@@ -1,0 +1,106 @@
+{
+  "name": "@weaver/electron-aittrpg",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AI TTRPG game UI — mirrors AI-DND-Matrix chrome; runs on Weaver engines",
+  "type": "module",
+  "main": "./out/main/index.js",
+  "scripts": {
+    "postinstall": "node ../../node_modules/electron/install.js",
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
+    "package": "npm run package:win",
+    "package:win": "electron-vite build && electron-builder --win --publish never",
+    "package:mac": "electron-vite build && electron-builder --mac --publish never"
+  },
+  "dependencies": {
+    "@weaver/civilization-engine": "*",
+    "@weaver/combat-engine": "*",
+    "@weaver/dm-engine": "*",
+    "@weaver/enemy-engine": "*",
+    "@weaver/item-engine": "*",
+    "@weaver/llm-engine": "*",
+    "@weaver/narration-engine": "*",
+    "@weaver/npc-engine": "*",
+    "@weaver/regional-engine": "*",
+    "@weaver/world-engine": "*",
+    "electron-log": "^5.4.4",
+    "electron-updater": "^6.8.3",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^5.2.0",
+    "electron": "^42.6.0",
+    "electron-builder": "^26.15.3",
+    "electron-vite": "^5.0.0",
+    "typescript": "^5.5.2",
+    "vite": "^7.3.6"
+  },
+  "build": {
+    "appId": "com.davgor.weaver.aittrpg",
+    "productName": "AI TTRPG",
+    "executableName": "AI-TTRPG",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "out/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "build/icon.png",
+        "to": "icon.png"
+      }
+    ],
+    "publish": {
+      "provider": "github",
+      "owner": "davgor",
+      "repo": "Weaver",
+      "channel": "latest"
+    },
+    "win": {
+      "icon": "build/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "allowElevation": true,
+      "artifactName": "AI-TTRPG-Setup-${version}.${ext}"
+    },
+    "portable": {
+      "artifactName": "AI-TTRPG-${version}-Portable.${ext}"
+    },
+    "mac": {
+      "icon": "build/icon.png",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "AI-TTRPG-${version}-${arch}.${ext}"
+    }
+  }
+}

@@ -1,0 +1,70 @@
+name: CI Checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-plan:
+    if: ${{ github.event_name != 'push' || !contains(github.event.head_commit.message || '', '[skip ci]') }}
+    runs-on: windows-latest
+    outputs:
+      shards: ${{ steps.plan.outputs.shards }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - id: plan
+        run: node scripts/test-plan-ci.mjs --target-ms 60000
+
+  test:
+    if: ${{ github.event_name != 'push' || !contains(github.event.head_commit.message || '', '[skip ci]') }}
+    needs: test-plan
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJson(needs.test-plan.outputs.shards) }}
+    steps:
+      - uses: actions/checkout@v4
+      # No `cache: npm` on Windows: setup-node/actions/cache can silently abort or
+      # corrupt restore (actions/cache#1754). Reliability > ~30s install savings.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install dependencies
+        run: node scripts/npm-ci-with-retry.mjs
+      - name: Ensure Electron binary is installed
+        run: node node_modules/electron/install.js
+      - run: node scripts/run-test-shard.mjs --index ${{ matrix.shard }} --target-ms 60000 --json-out shard-timings-${{ matrix.shard }}.json
+
+  lint:
+    if: ${{ github.event_name != 'push' || !contains(github.event.head_commit.message || '', '[skip ci]') }}
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install dependencies
+        run: node scripts/npm-ci-with-retry.mjs
+      - run: npm run lint
+
+  build:
+    if: ${{ github.event_name != 'push' || !contains(github.event.head_commit.message || '', '[skip ci]') }}
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install dependencies
+        run: node scripts/npm-ci-with-retry.mjs
+      - name: Ensure Electron binary is installed
+        run: node node_modules/electron/install.js
+      - run: npm run build:engines
+      - run: npm run typecheck
+      - run: npm run build -w @weaver/electron-admin
