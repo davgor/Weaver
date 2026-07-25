@@ -1,0 +1,169 @@
+import { app, BrowserWindow, ipcMain } from 'electron'
+import electronUpdater from 'electron-updater'
+import type {
+  AutoUpdatePhase,
+  AutoUpdateState,
+  ManualUpdateCheckResult
+} from '../shared/autoUpdate/types.js'
+import { AUTO_UPDATE_EVENT_CHANNEL } from '../shared/autoUpdate/types.js'
+import { logger } from './logger.js'
+import { resolveAutoUpdater } from './resolveAutoUpdater.js'
+
+const autoUpdater = resolveAutoUpdater({ default: electronUpdater })
+
+/** Delay before the first update check after launch. */
+export const INITIAL_CHECK_DELAY_MS = 8_000
+
+/** How often to re-check while the app stays open. */
+export const POLL_INTERVAL_MS = 4 * 60 * 60 * 1000
+
+let state: AutoUpdateState = {
+  phase: 'idle',
+  currentVersion: app.getVersion()
+}
+
+let checkInFlight = false
+
+export function canStartUpdateCheck(phase: AutoUpdatePhase): boolean {
+  return phase === 'idle' || phase === 'error'
+}
+
+export function formatUpdateReadyMessage(_version: string): string {
+  return 'Restart and update'
+}
+
+function broadcastState(): void {
+  for (const window of BrowserWindow.getAllWindows()) {
+    if (!window.isDestroyed()) {
+      window.webContents.send(AUTO_UPDATE_EVENT_CHANNEL, state)
+    }
+  }
+}
+
+function setState(patch: Partial<AutoUpdateState>): void {
+  state = { ...state, ...patch }
+  broadcastState()
+}
+
+export function getAutoUpdateState(): AutoUpdateState {
+  return state
+}
+
+export function isAutoUpdateEnabled(): boolean {
+  return app.isPackaged && process.env['DISABLE_AUTO_UPDATE'] !== '1'
+}
+
+export function quitAndInstallUpdate(): void {
+  autoUpdater.quitAndInstall(true, true)
+}
+
+function busyResultForPhase(phase: AutoUpdatePhase): ManualUpdateCheckResult {
+  if (phase === 'downloaded') {
+    return { outcome: 'busy', message: 'An update is ready to install.' }
+  }
+  if (phase === 'downloading' || phase === 'available') {
+    return { outcome: 'busy', message: 'An update is already downloading.' }
+  }
+  return { outcome: 'busy' }
+}
+
+export async function checkForUpdatesNow(): Promise<ManualUpdateCheckResult> {
+  if (!isAutoUpdateEnabled()) {
+    return { outcome: 'disabled' }
+  }
+  if (checkInFlight || !canStartUpdateCheck(state.phase)) {
+    return busyResultForPhase(state.phase)
+  }
+
+  checkInFlight = true
+  try {
+    const result = await autoUpdater.checkForUpdates()
+    if (!result) {
+      return { outcome: 'error', message: 'No update response from provider' }
+    }
+    if (result.isUpdateAvailable) {
+      return { outcome: 'update-available', version: result.updateInfo.version }
+    }
+    return { outcome: 'up-to-date' }
+  } catch (error: unknown) {
+    logger.error('Auto-update check failed:', error)
+    const message = error instanceof Error ? error.message : 'Update check failed'
+    setState({ phase: 'error', message })
+    return { outcome: 'error', message }
+  } finally {
+    checkInFlight = false
+  }
+}
+
+export function registerAutoUpdateHandlers(): void {
+  ipcMain.handle('autoUpdate:getState', () => getAutoUpdateState())
+  ipcMain.handle('autoUpdate:quitAndInstall', () => {
+    quitAndInstallUpdate()
+  })
+  ipcMain.handle('autoUpdate:checkForUpdates', () => checkForUpdatesNow())
+}
+
+function wireAutoUpdaterEvents(): void {
+  autoUpdater.on('checking-for-update', () => {
+    setState({ phase: 'checking' })
+  })
+
+  autoUpdater.on('update-available', (info) => {
+    setState({
+      phase: 'available',
+      availableVersion: info.version,
+      message: `Version ${info.version} is downloading…`
+    })
+  })
+
+  autoUpdater.on('update-not-available', () => {
+    setState({ phase: 'idle' })
+  })
+
+  autoUpdater.on('download-progress', (progress) => {
+    setState({
+      phase: 'downloading',
+      downloadPercent: Math.round(progress.percent)
+    })
+  })
+
+  autoUpdater.on('update-downloaded', (info) => {
+    setState({
+      phase: 'downloaded',
+      availableVersion: info.version,
+      downloadPercent: 100,
+      message: formatUpdateReadyMessage(info.version)
+    })
+  })
+
+  autoUpdater.on('error', (error) => {
+    logger.error('Auto-update error:', error)
+    setState({
+      phase: 'error',
+      message: error.message
+    })
+  })
+}
+
+function scheduleUpdateChecks(): void {
+  setTimeout(() => {
+    void checkForUpdatesNow()
+  }, INITIAL_CHECK_DELAY_MS)
+
+  setInterval(() => {
+    void checkForUpdatesNow()
+  }, POLL_INTERVAL_MS)
+}
+
+export function initAutoUpdate(): void {
+  if (!isAutoUpdateEnabled()) {
+    logger.info('Auto-update disabled (dev build or DISABLE_AUTO_UPDATE=1)')
+    return
+  }
+
+  autoUpdater.logger = logger
+  autoUpdater.autoDownload = true
+  autoUpdater.autoInstallOnAppQuit = true
+  wireAutoUpdaterEvents()
+  scheduleUpdateChecks()
+}

@@ -1,0 +1,33 @@
+---
+description: TDD, lint/test/build gate, and /board ticket traceability for all implementation work
+alwaysApply: true
+---
+
+# Delivery standards
+
+Any implementation work in this repo must follow `.cursor/skills/delivery-standards/SKILL.md` (also `.claude/skills/delivery-standards/SKILL.md`).
+
+## Required on every code change
+
+1. **TDD-first** — failing test(s) before implementation for engine packages (`packages/*Engine`), shared scripts, IPC, and other testable logic. Deterministic engines (Combat, World, Item, NPC, Enemy, Regional, Civilization, Character) must be heavily tested; NarrationEngine and DMEngine need tests for validation/orchestration (LLMs invent only via those two).
+2. **Operational separation** — Electron `main`/`preload` bootstrap, IPC wiring, and React container components stay thin, wiring-only. Business rules, transforms, and orchestration decisions live in separate, dependency-injected modules with their own unit tests that don't need Electron booted. Extract logic out rather than testing it in place or leaving it tangled in the wiring; see delivery-standards skill for the worked example (`engineDispatch.ts` / `EndpointRow.tsx`). This is what lets the same engines eventually back more than one client (text AI TTRPG now, a graphical client later).
+3. **Cross-package contract tests** — whenever package A calls package B's published API, establish/update consumer `*.contract.test.ts` that exercise the real provider (no mocking B's public API). Required for engine→engine and Electron→engine calls; see delivery-standards skill §2.
+4. **Verify before done** — all must pass; do not report completion otherwise:
+   - `npm test`
+   - `npm run lint`
+   - `npm run build` (or `npm run build:engines` + Electron build when relevant)
+   - `npm run deadcode` (ts-prune vs `.tsprune-ignore`; if export moves/deletes drift the baseline, run `npm run deadcode:refresh` after confirming the new findings are intentional)
+   - **`npm run ci:act`** — runs `.github/workflows/pr-checks.yml` and `.github/workflows/deadcode.yml` via `act` (see `act-ci-after-local-tasks` rule). Required, no exceptions. It checks Docker itself and fails fast with a message if Docker isn't running — if that happens, **pause and ask the user to start Docker** — do not silently skip or fall back to local-only commands.
+5. **Board traceability** — **ALWAYS write a ticket yourself.** Never ask the user whether to create one, which number to use, or whether to skip tracking. Create `/board/backlog/` (or move to `in-progress` when starting) with Description + checkable Acceptance Criteria before or as you start. Epic files use `XXXX-PACKAGE_NAME-Summary.md` (`Repo` for cross-cutting). If the user named a ticket id, use `complete-ticket` skill. Next free id: look at highest `XXXX` under `board/` and increment.
+
+## Also required
+
+- Read `README.md` for architecture boundaries (monorepo packages, LLM vs deterministic engines).
+- Check off acceptance criteria only after verification; move tickets to `done/` when complete.
+- Do not commit unless the user explicitly asks.
+- **If a native module rebuild is locked** by a running Electron/`electron-vite` session: kill those repo processes yourself per `.cursor/skills/delivery-standards/SKILL.md` — do not ask the user to close the app.
+
+## Exceptions
+
+- Read-only answers with no code changes: no ticket or test gate required.
+- Never treat “tiny fix” / CI fluff as an excuse to skip a ticket or to ask the user first.

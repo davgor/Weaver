@@ -1,0 +1,51 @@
+@import './theme.css';
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+.app-root {
+  --app-sidebar-width: 220px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.app-body {
+  display: flex;
+  height: calc(100% - 32px);
+  min-height: 0;
+}
+
+.main-panel {
+  flex: 1;
+  min-width: 0;
+  padding: 2rem 2.25rem;
+  overflow: auto;
+}
+
+.main-panel-empty {
+  max-width: 36rem;
+}
+
+.main-panel-empty .brand {
+  margin: 0 0 0.75rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  color: var(--text-accent);
+}
+
+.main-panel-empty h1 {
+  margin: 0 0 0.75rem;
+  font-size: 1.75rem;
+}
+
+.main-panel-empty p {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}

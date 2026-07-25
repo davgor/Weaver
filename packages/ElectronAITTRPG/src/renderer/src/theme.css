@@ -1,0 +1,391 @@
+:root {
+  --bg-gradient:
+    radial-gradient(circle at 20% 20%, rgba(120, 72, 28, 0.35), transparent 45%),
+    radial-gradient(circle at 80% 70%, rgba(42, 74, 120, 0.35), transparent 40%),
+    linear-gradient(160deg, #0d1118 0%, #17120d 45%, #0b0f14 100%);
+
+  --text-primary: #f4e8d2;
+  --text-secondary: #d8c7a8;
+  --text-muted: #b9a98c;
+  --text-dim: #8a7d68;
+  --text-accent: #c9a66b;
+
+  --surface-inset: rgba(8, 10, 14, 0.92);
+  --surface-glass: rgba(8, 10, 14, 0.72);
+  --surface-column: rgba(12, 15, 20, 0.82);
+  --surface-column-alt: rgba(16, 20, 26, 0.86);
+  --surface-panel: rgba(18, 22, 29, 0.94);
+  --surface-raised: rgba(22, 26, 34, 0.88);
+  --surface-hover: rgba(201, 166, 107, 0.1);
+  --surface-active: rgba(201, 166, 107, 0.2);
+  --surface-sidebar-hover: rgba(201, 166, 107, 0.08);
+  --surface-sidebar-active: rgba(201, 166, 107, 0.16);
+  --surface-scene: rgba(10, 12, 16, 0.75);
+
+  --bg-sidebar:
+    linear-gradient(180deg, rgba(5, 7, 11, 0.94) 0%, rgba(3, 5, 9, 0.97) 100%),
+    var(--bg-gradient);
+
+  --border-subtle: rgba(244, 232, 210, 0.1);
+  --border-medium: rgba(244, 232, 210, 0.18);
+  --border-strong: rgba(201, 166, 107, 0.4);
+
+  --accent-bronze-dark: #8b5a2b;
+  --accent-bronze-light: #d4a15a;
+  --accent-gold: #c9a66b;
+  --progress-gradient: linear-gradient(90deg, var(--accent-bronze-dark), var(--accent-bronze-light));
+
+  --color-error: #f0b2a5;
+  --color-error-bg: rgba(80, 32, 28, 0.55);
+  --color-success: #9cc49a;
+  --color-danger: #c45c5c;
+  --color-danger-solid: #8f3a3a;
+
+  --shadow-panel: 0 18px 48px rgba(0, 0, 0, 0.45);
+  --shadow-overlay: 0 12px 32px rgba(0, 0, 0, 0.5);
+
+  --font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-pill: 999px;
+
+  --overlay-backdrop: rgba(6, 8, 12, 0.72);
+
+  --scrollbar-track: rgba(8, 10, 14, 0.65);
+  --scrollbar-thumb: rgba(201, 166, 107, 0.32);
+  --scrollbar-thumb-hover: rgba(201, 166, 107, 0.48);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-family);
+  color: var(--text-primary);
+  background: #0b0f14;
+  -webkit-font-smoothing: antialiased;
+}
+
+.app-body {
+  background: var(--bg-gradient);
+}
+
+.app-root {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+.app-root * {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+.app-root ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.app-root ::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+  border-radius: var(--radius-pill);
+}
+
+.app-root ::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border: 2px solid transparent;
+  border-radius: var(--radius-pill);
+  background-clip: padding-box;
+}
+
+.app-root ::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+.app-root ::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Shared content surfaces */
+.content-panel,
+.main-panel,
+.campaign-review,
+.character-setup {
+  color: var(--text-primary);
+  background: transparent;
+}
+
+.content-panel h1,
+.main-panel h1,
+.campaign-review h1,
+.character-setup h1 {
+  margin: 0 0 0.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.content-panel h2,
+.main-panel h2,
+.campaign-review h2,
+.character-setup h2 {
+  margin: 1.25rem 0 0.5rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-accent);
+}
+
+.content-panel p,
+.main-panel p,
+.campaign-review p,
+.character-setup p {
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.content-panel ul,
+.main-panel ul,
+.campaign-review ul {
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+/* Form controls */
+.app-root input[type='text'],
+.app-root input[type='search'],
+.app-root input[type='number'],
+.app-root input[type='password'],
+.app-root textarea,
+.app-root select {
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-md);
+  background: var(--surface-inset);
+  color: var(--text-primary);
+  padding: 0.5rem 0.65rem;
+  font-family: inherit;
+  font-size: 0.95rem;
+}
+
+.app-root input:focus,
+.app-root textarea:focus,
+.app-root select:focus {
+  outline: none;
+  border-color: var(--border-strong);
+  box-shadow: 0 0 0 2px rgba(201, 166, 107, 0.15);
+}
+
+.app-root input::placeholder,
+.app-root textarea::placeholder {
+  color: var(--text-dim);
+}
+
+/* Themed action buttons — default for all app buttons except chrome/nav controls.
+   ModalPortal mounts overlays on document.body (outside .app-root), so .modal-overlay
+   must repeat the same rules. */
+.app-root .btn,
+.app-root button:not(
+  .titlebar-button,
+  .character-sheet-close,
+  .character-log-book-close,
+  .btn-ghost,
+  .campaigns-rail-toggle,
+  .campaigns-rail-button,
+  .campaigns-rail-chip,
+  .campaigns-rail-delete,
+  .campaigns-rail-action,
+  .campaigns-rail-import-button,
+  .player-sheet-rail-toggle,
+  .play-sheet-tab,
+  .sidebar-toggle,
+  .sidebar-campaign-button,
+  .ability-score-step,
+  .field-random-dice,
+  .equipment-selection-option
+),
+.modal-overlay .btn,
+.modal-overlay button:not(
+  .titlebar-button,
+  .character-sheet-close,
+  .character-log-book-close,
+  .btn-ghost,
+  .character-sheet-overlay-close
+) {
+  border: 1px solid var(--accent-gold);
+  background: rgba(201, 166, 107, 0.12);
+  color: var(--text-primary);
+  border-radius: var(--radius-md);
+  padding: 0.5rem 0.9rem;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.9rem;
+  transition: background 150ms ease, border-color 150ms ease;
+}
+
+.app-root .btn:hover:not(:disabled),
+.app-root button:not(
+  .titlebar-button,
+  .character-sheet-close,
+  .character-log-book-close,
+  .btn-ghost,
+  .campaigns-rail-toggle,
+  .campaigns-rail-button,
+  .campaigns-rail-chip,
+  .campaigns-rail-delete,
+  .campaigns-rail-action,
+  .campaigns-rail-import-button,
+  .player-sheet-rail-toggle,
+  .play-sheet-tab,
+  .sidebar-toggle,
+  .sidebar-campaign-button,
+  .ability-score-step,
+  .field-random-dice,
+  .equipment-selection-option
+):hover:not(:disabled),
+.modal-overlay .btn:hover:not(:disabled),
+.modal-overlay button:not(
+  .titlebar-button,
+  .character-sheet-close,
+  .character-log-book-close,
+  .btn-ghost,
+  .character-sheet-overlay-close
+):hover:not(:disabled) {
+  background: rgba(201, 166, 107, 0.22);
+  border-color: var(--accent-bronze-light);
+}
+
+.app-root .btn:disabled,
+.app-root button:not(
+  .titlebar-button,
+  .character-sheet-close,
+  .character-log-book-close,
+  .btn-ghost,
+  .campaigns-rail-toggle,
+  .campaigns-rail-button,
+  .campaigns-rail-chip,
+  .campaigns-rail-delete,
+  .campaigns-rail-action,
+  .campaigns-rail-import-button,
+  .player-sheet-rail-toggle,
+  .play-sheet-tab,
+  .sidebar-toggle,
+  .sidebar-campaign-button,
+  .ability-score-step,
+  .field-random-dice,
+  .equipment-selection-option
+):disabled,
+.modal-overlay .btn:disabled,
+.modal-overlay button:not(
+  .titlebar-button,
+  .character-sheet-close,
+  .character-log-book-close,
+  .btn-ghost,
+  .character-sheet-overlay-close
+):disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+.app-root .btn-danger,
+.app-root .campaign-delete-confirm {
+  border-color: var(--color-danger);
+  background: rgba(196, 92, 92, 0.2);
+  color: var(--text-primary);
+}
+
+.app-root .btn-danger:hover:not(:disabled),
+.app-root .campaign-delete-confirm:hover:not(:disabled) {
+  background: rgba(196, 92, 92, 0.35);
+  border-color: #d87070;
+}
+
+.app-root .guided-conversation-advance {
+  border-color: var(--accent-bronze-light);
+  background: rgba(201, 166, 107, 0.2);
+}
+
+.app-root .guided-conversation-advance:hover:not(:disabled) {
+  background: rgba(201, 166, 107, 0.3);
+  border-color: var(--accent-bronze-light);
+}
+
+.app-root .ability-score-step {
+  border: 1px solid var(--border-medium);
+  background: var(--surface-inset);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  padding: 0;
+}
+
+.app-root .ability-score-step:hover:not(:disabled) {
+  border-color: var(--border-strong);
+  background: var(--surface-hover);
+}
+
+/* Ghost / icon buttons — no gold chrome */
+.app-root .btn-ghost {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm);
+}
+
+.app-root .btn-ghost:hover:not(:disabled) {
+  color: var(--text-accent);
+  background: var(--surface-hover);
+  border-color: transparent;
+}
+
+.eyebrow {
+  margin: 0 0 0.5rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  color: var(--text-accent);
+}
+
+.panel-card {
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-lg);
+  background: var(--surface-glass);
+  box-shadow: var(--shadow-panel);
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--overlay-backdrop);
+}
+
+.modal-panel {
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-lg);
+  background: var(--surface-panel);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-panel);
+  min-width: 0;
+  max-width: 100%;
+}
+
+.progress-track {
+  height: 8px;
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  background: rgba(244, 232, 210, 0.12);
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--progress-gradient);
+}

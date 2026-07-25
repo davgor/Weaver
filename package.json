@@ -1,0 +1,51 @@
+{
+  "name": "weaver",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Weaver — TypeScript monorepo for a modular TTRPG game engine",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/davgor/Weaver.git"
+  },
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "preadmin": "node scripts/ensure-dev.mjs",
+    "admin": "npm run dev --workspace=@weaver/electron-admin --if-present",
+    "preai-ttrpg": "node scripts/ensure-dev.mjs --workspace=packages/ElectronAITTRPG",
+    "ai-ttrpg": "npm run dev --workspace=@weaver/electron-aittrpg --if-present",
+    "build": "npm run build --workspaces --if-present",
+    "build:engines": "npm run build -w @weaver/combat-engine -w @weaver/world-engine -w @weaver/regional-engine -w @weaver/civilization-engine -w @weaver/narration-engine -w @weaver/item-engine -w @weaver/npc-engine -w @weaver/enemy-engine -w @weaver/dm-engine -w @weaver/llm-engine",
+    "migrate": "node scripts/migrate.mjs",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "oxlint packages scripts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "deadcode": "node scripts/deadcode-check.mjs",
+    "deadcode:refresh": "node scripts/deadcode-refresh.mjs",
+    "ci:act": "node scripts/run-act.mjs",
+    "board:order": "node scripts/board-order.mjs",
+    "package": "npm run build:engines && npm run package -w @weaver/electron-aittrpg && npm run package -w @weaver/electron-admin",
+    "package:win": "npm run build:engines && npm run package:win -w @weaver/electron-aittrpg && npm run package:win -w @weaver/electron-admin",
+    "package:mac": "npm run build:engines && npm run package:mac -w @weaver/electron-aittrpg && npm run package:mac -w @weaver/electron-admin"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "oxlint": "^1.71.0",
+    "ts-prune": "^0.10.3",
+    "typescript": "^5.5.2",
+    "vitest": "^4.1.9"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "electron-builder": "26.15.3"
+  },
+  "overrides": {
+    "brace-expansion": "5.0.8",
+    "minimatch": "10.2.5",
+    "@electron/asar": "4.2.1"
+  }
+}
