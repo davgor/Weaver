@@ -1,7 +1,9 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "outDir": "out",
+    "composite": true,
+    "outDir": "out-tsc/node",
+    "tsBuildInfoFile": "out-tsc/node/tsconfig.node.tsbuildinfo",
     "types": ["node"],
     "lib": ["ES2022"]
   },

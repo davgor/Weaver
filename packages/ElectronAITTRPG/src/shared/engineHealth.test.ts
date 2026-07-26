@@ -8,6 +8,7 @@ describe('summarizeEngineHealth', () => {
       { id: 'WorldEngine' },
       { id: 'RegionalEngine' },
       { id: 'CivilizationEngine' },
+      { id: 'DungeonEngine' },
       { id: 'NarrationEngine' },
       { id: 'ItemEngine' },
       { id: 'NPCEngine' },
@@ -26,6 +27,7 @@ describe('summarizeEngineHealth', () => {
     expect(summary.missing).toEqual([
       'RegionalEngine',
       'CivilizationEngine',
+      'DungeonEngine',
       'NarrationEngine',
       'ItemEngine',
       'NPCEngine',

@@ -3,6 +3,7 @@ const REQUIRED_ENGINE_IDS = [
   'WorldEngine',
   'RegionalEngine',
   'CivilizationEngine',
+  'DungeonEngine',
   'NarrationEngine',
   'ItemEngine',
   'NPCEngine',
