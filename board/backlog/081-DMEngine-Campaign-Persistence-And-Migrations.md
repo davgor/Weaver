@@ -6,7 +6,7 @@ Own the **one SQLite file per campaign** product persistence spine from `REBUILD
 
 **Depends on:** none for the migration runner scaffolding; campaign table consumers land with later DM/character/NPC epics. **Feeds:** `052-DMEngine-Campaign-Generation-Pipeline`, `059-DMEngine-Campaign-Portability`, ElectronAITTRPG campaign open/create UI (`069`/`071`).
 
-**LLM boundary:** persistence only — no prose invention, no combat/world fact invention. Migrations may seed deterministic catalogs (creatures/spells) later; LLM does not write schema.
+**LLM boundary:** persistence only — no prose invention, no combat/world fact invention. Migrations may seed deterministic catalogs (creatures/actions) later; LLM does not write schema.
 
 ## Sub-tickets
 
@@ -22,6 +22,6 @@ Own the **one SQLite file per campaign** product persistence spine from `REBUILD
 - [ ] Campaign open/create opens a single SQLite file per campaign and runs forward-only numbered migrations
 - [ ] Migration runner is unit-tested (apply, idempotent re-open, reject unknown/old-dir downgrades as specified)
 - [ ] Boundary documented: which tables live in the campaign bundle vs which remain in engine-local stores (World/Regional/Civ)
-- [ ] Catalog seed hook exists (even if initial seed set is minimal) so creatures/spells can load on migrate
+- [ ] Catalog seed hook exists (even if initial seed set is minimal) so creatures/ActionEngine actions can load on migrate
 - [ ] Explicit: Electron apps call DMEngine (or a thin shared persistence module owned by this epic's package boundary) — renderer never talks SQL
 - [ ] Sub-tickets listed above exist as `board/backlog/081.*` files; none implemented until separately completed

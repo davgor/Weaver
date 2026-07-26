@@ -4,7 +4,7 @@
 
 Epic ids are grouped by package/theme (e.g. `021`-`031` = CharacterEngine), **not** by dependency order. Picking tickets in numeric order alone will hand you one before something it depends on exists. Work wave by wave instead: everything in a wave has no unmet dependency on anything else still pending, so tickets within a wave can run in any order (including in parallel).
 
-11 waves, 69 pending epics.
+11 waves, 72 pending epics.
 
 ## Wave 1
 
@@ -19,6 +19,8 @@ Epic ids are grouped by package/theme (e.g. `021`-`031` = CharacterEngine), **no
 - `079-Repo-Operational-Separation-Standard-And-Act-Tooling` _(in-progress)_
 - `080-Repo-Board-Epic-Seed-Cleanup` _(in-progress)_
 - `081-DMEngine-Campaign-Persistence-And-Migrations`
+- `082-ActionEngine-Ability-Effect-And-Range-Model`
+- `085-Repo-ActionEngine-Board-Reshape` _(in-progress)_
 
 ## Wave 2
 
@@ -33,6 +35,7 @@ Epic ids are grouped by package/theme (e.g. `021`-`031` = CharacterEngine), **no
 - `036-ItemEngine-Starting-Gear-Catalog`
 - `066-NarrationEngine-Visual-Token-Generation`
 - `067-LLMEngine-Multi-Cloud-Provider-Adapters`
+- `083-ActionEngine-Catalog-And-Known-Actions`
 
 ## Wave 3
 
@@ -72,7 +75,7 @@ Epic ids are grouped by package/theme (e.g. `021`-`031` = CharacterEngine), **no
 - `050-CombatEngine-Flee-Surrender-Nonlethal`
 - `051-CombatEngine-Dynamic-Start-And-Triggers`
 - `063-NarrationEngine-Scene-Social-Split-And-Streaming`
-- `082-CombatEngine-Spell-Casting-And-Action-Lockout`
+- `084-ActionEngine-Use-Resolution-And-Lockout`
 
 ## Wave 7
 

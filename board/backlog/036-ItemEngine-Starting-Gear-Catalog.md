@@ -9,6 +9,6 @@ Port the archetype starting-loadout catalog (the item-data side; `026-CharacterE
 ## Acceptance criteria
 
 - [ ] Seed catalog of starting loadouts keyed by archetype (Fighter, Rogue, Mage, Cleric, Ranger), each resolving to valid item template references from `032`
-- [ ] Starter spell catalog entries are represented alongside starting gear where an archetype grants known spells at level 1
+- [ ] Starter **known-action grants** are represented alongside starting gear where an archetype grants actions at level 1 — as ActionEngine `actionId` references from `083-ActionEngine-Catalog-And-Known-Actions`, not a parallel ItemEngine spell-stat catalog
 - [ ] Catalog is versioned/seedable the same way WorldEngine/RegionalEngine treat their seed data, so a fresh campaign gets deterministic starting gear
 - [ ] `036.x` sub-tickets (once created) cover catalog authoring separately from the API surface defined in `032`

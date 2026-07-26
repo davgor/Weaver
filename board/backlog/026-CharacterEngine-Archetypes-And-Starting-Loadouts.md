@@ -9,7 +9,7 @@ Port the five seed archetypes and the starting-loadout selection flow (state/sel
 ## Acceptance criteria
 
 - [ ] Five seed archetypes (Fighter, Rogue, Mage, Cleric, Ranger), levels 1–20, each with a default per-archetype starting weapon/kit
-- [ ] Starting-loadout selection persists the chosen gear/spell set against the character before onboarding continues
+- [ ] Starting-loadout selection persists the chosen gear + known ActionEngine `actionId` set against the character before onboarding continues
 - [ ] Archetype identity is a stable key other engines (CombatEngine, ItemEngine) can key perk/feature templates and default gear off of
 - [ ] Unit tests cover each archetype's default loadout resolving to valid ItemEngine item references
 - [ ] This package's consumption of `036-ItemEngine-Starting-Gear-Catalog`'s catalog API is covered by a `*.contract.test.ts` here that exercises ItemEngine's real published API (no mocking its public surface), per delivery-standards' cross-package contract-test rule

@@ -4,9 +4,9 @@ Give `@weaver/combat-engine` its first real behavior: starting an encounter, rol
 
 **Ported from:** `board/done/031-combat-encounter-mode.md` and the "Combat" section of AI-DND-Matrix's README (initiative rolled once per encounter (`d20 + Agility`); one Action + Movement per turn; typed combat actions in the same free-text box as exploration).
 
-**Depends on:** `021-CharacterEngine-Core-Ability-Model` (Agility mod for initiative), `037-NPCEngine-Construction-And-Identity` / `045-EnemyEngine-Bestiary-Catalog` (combatants come from these packages). **Feeds:** `049`–`051` (remaining CombatEngine epics), DMEngine turn routing (`053-DMEngine-Turn-Routing`).
+**Depends on:** `021-CharacterEngine-Core-Ability-Model` (Agility mod for initiative), `037-NPCEngine-Construction-And-Identity` / `045-EnemyEngine-Bestiary-Catalog` (combatants come from these packages). **Feeds:** `049`–`051` (remaining CombatEngine epics), DMEngine turn routing (`053-DMEngine-Turn-Routing`), ActionEngine use/lockout (`084-ActionEngine-Use-Resolution-And-Lockout` — Combat owns turn/Action slots; ActionEngine owns ability legality, effects, and catalog turn cost).
 
-**LLM boundary:** deterministic — no Electron, no LLM invention of outcomes. DMEngine decides *when* combat starts and narrates it; this package owns whether an action succeeds.
+**LLM boundary:** deterministic — no Electron, no LLM invention of outcomes. DMEngine decides *when* combat starts and narrates it; this package owns encounter turn/hit resolution. **Ability definitions and effect catalogs live in ActionEngine**, not here.
 
 ## Acceptance criteria
 

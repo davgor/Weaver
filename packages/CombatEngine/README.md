@@ -4,7 +4,7 @@ Deterministic combat rules and resolution for Weaver campaigns.
 
 ## Role
 
-Owns turn order, hit/damage resolution, combatant state, and related combat facts. Peer packages (DMEngine, NarrationEngine, Electron shells) consume this API; they must not invent combat outcomes.
+Owns turn order, hit/damage resolution, combatant state, and related combat facts. Peer packages (DMEngine, NarrationEngine, Electron shells) consume this API; they must not invent combat outcomes. **Usable abilities** (spells and class actions) and their **effects/ranges** are owned by ActionEngine (board `082`–`084`); this package supplies turn/Action slots and consumes use/lockout results.
 
 ## Boundaries
 
@@ -39,6 +39,7 @@ await combatEngine.call('health')
 | [049](../../board/backlog/049-CombatEngine-Hit-Damage-Crit-Conditions.md) | Hit/damage/crit resolution, condition application |
 | [050](../../board/backlog/050-CombatEngine-Flee-Surrender-Nonlethal.md) | Flee, surrender, non-lethal victory, execute |
 | [051](../../board/backlog/051-CombatEngine-Dynamic-Start-And-Triggers.md) | Dynamic combat start without a pre-placed hostile |
+| [084](../../board/backlog/084-ActionEngine-Use-Resolution-And-Lockout.md) *(peer)* | ActionEngine use/lockout — Combat does not own ability definitions |
 
 ## Scripts
 
