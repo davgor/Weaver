@@ -9,6 +9,17 @@ import {
   verifyUpdaterMetadata
 } from './verify-release-artifacts.mjs'
 
+function seedNestedDownloadLayout(root) {
+  const aittrpg = join(root, 'ElectronAITTRPG', 'release')
+  const admin = join(root, 'ElectronAdmin', 'release')
+  mkdirSync(aittrpg, { recursive: true })
+  mkdirSync(admin, { recursive: true })
+  writeFileSync(join(aittrpg, 'AI-TTRPG-Setup-0.2.0.exe'), 'bin')
+  writeFileSync(join(admin, 'AI-ADMIN-Setup-0.2.0.exe'), 'bin')
+  writeChannelYml(aittrpg, 'latest.yml', 'AI-TTRPG-Setup-0.2.0.exe')
+  writeChannelYml(admin, 'ai-admin.yml', 'AI-ADMIN-Setup-0.2.0.exe')
+}
+
 function writeChannelYml(dir, name, artifact) {
   writeFileSync(
     join(dir, name),
@@ -119,6 +130,17 @@ describe('runVerifyReleaseArtifacts', () => {
     const log = vi.spyOn(console, 'log').mockImplementation(() => {})
     expect(runVerifyReleaseArtifacts(dir).ok).toBe(true)
     expect(log).toHaveBeenCalledWith('latest.yml: ok')
+    log.mockRestore()
+  })
+
+  it('flattens nested package release downloads before verifying', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'weaver-run-nested-'))
+    seedNestedDownloadLayout(dir)
+    const log = vi.spyOn(console, 'log').mockImplementation(() => {})
+    expect(runVerifyReleaseArtifacts(dir).ok).toBe(true)
+    expect(log).toHaveBeenCalledWith('flattened: latest.yml')
+    expect(log).toHaveBeenCalledWith('latest.yml: ok')
+    expect(log).toHaveBeenCalledWith('ai-admin.yml: ok')
     log.mockRestore()
   })
 })
