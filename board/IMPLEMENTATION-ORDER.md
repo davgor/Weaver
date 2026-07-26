@@ -8,4 +8,4 @@ Epic ids are grouped by package/theme (e.g. `021`-`031` = CharacterEngine), **no
 
 ## Wave 1
 
-- `076-ElectronAITTRPG-Play-Shell-Resilience`
+- `076-ElectronAITTRPG-Play-Shell-Resilience` _(in-progress)_
