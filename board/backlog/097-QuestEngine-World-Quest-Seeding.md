@@ -2,7 +2,9 @@
 
 Add `packages/QuestEngine` (`@weaver/quest-engine`): deterministic, LLM-free owner of **world/campaign quest definitions and seeded instances** bound to real world facts (regions, settlements/places, NPCs, items, optional dungeon ids). Today quests are only a thin CharacterEngine log (`questId` / kind / status / title) plus DM propose/complete orchestration (`028` / `056`) — nothing seeds a coherent world quest graph at campaign generation time.
 
-**Depends on:** `012` / `013` / `016` (world/region/settlement facts to bind), `028-CharacterEngine-Journal-Logbook-Quests-Spellbook` (PC quest log remains the acceptance surface), `037` / `032` (NPC/item ids for FK targets), `052-DMEngine-Campaign-Generation-Pipeline` (orchestration host for a seed stage). **Soft peers:** `096-CharacterEngine-Location-Ownership` (location-gated offers later), DungeonEngine instance ids. **Feeds:** DMEngine campaign-gen quest stage, DM `proposeQuest` (should reference QuestEngine definitions), NarrationEngine quest flavor fill (titles/briefs via Narration — QuestEngine stores validated text + structure, does not invent).
+**Depends on:** `012` / `013` / `016` (world/region/settlement facts to bind), `028-CharacterEngine-Journal-Logbook-Quests-Spellbook` (PC quest log remains the acceptance surface), `037` / `032` (NPC/item ids for FK targets), `052-DMEngine-Campaign-Generation-Pipeline` (orchestration host for a seed stage).
+
+**Feeds:** DMEngine campaign-gen quest stage, DM `proposeQuest` (should reference QuestEngine definitions), NarrationEngine quest flavor fill (titles/briefs via Narration — QuestEngine stores validated text + structure, does not invent). Location-gated offers may use `096-CharacterEngine-Location-Ownership` later (not a hard dependency for seeding).
 
 **Ownership split (chosen):**
 | Package | Owns |
