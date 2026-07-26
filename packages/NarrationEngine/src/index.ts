@@ -88,6 +88,36 @@ export type {
 } from './peers.js'
 export { extractClaims, stripClaimBlock } from './claimExtract.js'
 export { validateClaims } from './claimValidate.js'
+export { applyTerminologyGuards, findForbiddenTerminology } from './terminologyGuards.js'
+export type { TerminologyGuardResult, TerminologyRewrite } from './terminologyGuards.js'
+export { validateProseTone } from './toneGuard.js'
+export type { ProseToneValidation } from './toneGuard.js'
+export {
+  deityNameFallback,
+  resolveDeityName,
+  validateDeityName
+} from './deityNameValidate.js'
+export {
+  realizePantheon,
+  realizePlaceNaming,
+  sealPantheon,
+  sealPlaceNaming
+} from './worldNaming.js'
+export type {
+  PantheonDeity,
+  PantheonNaming,
+  PantheonOutcome,
+  PlaceNaming,
+  PlaceNamingOutcome,
+  PlaceStats,
+  RealizePantheonInput,
+  RealizePlaceNamingInput,
+  RegionPlaceStats,
+  SettlementPlaceStats
+} from './worldNaming.js'
+export type { DeityNameValidation, ResolvedDeityName } from './deityNameValidate.js'
+export { validateProse } from './proseValidate.js'
+export type { ProseValidationResult } from './proseValidate.js'
 export { decideSilentResolve } from './silentResolve.js'
 export {
   clearNarrationStore,
@@ -97,9 +127,21 @@ export {
   recordPlayerSocial,
   streamSocial
 } from './proseApi.js'
+export { createRagIndex, DEFAULT_RAG_MAX_CHARS, RAG_REINDEX_NOTE } from './rag/ragIndex.js'
+export type {
+  CampaignFactCategory,
+  EmbedderMode,
+  IndexCampaignFactOptions,
+  RagChunk,
+  RagEmbedder,
+  RagIndex,
+  RetrieveRelevantChunksInput,
+  RetrieveRelevantChunksResult
+} from './rag/ragIndex.js'
 
 import type { NarrationPeers } from './peers.js'
 import { buildProseEndpoints } from './proseEndpoints.js'
+import { buildRagEndpoints } from './rag/ragEndpoints.js'
 import {
   clearNarrationStore,
   generateScene,
@@ -286,7 +328,8 @@ function buildEndpoints(): EngineEndpoint[] {
         return await setManualPortrait(request.characterId, request.imagePath)
       }
     },
-    ...buildProseEndpoints(() => injectedPeers)
+    ...buildProseEndpoints(() => injectedPeers),
+    ...buildRagEndpoints()
   ]
 }
 

@@ -18,5 +18,7 @@ export type {
 } from './types.js'
 export { REGION_STATS_VERSION, regionSummary } from './types.js'
 export { createRegionalService } from './regionService.js'
+export { realizeRegionNaming, RegionNamingError } from './regionNaming.js'
+export type { RegionNamingInput, RealizeRegionNamingOptions } from './regionNaming.js'
 export { regionalEngine } from './engineApi.js'
 export type { RegionalEngineApi } from './engineApi.js'

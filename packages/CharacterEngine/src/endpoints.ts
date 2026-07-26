@@ -81,6 +81,43 @@ import {
   type RaceSelectionInput
 } from './raceBackground.js'
 import { advanceTravelDays, getCampaignDay, longRest } from './timeRest.js'
+import {
+  detectEmergentDirection,
+  recordTaggedPlayPattern
+} from './emergentDirection.js'
+import {
+  computeFeatureFromTemplate,
+  listArchetypeFeatureTemplates
+} from './featureTemplates.js'
+import {
+  applyLevelUpChoice,
+  beginLevelUpCeremony,
+  completeLevelUpWithFallback
+} from './levelUp.js'
+import {
+  awardXp,
+  computeXpAward,
+  getCharacterProgression,
+  getLevelSpanXp,
+  isDifficultyBand
+} from './xp.js'
+import {
+  getCampaignDeathMode,
+  getCharacterLifeStatus,
+  isDeathMode,
+  resolveCharacterDeath,
+  setCampaignDeathMode,
+  type DeathMode,
+  type RespawnConfig
+} from './deathModes.js'
+import { recordAutosaveSnapshot } from './autosave.js'
+import {
+  createCompanion,
+  getCompanionOnboardingStatus,
+  listCompanions,
+  skipCompanionCreation
+} from './companions.js'
+import { requestInactiveProxyAction } from './inactiveProxy.js'
 
 export type EngineEndpoint = {
   name: string
@@ -110,7 +147,13 @@ export function buildEndpoints(): EngineEndpoint[] {
     ...archetypeEndpoints(),
     ...recordEndpoints(),
     ...raceBackgroundEndpoints(),
-    ...timeRestEndpoints()
+    ...timeRestEndpoints(),
+    ...xpEndpoints(),
+    ...levelUpEndpoints(),
+    ...emergentDirectionEndpoints(),
+    ...deathModeEndpoints(),
+    ...companionEndpoints(),
+    ...inactiveProxyEndpoints()
   ]
 }
 
@@ -392,6 +435,207 @@ function timeRestEndpoints(): EngineEndpoint[] {
       invoke: parseTravel
     }
   ]
+}
+
+function xpEndpoints(): EngineEndpoint[] {
+  return [
+    {
+      name: 'getLevelSpanXp',
+      description: 'Read engine-owned XP span for a level',
+      invoke: (payload) => getLevelSpanXp(readNumber(readRecord(payload, 'getLevelSpanXp'), 'level'))
+    },
+    {
+      name: 'computeXpAward',
+      description: 'Compute XP from a difficulty band and level span',
+      invoke: (payload) => {
+        const record = readRecord(payload, 'computeXpAward')
+        return computeXpAward(readDifficultyBand(record), readNumber(record, 'level'))
+      }
+    },
+    {
+      name: 'awardXp',
+      description: 'Award XP using the character current level span',
+      invoke: (payload) => {
+        const record = readRecord(payload, 'awardXp')
+        return awardXp(readString(record, 'characterId'), readDifficultyBand(record))
+      }
+    },
+    {
+      name: 'getCharacterProgression',
+      description: 'Read persisted character level and XP progress',
+      invoke: (payload) =>
+        getCharacterProgression(readCharacterIdPayload(payload, 'getCharacterProgression'))
+    }
+  ]
+}
+
+function levelUpEndpoints(): EngineEndpoint[] {
+  return [
+    {
+      name: 'listArchetypeFeatureTemplates',
+      description: 'List template ids for an archetype perk pool',
+      invoke: (payload) =>
+        listArchetypeFeatureTemplates(readArchetypePayload(payload, 'listArchetypeFeatureTemplates'))
+    },
+    {
+      name: 'computeFeatureFromTemplate',
+      description: 'Materialize mechanical perk numbers from a template id',
+      invoke: (payload) => {
+        const record = readRecord(payload, 'computeFeatureFromTemplate')
+        return computeFeatureFromTemplate(readString(record, 'templateId'), {
+          level: readNumber(record, 'level')
+        })
+      }
+    },
+    {
+      name: 'beginLevelUpCeremony',
+      description: 'Build template-backed perk choices for the next level',
+      invoke: (payload) =>
+        beginLevelUpCeremony(parseLevelUpCeremonyPayload(payload, 'beginLevelUpCeremony'))
+    },
+    {
+      name: 'applyLevelUpChoice',
+      description: 'Apply one template-backed perk and advance character level',
+      invoke: (payload) => applyLevelUpChoice(parseApplyLevelUpPayload(payload))
+    },
+    {
+      name: 'completeLevelUpWithFallback',
+      description: 'Finish level-up with engine fallback when flavor proposer fails',
+      invoke: (payload) =>
+        completeLevelUpWithFallback(
+          parseLevelUpCeremonyPayload(payload, 'completeLevelUpWithFallback')
+        )
+    }
+  ]
+}
+
+function emergentDirectionEndpoints(): EngineEndpoint[] {
+  return [
+    {
+      name: 'recordTaggedPlayPattern',
+      description: 'Increment a tagged play-pattern counter for emergent detection',
+      invoke: (payload) => {
+        const record = readRecord(payload, 'recordTaggedPlayPattern')
+        return recordTaggedPlayPattern(readString(record, 'characterId'), readString(record, 'tag'))
+      }
+    },
+    {
+      name: 'detectEmergentDirection',
+      description: 'Detect out-of-kit emergent direction for level-up input',
+      invoke: (payload) => {
+        const record = readRecord(payload, 'detectEmergentDirection')
+        return detectEmergentDirection(
+          readString(record, 'characterId'),
+          readArchetypeValue(record['archetype'])
+        )
+      }
+    }
+  ]
+}
+
+function deathModeEndpoints(): EngineEndpoint[] {
+  return [
+    {
+      name: 'setCampaignDeathMode',
+      description: 'Configure per-campaign death mode (legendary, standard, respawn)',
+      invoke: (payload) => {
+        const record = readRecord(payload, 'setCampaignDeathMode')
+        return setCampaignDeathMode(
+          readString(record, 'campaignId'),
+          readDeathMode(record['mode'])
+        )
+      }
+    },
+    {
+      name: 'getCampaignDeathMode',
+      description: 'Read configured per-campaign death mode',
+      invoke: (payload) => getCampaignDeathMode(readCampaignIdPayload(payload, 'getCampaignDeathMode'))
+    },
+    {
+      name: 'recordAutosaveSnapshot',
+      description: 'Persist the latest autosave snapshot after a resolved action',
+      invoke: (payload) => recordAutosaveSnapshot(...parseAutosaveSnapshotPayload(payload))
+    },
+    {
+      name: 'resolveCharacterDeath',
+      description: 'Resolve death using campaign mode, autosave, respawn, or story-driven flag',
+      invoke: (payload) => resolveCharacterDeath(parseResolveDeathPayload(payload))
+    },
+    {
+      name: 'getCharacterLifeStatus',
+      description: 'Read alive/dead status, cause, and attached obituary text',
+      invoke: (payload) =>
+        getCharacterLifeStatus(readCharacterIdPayload(payload, 'getCharacterLifeStatus'))
+    }
+  ]
+}
+
+function companionEndpoints(): EngineEndpoint[] {
+  return [
+    {
+      name: 'getCompanionOnboardingStatus',
+      description: 'Read post-equipment companion onboarding status for an owner PC',
+      invoke: (payload) =>
+        getCompanionOnboardingStatus(readCharacterIdPayload(payload, 'getCompanionOnboardingStatus'))
+    },
+    {
+      name: 'skipCompanionCreation',
+      description: 'Skip optional companion creation after equipment selection',
+      invoke: (payload) =>
+        skipCompanionCreation(readCharacterIdPayload(payload, 'skipCompanionCreation'))
+    },
+    {
+      name: 'createCompanion',
+      description: 'Create a full companion character owned by a player character',
+      invoke: (payload) => createCompanion(parseCreateCompanionPayload(payload))
+    },
+    {
+      name: 'listCompanions',
+      description: 'List companions owned by a player character',
+      invoke: (payload) => listCompanions(readCharacterIdPayload(payload, 'listCompanions'))
+    }
+  ]
+}
+
+function inactiveProxyEndpoints(): EngineEndpoint[] {
+  return [
+    {
+      name: 'requestInactiveProxyAction',
+      description: 'Suggest an engine-grounded action for an inactive player character',
+      invoke: (payload) => {
+        const record = readRecord(payload, 'requestInactiveProxyAction')
+        return requestInactiveProxyAction({
+          characterId: readString(record, 'characterId'),
+          intentTag: readString(record, 'intentTag')
+        })
+      }
+    }
+  ]
+}
+
+function parseCreateCompanionPayload(payload: unknown) {
+  const record = readRecord(payload, 'createCompanion')
+  const bodyMod = readOptionalNumber(record, 'bodyMod')
+  const level = readOptionalNumber(record, 'level')
+  const base = {
+    ownerCharacterId: readString(record, 'ownerCharacterId'),
+    campaignId: readString(record, 'campaignId'),
+    name: readString(record, 'name'),
+    archetype: readArchetypeValue(record['archetype'])
+  }
+  return {
+    ...base,
+    ...(bodyMod === undefined ? {} : { bodyMod }),
+    ...(level === undefined ? {} : { level })
+  }
+}
+
+function readOptionalNumber(record: Record<string, unknown>, key: string): number | undefined {
+  const value = record[key]
+  if (value === undefined) {
+    return undefined
+  }
+  return readNumber(record, key)
 }
 
 function parseAbilityModifierPayload(payload: unknown): { score: number } {
@@ -827,5 +1071,144 @@ function readRecord(payload: unknown, label: string): Record<string, unknown> {
 }
 
 function optionalStringField(key: string, value: string | undefined): Record<string, string> {
+  return value === undefined ? {} : { [key]: value }
+}
+
+function readDifficultyBand(record: Record<string, unknown>) {
+  const value = record['difficulty']
+  if (!isDifficultyBand(value)) {
+    throw new Error('Expected difficulty to be easy, medium, hard, deadly, or impossible')
+  }
+  return value
+}
+
+function parseLevelUpCeremonyPayload(payload: unknown, label: string) {
+  const record = readRecord(payload, label)
+  return {
+    characterId: readString(record, 'characterId'),
+    archetype: readArchetypeValue(record['archetype']),
+    currentLevel: readNumber(record, 'currentLevel')
+  }
+}
+
+function parseApplyLevelUpPayload(payload: unknown) {
+  const record = readRecord(payload, 'applyLevelUpChoice')
+  const flavorText = readOptionalString(record, 'flavorText')
+  const base = {
+    characterId: readString(record, 'characterId'),
+    archetype: readArchetypeValue(record['archetype']),
+    currentLevel: readNumber(record, 'currentLevel'),
+    templateId: readString(record, 'templateId')
+  }
+  return flavorText === undefined ? base : { ...base, flavorText }
+}
+
+function readDeathMode(value: unknown): DeathMode {
+  if (!isDeathMode(value)) {
+    throw new Error('Expected mode to be legendary, standard, or respawn')
+  }
+  return value
+}
+
+function parseAutosaveSnapshotPayload(payload: unknown): [string, Parameters<typeof recordAutosaveSnapshot>[1]] {
+  const record = readRecord(payload, 'recordAutosaveSnapshot')
+  const snapshotRecord = readRecord(record['snapshot'], 'snapshot')
+  const statsRecord = readRecord(snapshotRecord['stats'], 'stats.stats')
+  const dyingValue = statsRecord['dying']
+  const progressionValue = snapshotRecord['progression']
+  const snapshot: Parameters<typeof recordAutosaveSnapshot>[1] = {
+    stats: {
+      characterId: readString(statsRecord, 'characterId'),
+      maxHp: readNumber(statsRecord, 'maxHp'),
+      currentHp: readNumber(statsRecord, 'currentHp'),
+      conditions: readConditionListValue(statsRecord['conditions']),
+      dying: readOptionalDyingState(dyingValue)
+    },
+    recordedAt: readString(snapshotRecord, 'recordedAt')
+  }
+  const progression = readOptionalProgression(progressionValue)
+  if (progression !== undefined) {
+    snapshot.progression = progression
+  }
+  return [readString(record, 'characterId'), snapshot]
+}
+
+function parseResolveDeathPayload(payload: unknown) {
+  const record = readRecord(payload, 'resolveCharacterDeath')
+  const storyDriven = readOptionalBoolean(record, 'storyDriven')
+  const obituaryDraft = readOptionalString(record, 'obituaryDraft')
+  const respawnConfig = readOptionalRespawnConfig(record['respawnConfig'])
+  const base = {
+    characterId: readString(record, 'characterId'),
+    campaignId: readString(record, 'campaignId'),
+    cause: readString(record, 'cause')
+  }
+  return {
+    ...base,
+    ...optionalBooleanField('storyDriven', storyDriven),
+    ...optionalStringField('obituaryDraft', obituaryDraft),
+    ...(respawnConfig === undefined ? {} : { respawnConfig })
+  }
+}
+
+function readOptionalBoolean(
+  record: Record<string, unknown>,
+  key: string
+): boolean | undefined {
+  const value = record[key]
+  if (value === undefined) {
+    return undefined
+  }
+  if (typeof value !== 'boolean') {
+    throw new Error(`Expected ${key} to be a boolean`)
+  }
+  return value
+}
+
+function readConditionListValue(value: unknown): import('./conditions.js').Condition[] {
+  if (!Array.isArray(value) || !value.every(isCondition)) {
+    throw new Error('Expected conditions to be an array of known conditions')
+  }
+  return [...value]
+}
+
+function readOptionalDyingState(value: unknown) {
+  if (value === null) {
+    return null
+  }
+  const record = readRecord(value, 'dying')
+  return {
+    successes: readNumber(record, 'successes'),
+    failures: readNumber(record, 'failures'),
+    stable: readBoolean(record, 'stable')
+  }
+}
+
+function readOptionalProgression(value: unknown) {
+  if (value === undefined) {
+    return undefined
+  }
+  const record = readRecord(value, 'progression')
+  return {
+    characterId: readString(record, 'characterId'),
+    level: readNumber(record, 'level'),
+    xp: readNumber(record, 'xp')
+  }
+}
+
+function readOptionalRespawnConfig(value: unknown): RespawnConfig | undefined {
+  if (value === undefined) {
+    return undefined
+  }
+  const record = readRecord(value, 'respawnConfig')
+  return {
+    relocateTo: readString(record, 'relocateTo'),
+    cost: readNumber(record, 'cost'),
+    maxRespawns: readNumber(record, 'maxRespawns'),
+    currentGold: readNumber(record, 'currentGold')
+  }
+}
+
+function optionalBooleanField(key: string, value: boolean | undefined): Record<string, boolean> {
   return value === undefined ? {} : { [key]: value }
 }

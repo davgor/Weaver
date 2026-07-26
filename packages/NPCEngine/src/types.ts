@@ -136,6 +136,8 @@ export type WorldFact = {
   provenance: MemoryProvenance
   regionIds?: readonly string[]
   factionIds?: readonly string[]
+  /** When set, the fact is tied to specific NPC dossiers (038 write path, 042 read path). */
+  npcIds?: readonly string[]
 }
 
 export type GroundingContext = {
@@ -147,6 +149,39 @@ export type GroundingContext = {
 
 export type QueryNpcGroundingContextInput = {
   npcId: string
+}
+
+export type NpcDossierTraits = {
+  race: NpcIdentityBundle['race']
+  background?: NpcBackground
+  alignment: string
+  temperament: string
+  nonSpeaking: boolean
+  speciesKind: NpcSpeciesKind
+}
+
+/** Persisted DM notes about an NPC, keyed by campaign + npc (042). Separate from 041 opinion scores. */
+export type UpsertDmNpcOpinionInput = {
+  campaignId: string
+  npcId: string
+  text: string
+}
+
+export type GetNpcDossierInput = {
+  npcId: string
+  campaignId: string
+}
+
+export type NpcDossier = {
+  npcId: string
+  campaignId: string
+  displayName?: string
+  regionId: string
+  civilizationId: string
+  traits: NpcDossierTraits
+  facts: WorldFact[]
+  dmOpinion: string | null
+  disposition: DefeatDisposition | null
 }
 
 export type OpinionSubjectKind = 'npc' | 'pc'

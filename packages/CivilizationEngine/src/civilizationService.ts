@@ -76,6 +76,11 @@ export type CivilizationService = {
   countCivilizations: (worldId: string) => number
   deleteCivilization: (worldId: string, civilizationId: string) => void
   clearCivilizations: (worldId: string, regionId?: string) => void
+  updateSettlementNaming: (
+    worldId: string,
+    civilizationId: string,
+    naming: { displayName: string; history: string; namingRealizedAt: string }
+  ) => CivilizationRecord
 }
 
 function nowIso(): string {
@@ -403,6 +408,27 @@ class DefaultCivilizationService implements CivilizationService {
       this.overlays.deleteOverlaysForCivilization(worldId, record.civilizationId)
     }
     this.store.clearCivilizations(worldId, regionId)
+  }
+
+  updateSettlementNaming(
+    worldId: string,
+    civilizationId: string,
+    naming: { displayName: string; history: string; namingRealizedAt: string }
+  ): CivilizationRecord {
+    requireWorldId(worldId)
+    const existing = this.store.getCivilization(worldId, civilizationId)
+    if (existing === null) {
+      throw new Error(`Civilization not found: ${civilizationId}`)
+    }
+    const updated: CivilizationRecord = {
+      ...existing,
+      displayName: naming.displayName,
+      history: naming.history,
+      namingRealizedAt: naming.namingRealizedAt,
+      updatedAt: nowIso()
+    }
+    this.store.saveCivilization(updated, this.cellsForCivilization(worldId, civilizationId))
+    return this.store.getCivilization(worldId, civilizationId) ?? updated
   }
 
   private cellsForCivilization(worldId: string, civilizationId: string) {

@@ -1,5 +1,22 @@
 export type { EngineEndpoint } from './typesApi.js'
 export {
+  applyEnchantmentOverlay,
+  listEnchantmentOverlays,
+  removeEnchantmentOverlay
+} from './enchantmentModifications.js'
+export {
+  WEAPON_DAMAGE_TYPES,
+  isWeaponDamageType
+} from './enchantmentTypes.js'
+export type {
+  EnchantmentDamageOverlay,
+  EnchantmentOnHitOverlay,
+  EnchantmentOverlay,
+  WeaponDamageComponent,
+  WeaponDamageProfile,
+  WeaponDamageType
+} from './enchantmentTypes.js'
+export {
   CurrencyError,
   InsufficientFundsError,
   InvalidCurrencyAmountError,
@@ -64,5 +81,14 @@ export type {
 export type { StarterItemTemplateId } from './templateCatalog.js'
 export { createItemService } from './itemService.js'
 export type { ItemService } from './itemService.js'
+export {
+  buildWeaponDamageProfile,
+  resolveWeaponDamageAgainstTarget
+} from './weaponDamage.js'
+export type {
+  DamageModifierFn,
+  DamageModifierInput,
+  ResolvedWeaponDamage
+} from './weaponDamage.js'
 export { itemEngine } from './engineApi.js'
 export type { ItemEngineApi } from './engineApi.js'

@@ -1,4 +1,10 @@
 import {
+  applyEnchantmentOverlay,
+  listEnchantmentOverlays,
+  removeEnchantmentOverlay
+} from './enchantmentModifications.js'
+import type { EnchantmentOverlay } from './enchantmentTypes.js'
+import {
   createEmptyEquippedItems,
   isFixedEquipmentSlot,
   type EquipmentSlot,
@@ -11,6 +17,8 @@ import {
   type ItemTemplate,
   type ItemView
 } from './types.js'
+import type { WeaponDamageProfile } from './enchantmentTypes.js'
+import { buildWeaponDamageProfile } from './weaponDamage.js'
 
 type InventoryRecord = {
   characterId: string
@@ -27,6 +35,10 @@ export type ItemService = {
   getEquipped: (characterId: string) => EquippedItemViews
   equip: (characterId: string, instanceId: string, slot: EquipmentSlot) => InventorySnapshot
   unequip: (characterId: string, target: string) => InventorySnapshot
+  getItemInstance: (instanceId: string) => ItemInstance
+  applyEnchantment: (instanceId: string, overlay: EnchantmentOverlay) => ItemInstance
+  removeEnchantment: (instanceId: string, overlayId: string) => ItemInstance
+  getWeaponDamageProfile: (instanceId: string) => WeaponDamageProfile
 }
 
 function requireId(value: string, label: string): string {
@@ -39,6 +51,9 @@ function cloneTemplate(template: ItemTemplate): ItemTemplate {
   if (template.description !== undefined) copy.description = template.description
   if (template.equipmentSlots !== undefined) copy.equipmentSlots = [...template.equipmentSlots]
   if (template.tags !== undefined) copy.tags = [...template.tags]
+  if (template.weaponDamage !== undefined) {
+    copy.weaponDamage = template.weaponDamage.map((component) => ({ ...component }))
+  }
   return copy
 }
 
@@ -47,7 +62,9 @@ function cloneInstance(instance: ItemInstance): ItemInstance {
   if (instance.durability !== undefined) copy.durability = instance.durability
   if (instance.charges !== undefined) copy.charges = instance.charges
   if (instance.customName !== undefined) copy.customName = instance.customName
-  if (instance.enchantmentRefs !== undefined) copy.enchantmentRefs = [...instance.enchantmentRefs]
+  if (instance.enchantmentOverlays !== undefined) {
+    copy.enchantmentOverlays = listEnchantmentOverlays(instance)
+  }
   return copy
 }
 
@@ -65,7 +82,9 @@ function createInstance(id: string, templateId: string, state: ItemInstanceState
   if (state.durability !== undefined) instance.durability = state.durability
   if (state.charges !== undefined) instance.charges = state.charges
   if (state.customName !== undefined) instance.customName = state.customName
-  if (state.enchantmentRefs !== undefined) instance.enchantmentRefs = [...state.enchantmentRefs]
+  if (state.enchantmentOverlays !== undefined) {
+    instance.enchantmentOverlays = listEnchantmentOverlays({ id, templateId, enchantmentOverlays: state.enchantmentOverlays })
+  }
   return instance
 }
 
@@ -157,6 +176,35 @@ class InMemoryItemService implements ItemService {
     else if (isFixedEquipmentSlot(target)) this.unequipFixedSlot(inventory, target)
     else this.unequipByInstance(inventory, target)
     return this.listInventory(characterId)
+  }
+
+  getItemInstance(instanceId: string): ItemInstance {
+    return cloneInstance(this.requireInstance(instanceId))
+  }
+
+  applyEnchantment(instanceId: string, overlay: EnchantmentOverlay): ItemInstance {
+    const instance = this.requireInstance(instanceId)
+    const updated = applyEnchantmentOverlay(instance, overlay)
+    this.instances.set(instanceId, updated)
+    return cloneInstance(updated)
+  }
+
+  removeEnchantment(instanceId: string, overlayId: string): ItemInstance {
+    const instance = this.requireInstance(instanceId)
+    const updated = removeEnchantmentOverlay(instance, overlayId)
+    this.instances.set(instanceId, updated)
+    return cloneInstance(updated)
+  }
+
+  getWeaponDamageProfile(instanceId: string): WeaponDamageProfile {
+    const instance = this.requireInstance(instanceId)
+    return buildWeaponDamageProfile(this.getTemplate(instance.templateId), instance)
+  }
+
+  private requireInstance(instanceId: string): ItemInstance {
+    const instance = this.instances.get(instanceId)
+    if (!instance) throw new Error(`Item instance not found: ${instanceId}`)
+    return instance
   }
 
   private getInventory(characterId: string): InventoryRecord {

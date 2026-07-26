@@ -1,38 +1,8 @@
 import { app, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'node:path'
-import { combatEngine } from '@weaver/combat-engine'
-import { actionEngine } from '@weaver/action-engine'
-import { characterEngine } from '@weaver/character-engine'
-import { worldEngine } from '@weaver/world-engine'
-import { regionalEngine } from '@weaver/regional-engine'
-import { civilizationEngine } from '@weaver/civilization-engine'
-import { dungeonEngine } from '@weaver/dungeon-engine'
-import { narrationEngine } from '@weaver/narration-engine'
-import { itemEngine } from '@weaver/item-engine'
-import { npcEngine } from '@weaver/npc-engine'
-import { enemyEngine } from '@weaver/enemy-engine'
-import { dmEngine } from '@weaver/dm-engine'
-import { llmEngine } from '@weaver/llm-engine'
 import { APP_DISPLAY_NAME } from '../shared/appBranding.js'
-import { buildCatalog, dispatchEngineCall, type DispatchableEngine } from './engineDispatch.js'
-
-// Add new engines here as they're scaffolded
-// and to REQUIRED_ENGINE_IDS in ElectronAITTRPG/src/shared/engineHealth.ts.
-const engines: readonly DispatchableEngine[] = [
-  combatEngine,
-  actionEngine,
-  characterEngine,
-  worldEngine,
-  regionalEngine,
-  civilizationEngine,
-  dungeonEngine,
-  narrationEngine,
-  itemEngine,
-  npcEngine,
-  enemyEngine,
-  dmEngine,
-  llmEngine
-]
+import { buildCatalog, dispatchEngineCall } from './engineDispatch.js'
+import { adminEngines } from './engines.js'
 
 function createWindow(): void {
   const win = new BrowserWindow({
@@ -58,12 +28,12 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
-  ipcMain.handle('engines:list', () => buildCatalog(engines))
+  ipcMain.handle('engines:list', () => buildCatalog(adminEngines))
 
   ipcMain.handle(
     'engines:call',
     async (_event, engineId: string, endpoint: string, payload?: unknown) =>
-      dispatchEngineCall(engines, engineId, endpoint, payload)
+      dispatchEngineCall(adminEngines, engineId, endpoint, payload)
   )
 
   createWindow()

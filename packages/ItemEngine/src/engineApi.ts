@@ -6,6 +6,7 @@ import {
   type CurrencyService,
   type PriceClampOptions
 } from './currencyService.js'
+import type { EnchantmentOverlay } from './enchantmentTypes.js'
 import { createItemService, type ItemService } from './itemService.js'
 import { generateLoot, type GenerateLootRequest, type LootDrop } from './lootService.js'
 import {
@@ -22,6 +23,7 @@ import type {
   ItemInstanceState,
   ItemTemplate
 } from './types.js'
+import type { WeaponDamageProfile } from './enchantmentTypes.js'
 
 export type ItemEngineApi = {
   id: 'ItemEngine'
@@ -39,6 +41,10 @@ export type ItemEngineApi = {
   getEquipped: (characterId: string) => EquippedItemViews
   equip: (characterId: string, instanceId: string, slot: EquipmentSlot) => InventorySnapshot
   unequip: (characterId: string, target: string) => InventorySnapshot
+  getItemInstance: (instanceId: string) => ItemInstance
+  applyEnchantment: (instanceId: string, overlay: EnchantmentOverlay) => ItemInstance
+  removeEnchantment: (instanceId: string, overlayId: string) => ItemInstance
+  getWeaponDamageProfile: (instanceId: string) => WeaponDamageProfile
   credit: (characterId: string, amount: number) => CurrencyBalanceSnapshot
   debit: (characterId: string, amount: number) => CurrencyBalanceSnapshot
   getBalance: (characterId: string) => number
@@ -93,6 +99,18 @@ export const itemEngine: ItemEngineApi = {
   },
   unequip(characterId, target) {
     return singletonService.unequip(characterId, target)
+  },
+  getItemInstance(instanceId) {
+    return singletonService.getItemInstance(instanceId)
+  },
+  applyEnchantment(instanceId, overlay) {
+    return singletonService.applyEnchantment(instanceId, overlay)
+  },
+  removeEnchantment(instanceId, overlayId) {
+    return singletonService.removeEnchantment(instanceId, overlayId)
+  },
+  getWeaponDamageProfile(instanceId) {
+    return singletonService.getWeaponDamageProfile(instanceId)
   },
   credit(characterId, amount) {
     return singletonCurrency.credit(characterId, amount)

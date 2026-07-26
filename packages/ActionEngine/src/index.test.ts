@@ -285,3 +285,31 @@ describe('@weaver/action-engine catalog and known-action endpoints', () => {
     ).resolves.toBe(false)
   })
 })
+
+describe('@weaver/action-engine endpoint payload validation', () => {
+  it('rejects malformed known-action payloads', async () => {
+    await expect(actionEngine.call('grantKnownAction', null)).rejects.toThrow(/characterId and actionId/i)
+    await expect(actionEngine.call('listKnownActions', {})).rejects.toThrow(/characterId/i)
+  })
+
+  it('rejects malformed use and validate payloads', async () => {
+    await expect(actionEngine.call('validateUse', { characterId: 'pc', actionId: 'ice_bolt' })).rejects.toThrow(
+      /distanceFeet/i
+    )
+    await expect(
+      actionEngine.call('useAction', {
+        characterId: 'pc',
+        actionId: 'ice_bolt',
+        distanceFeet: 5
+      })
+    ).rejects.toThrow(/targetIds/i)
+    await expect(
+      actionEngine.call('validateUse', {
+        characterId: 'pc',
+        actionId: 'ice_bolt',
+        distanceFeet: 5,
+        weaponReachFeet: Number.NaN
+      })
+    ).rejects.toThrow(/weaponReachFeet/i)
+  })
+})

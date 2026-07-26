@@ -140,6 +140,27 @@ class DefaultRegionalService implements RegionalService {
     validateWorldId(worldId)
     return this.store.countRegions(worldId)
   }
+
+  updateRegionNaming(
+    worldId: string,
+    regionId: string,
+    naming: { displayName: string; history: string; namingRealizedAt: string }
+  ): RegionRecord {
+    validateWorldId(worldId)
+    const existing = this.store.getRegion(worldId, regionId)
+    if (existing === null) {
+      throw new Error(`Region not found: ${regionId}`)
+    }
+    const updated: RegionRecord = {
+      ...existing,
+      displayName: naming.displayName,
+      history: naming.history,
+      namingRealizedAt: naming.namingRealizedAt,
+      updatedAt: nowIso()
+    }
+    const cells = this.store.getRegionCells(worldId, regionId)
+    return this.store.saveRegion(updated, cells)
+  }
 }
 
 export function createRegionalService(options: RegionalServiceOptions): RegionalService {

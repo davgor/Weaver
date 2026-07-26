@@ -63,7 +63,7 @@ describe('probeVulkanWithNodeLlama', () => {
 describe('createNodeLlamaRuntime completion', () => {
   beforeEach(resetLlamaMocks)
 
-  it('creates a runtime that completes with system prompt and maxTokens', async () => {
+  it('creates a runtime that completes with context and maxTokens', async () => {
     const { createNodeLlamaRuntime } = await import('./nodeLlamaRuntime.js')
     const runtime = await createNodeLlamaRuntime({
       modelPath: '/tmp/model.gguf',
@@ -71,11 +71,9 @@ describe('createNodeLlamaRuntime completion', () => {
     })
     expect(getLlama).toHaveBeenCalledWith({ gpu: 'vulkan' })
 
-    const result = await runtime.complete({
-      messages: [
-        { role: 'system', content: 'be brief' },
-        { role: 'user', content: 'hi' }
-      ],
+    const result = await runtime.completeText({
+      prompt: 'hi',
+      context: 'be brief',
       maxTokens: 16
     })
     expect(result).toEqual({ text: 'out:hi:16', backend: 'vulkan' })
@@ -91,7 +89,7 @@ describe('createNodeLlamaRuntime completion', () => {
 describe('createNodeLlamaRuntime options', () => {
   beforeEach(resetLlamaMocks)
 
-  it('uses cpu gpu option and omits maxTokens / system prompt when absent', async () => {
+  it('uses cpu gpu option and omits maxTokens / context when absent', async () => {
     const { createNodeLlamaRuntime } = await import('./nodeLlamaRuntime.js')
     const runtime = await createNodeLlamaRuntime({
       modelPath: '/tmp/model.gguf',
@@ -99,21 +97,10 @@ describe('createNodeLlamaRuntime options', () => {
     })
     expect(getLlama).toHaveBeenCalledWith({ gpu: false })
 
-    const result = await runtime.complete({
-      messages: [{ role: 'user', content: 'yo' }]
+    const result = await runtime.completeText({
+      prompt: 'yo'
     })
     expect(result.text).toBe('out:yo:none')
     expect(prompt).toHaveBeenCalledWith('yo')
-  })
-
-  it('rejects completion requests without a user message', async () => {
-    const { createNodeLlamaRuntime } = await import('./nodeLlamaRuntime.js')
-    const runtime = await createNodeLlamaRuntime({
-      modelPath: '/tmp/model.gguf',
-      backend: 'cpu'
-    })
-    await expect(
-      runtime.complete({ messages: [{ role: 'system', content: 'only system' }] })
-    ).rejects.toThrow(/requires a user message/)
   })
 })

@@ -53,6 +53,27 @@ export type {
 } from './intents/types.js'
 
 export { DmQuestError } from './quests/errors.js'
+export { DmNamingError } from './naming/errors.js'
+export {
+  realizeCampaignPantheon,
+  realizeRegionName,
+  realizeSettlementName,
+  regenerateRegionName,
+  persistValidatedRegionNaming,
+  persistValidatedSettlementNaming,
+  assertValidatedPlaceNaming,
+  toValidatedPlaceNaming
+} from './naming/worldNamingOrchestration.js'
+export type {
+  CivilizationNamingApi,
+  NarrationWorldNamingApi,
+  RealizeCampaignPantheonInput,
+  RealizeRegionNameInput,
+  RealizeSettlementNameDeps,
+  RealizeSettlementNameInput,
+  RegionalNamingApi,
+  ValidatedPlaceNaming
+} from './naming/worldNamingOrchestration.js'
 export {
   completeQuest,
   failQuest,

@@ -60,9 +60,37 @@ describe('@weaver/narration-engine', () => {
         'streamSocial',
         'generateScene',
         'decideSilentResolve',
-        'validateProseClaims'
+        'validateProseClaims',
+        'retrieveRelevantChunks',
+        'indexCampaignFact'
       ])
     )
+  })
+})
+
+describe('rag retrieval endpoints', () => {
+  it('indexes and retrieves campaign facts through call()', async () => {
+    await narrationEngine.call('indexCampaignFact', {
+      chunk: {
+        id: 'world-1',
+        campaignId: 'rag-campaign',
+        category: 'world',
+        text: 'The obsidian spire watches the northern pass'
+      }
+    })
+
+    const result = await narrationEngine.call('retrieveRelevantChunks', {
+      campaignId: 'rag-campaign',
+      query: 'obsidian spire',
+      mode: 'lexical'
+    })
+
+    expect(result).toMatchObject({
+      retrievalMode: 'lexical',
+      usedLexicalFallback: false,
+      totalChars: expect.any(Number)
+    })
+    expect((result as { chunks: Array<{ id: string }> }).chunks[0]?.id).toBe('world-1')
   })
 })
 
@@ -196,6 +224,66 @@ describe('manual portraits', () => {
     expect(first).toEqual({ characterId: 'pc-1', imagePath: '/uploads/old.png' })
     expect(replacement).toEqual({ characterId: 'pc-1', imagePath: '/uploads/new.png' })
     expect(saved).toEqual(['pc-1:/uploads/old.png', 'pc-1:/uploads/new.png'])
+  })
+
+  it('routes setManualPortrait through call() with payload validation', async () => {
+    await expect(narrationEngine.call('setManualPortrait', { characterId: 'pc-1' })).rejects.toThrow(
+      /characterId and imagePath/i
+    )
+    await expect(
+      narrationEngine.call('setManualPortrait', { characterId: 'pc-1', imagePath: '/ok.png' })
+    ).resolves.toEqual({ characterId: 'pc-1', imagePath: '/ok.png' })
+  })
+})
+
+describe('generatePortrait endpoint wiring', () => {
+  it('routes generatePortrait through call() with payload validation', async () => {
+    await expect(narrationEngine.call('generatePortrait', { prompt: 'bad' })).rejects.toThrow(
+      /ImageGenerateRequest/i
+    )
+
+    const result = await narrationEngine.call('generatePortrait', {
+      subjectKind: 'npc',
+      subjectId: 'npc-1',
+      prompt: 'portrait prompt',
+      settings: { provider: 'cloud', generativeTokensEnabled: false },
+      subjectFacts: { race: 'elf', description: 'scout' }
+    })
+
+    expect(result).toEqual({ imagePath: null, provider: 'cloud', degraded: true })
+  })
+
+  it('includes optional subject name lines in portrait prompts', () => {
+    const request = {
+      ...sampleRequest('npc', 'cloud', true),
+      subjectFacts: { race: 'elf', description: 'scout', name: 'Mira' }
+    }
+
+    expect(buildPortraitPrompt(request)).toContain('Name: Mira')
+  })
+})
+
+describe('fetch image provider edge cases', () => {
+  it('degrades when fetch returns a non-ok response or invalid body', async () => {
+    const failingFetch: ImageFetch = async () => ({ ok: false, json: async () => ({}) })
+    const emptyBodyFetch: ImageFetch = async () => ({ ok: true, json: async () => ({ notPath: true }) })
+
+    const failing = createCloudImageProvider({
+      endpoint: 'https://cloud.example/generate',
+      fetch: failingFetch
+    })
+    const emptyBody = createCloudImageProvider({
+      endpoint: 'https://cloud.example/generate',
+      fetch: emptyBodyFetch
+    })
+
+    await expect(failing.generate(providerRequest('cloud'))).resolves.toBeNull()
+    await expect(emptyBody.generate(providerRequest('cloud'))).resolves.toBeNull()
+  })
+
+  it('degrades when no provider is configured for the requested rail', async () => {
+    const result = await generatePortrait(sampleRequest('npc', 'cloud', true), { providers: {} })
+    expect(result).toEqual({ imagePath: null, provider: 'cloud', degraded: true })
   })
 })
 

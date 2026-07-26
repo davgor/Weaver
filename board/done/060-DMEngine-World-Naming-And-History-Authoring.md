@@ -10,8 +10,8 @@ RegionalEngine and CivilizationEngine deliberately assign only machine ids and s
 
 ## Acceptance criteria
 
-- [ ] Every RegionalEngine region and CivilizationEngine settlement can be assigned a display name + short seeded history: DMEngine requests it from NarrationEngine, NarrationEngine invents and validates it against the region/settlement's actual stats, and DMEngine persists the accepted result back onto the owning engine's record (not shadow-copied into DMEngine, and never written from DMEngine-invented text)
-- [ ] Pantheon/deity generation produces a campaign-scoped set of gods with plain-English-fantasy names and domains via the same DMEngine→NarrationEngine call, honoring `064-NarrationEngine-Tone-And-Terminology-Guards`
-- [ ] Region "regenerate" (re-roll name/history for one region without touching its underlying deterministic stats) is supported through the same orchestration path
-- [ ] Naming/history is a one-time "realize" per region/settlement per campaign, not regenerated on every read
-- [ ] DMEngine's consumption of NarrationEngine's naming API and of RegionalEngine's/CivilizationEngine's record-update APIs is covered by `*.contract.test.ts` here against each of their real published APIs — a regression test proves DMEngine cannot persist a name that didn't round-trip through NarrationEngine's validation
+- [x] Every RegionalEngine region and CivilizationEngine settlement can be assigned a display name + short seeded history: DMEngine requests it from NarrationEngine, NarrationEngine invents and validates it against the region/settlement's actual stats, and DMEngine persists the accepted result back onto the owning engine's record (not shadow-copied into DMEngine, and never written from DMEngine-invented text)
+- [x] Pantheon/deity generation produces a campaign-scoped set of gods with plain-English-fantasy names and domains via the same DMEngine→NarrationEngine call, honoring `064-NarrationEngine-Tone-And-Terminology-Guards`
+- [x] Region "regenerate" (re-roll name/history for one region without touching its underlying deterministic stats) is supported through the same orchestration path
+- [x] Naming/history is a one-time "realize" per region/settlement per campaign, not regenerated on every read
+- [x] DMEngine's consumption of NarrationEngine's naming API and of RegionalEngine's/CivilizationEngine's record-update APIs is covered by `*.contract.test.ts` here against each of their real published APIs — a regression test proves DMEngine cannot persist a name that didn't round-trip through NarrationEngine's validation

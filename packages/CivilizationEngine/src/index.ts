@@ -71,5 +71,13 @@ export type { CivilizationStore } from './store/civilizationStore.js'
 export { createWorldOverlayAdapter } from './store/worldOverlayAdapter.js'
 export { createCivilizationService } from './civilizationService.js'
 export type { CivilizationService } from './civilizationService.js'
+export {
+  realizeSettlementNaming,
+  SettlementNamingError
+} from './settlementNaming.js'
+export type {
+  RealizeSettlementNamingOptions,
+  SettlementNamingInput
+} from './settlementNaming.js'
 export { civilizationEngine } from './engineApi.js'
 export type { CivilizationEngineApi } from './engineApi.js'

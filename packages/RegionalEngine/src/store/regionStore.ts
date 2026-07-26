@@ -28,6 +28,9 @@ type RegionRow = {
   centroidY: number
   statsVersion: number
   extraStats: string
+  displayName: string | null
+  history: string | null
+  namingRealizedAt: string | null
   createdAt: string
   updatedAt: string
 }
@@ -70,6 +73,9 @@ function ensureSchema(db: SqliteDb): void {
       centroidY REAL NOT NULL,
       statsVersion INTEGER NOT NULL,
       extraStats TEXT NOT NULL,
+      displayName TEXT,
+      history TEXT,
+      namingRealizedAt TEXT,
       createdAt TEXT NOT NULL,
       updatedAt TEXT NOT NULL
     );
@@ -83,6 +89,22 @@ function ensureSchema(db: SqliteDb): void {
     CREATE INDEX IF NOT EXISTS idx_region_membership_region
       ON region_membership(worldId, regionId);
   `)
+  ensureNamingColumns(db)
+}
+
+function ensureNamingColumns(db: SqliteDb): void {
+  const columns = (db.prepare(`PRAGMA table_info(regions)`).all() as Array<{ name: string }>).map(
+    (row) => row.name
+  )
+  if (!columns.includes('displayName')) {
+    db.exec('ALTER TABLE regions ADD COLUMN displayName TEXT')
+  }
+  if (!columns.includes('history')) {
+    db.exec('ALTER TABLE regions ADD COLUMN history TEXT')
+  }
+  if (!columns.includes('namingRealizedAt')) {
+    db.exec('ALTER TABLE regions ADD COLUMN namingRealizedAt TEXT')
+  }
 }
 
 function openDb(dataRoot: string, worldId: string): SqliteDb {
@@ -128,6 +150,9 @@ function rowToRegion(row: RegionRow): RegionRecord {
     updatedAt: row.updatedAt
   }
   if (row.sourceExpansionId !== null) record.sourceExpansionId = row.sourceExpansionId
+  if (row.displayName !== null) record.displayName = row.displayName
+  if (row.history !== null) record.history = row.history
+  if (row.namingRealizedAt !== null) record.namingRealizedAt = row.namingRealizedAt
   return record
 }
 
@@ -154,6 +179,9 @@ function regionParams(region: RegionRecord): Record<string, SqlValue> {
     centroidY: region.centroid.y,
     statsVersion: region.statsVersion,
     extraStats: JSON.stringify(region.extraStats),
+    displayName: region.displayName ?? null,
+    history: region.history ?? null,
+    namingRealizedAt: region.namingRealizedAt ?? null,
     createdAt: region.createdAt,
     updatedAt: region.updatedAt
   }
@@ -187,7 +215,8 @@ function insertRegion(db: SqliteDb, region: RegionRecord): void {
     (@regionId, @worldId, @sourceExpansionId, @dominantLandType, @landTypeHistogram,
      @averageElevation, @minElevation, @maxElevation, @waterContent, @isOcean,
      @touchesOcean, @isLandlocked, @cellCount, @minX, @minY, @maxX, @maxY,
-     @centroidX, @centroidY, @statsVersion, @extraStats, @createdAt, @updatedAt)`
+     @centroidX, @centroidY, @statsVersion, @extraStats, @displayName, @history,
+     @namingRealizedAt, @createdAt, @updatedAt)`
   ).run(regionParams(region))
 }
 

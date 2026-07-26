@@ -25,6 +25,9 @@ type CivRow = {
   npcSlotsAssigned: number
   statsVersion: number
   extraStats: string
+  displayName: string | null
+  history: string | null
+  namingRealizedAt: string | null
   createdAt: string
   updatedAt: string
 }
@@ -71,6 +74,11 @@ function dbPath(dataRoot: string, worldId: string): string {
 }
 
 function ensureSchema(db: SqliteDb): void {
+  createCivilizationTables(db)
+  ensureNamingColumns(db)
+}
+
+function createCivilizationTables(db: SqliteDb): void {
   db.exec(`
     CREATE TABLE IF NOT EXISTS civilizations (
       civilizationId TEXT PRIMARY KEY,
@@ -91,6 +99,9 @@ function ensureSchema(db: SqliteDb): void {
       npcSlotsAssigned INTEGER NOT NULL,
       statsVersion INTEGER NOT NULL,
       extraStats TEXT NOT NULL,
+      displayName TEXT,
+      history TEXT,
+      namingRealizedAt TEXT,
       createdAt TEXT NOT NULL,
       updatedAt TEXT NOT NULL
     );
@@ -116,6 +127,21 @@ function ensureSchema(db: SqliteDb): void {
     );
     CREATE INDEX IF NOT EXISTS idx_slots_world ON npc_placeholders(worldId, civilizationId);
   `)
+}
+
+function ensureNamingColumns(db: SqliteDb): void {
+  const columns = (db.prepare(`PRAGMA table_info(civilizations)`).all() as Array<{ name: string }>).map(
+    (row) => row.name
+  )
+  if (!columns.includes('displayName')) {
+    db.exec('ALTER TABLE civilizations ADD COLUMN displayName TEXT')
+  }
+  if (!columns.includes('history')) {
+    db.exec('ALTER TABLE civilizations ADD COLUMN history TEXT')
+  }
+  if (!columns.includes('namingRealizedAt')) {
+    db.exec('ALTER TABLE civilizations ADD COLUMN namingRealizedAt TEXT')
+  }
 }
 
 function openDb(dataRoot: string, worldId: string): SqliteDb {
@@ -159,6 +185,9 @@ function rowToRecord(row: CivRow): CivilizationRecord {
   if (row.centroidX !== null && row.centroidY !== null) {
     record.centroid = { x: row.centroidX, y: row.centroidY }
   }
+  if (row.displayName !== null) record.displayName = row.displayName
+  if (row.history !== null) record.history = row.history
+  if (row.namingRealizedAt !== null) record.namingRealizedAt = row.namingRealizedAt
   return record
 }
 
@@ -183,7 +212,7 @@ function insertCivilization(db: SqliteDb, record: CivilizationRecord): void {
       @civilizationId, @worldId, @regionId, @kind, @originX, @originY,
       @minX, @minY, @maxX, @maxY, @centroidX, @centroidY, @seedSalt,
       @population, @npcSlotCount, @npcSlotsAssigned, @statsVersion,
-      @extraStats, @createdAt, @updatedAt
+      @extraStats, @displayName, @history, @namingRealizedAt, @createdAt, @updatedAt
     )
     ON CONFLICT(civilizationId) DO UPDATE SET
       regionId=excluded.regionId, kind=excluded.kind, originX=excluded.originX,
@@ -192,7 +221,9 @@ function insertCivilization(db: SqliteDb, record: CivilizationRecord): void {
       centroidY=excluded.centroidY, seedSalt=excluded.seedSalt,
       population=excluded.population, npcSlotCount=excluded.npcSlotCount,
       npcSlotsAssigned=excluded.npcSlotsAssigned, statsVersion=excluded.statsVersion,
-      extraStats=excluded.extraStats, updatedAt=excluded.updatedAt`
+      extraStats=excluded.extraStats, displayName=excluded.displayName,
+      history=excluded.history, namingRealizedAt=excluded.namingRealizedAt,
+      updatedAt=excluded.updatedAt`
   ).run({
     civilizationId: record.civilizationId,
     worldId: record.worldId,
@@ -212,6 +243,9 @@ function insertCivilization(db: SqliteDb, record: CivilizationRecord): void {
     npcSlotsAssigned: record.npcSlotsAssigned,
     statsVersion: record.statsVersion,
     extraStats: JSON.stringify(record.extraStats),
+    displayName: record.displayName ?? null,
+    history: record.history ?? null,
+    namingRealizedAt: record.namingRealizedAt ?? null,
     createdAt: record.createdAt,
     updatedAt: record.updatedAt
   })

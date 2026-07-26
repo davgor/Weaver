@@ -1,3 +1,8 @@
+import type { EnchantmentOverlay, WeaponDamageComponent } from './enchantmentTypes.js'
+
+export type { EnchantmentOverlay, WeaponDamageComponent, WeaponDamageProfile, WeaponDamageType } from './enchantmentTypes.js'
+export { WEAPON_DAMAGE_TYPES, isWeaponDamageType } from './enchantmentTypes.js'
+
 export const EQUIPMENT_SLOTS = ['mainHand', 'offHand', 'shield', 'armor', 'accessories'] as const
 export const FIXED_EQUIPMENT_SLOTS = ['mainHand', 'offHand', 'shield', 'armor'] as const
 
@@ -8,7 +13,7 @@ export type ItemInstanceState = {
   durability?: number
   charges?: number
   customName?: string
-  enchantmentRefs?: string[]
+  enchantmentOverlays?: EnchantmentOverlay[]
 }
 
 export type ItemTemplate = {
@@ -17,6 +22,7 @@ export type ItemTemplate = {
   description?: string
   equipmentSlots?: EquipmentSlot[]
   tags?: string[]
+  weaponDamage?: WeaponDamageComponent[]
 }
 
 export type ItemInstance = {
@@ -25,7 +31,7 @@ export type ItemInstance = {
   durability?: number
   charges?: number
   customName?: string
-  enchantmentRefs?: string[]
+  enchantmentOverlays?: EnchantmentOverlay[]
 }
 
 export type EquippedItems = {

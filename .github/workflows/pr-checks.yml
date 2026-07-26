@@ -83,4 +83,6 @@ jobs:
         run: node scripts/npm-ci-with-retry.mjs
       - name: Ensure Electron binary is installed
         run: node node_modules/electron/install.js
+      - name: Build engine packages
+        run: npm run build:engines
       - run: npm run test:coverage

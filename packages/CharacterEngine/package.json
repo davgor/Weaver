@@ -22,6 +22,9 @@
     "@weaver/item-engine": "*"
   },
   "devDependencies": {
+    "@weaver/action-engine": "*",
+    "@weaver/civilization-engine": "*",
+    "@weaver/npc-engine": "*",
     "typescript": "^5.5.2"
   }
 }

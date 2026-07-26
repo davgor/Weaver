@@ -69,6 +69,16 @@ export function clearCharacterStatsStore(): void {
   characterStats.clear()
 }
 
+export function restoreCharacterStats(stats: CharacterStats): CharacterStats {
+  return writeStats({
+    characterId: stats.characterId,
+    maxHp: stats.maxHp,
+    currentHp: stats.currentHp,
+    conditions: [...stats.conditions],
+    dying: stats.dying === null ? null : { ...stats.dying }
+  })
+}
+
 export function applyHitPointDamage(characterId: string, amount: number): CharacterStats {
   assertNonNegativeInteger(amount, 'amount')
   const stats = requireStats(characterId)

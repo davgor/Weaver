@@ -1,5 +1,7 @@
 import type { EngineEndpoint } from './typesApi.js'
 import { clampProposedPrice, type CurrencyService, type PriceClampOptions } from './currencyService.js'
+import type { EnchantmentOverlay } from './enchantmentTypes.js'
+import { isWeaponDamageType } from './enchantmentTypes.js'
 import { type ItemService } from './itemService.js'
 import { generateLoot, type GenerateLootRequest } from './lootService.js'
 import { getStartingLoadout, isStartingGearArchetype } from './startingGear.js'
@@ -78,7 +80,65 @@ function parseTemplate(payload: unknown): ItemTemplate {
   if (equipmentSlots !== undefined) template.equipmentSlots = equipmentSlots
   const tags = optionalStringArray(body, 'tags')
   if (tags !== undefined) template.tags = tags
+  const weaponDamage = optionalWeaponDamage(body)
+  if (weaponDamage !== undefined) template.weaponDamage = weaponDamage
   return template
+}
+
+function optionalWeaponDamage(payload: Record<string, unknown>) {
+  const value = payload.weaponDamage
+  if (value === undefined) return undefined
+  if (!Array.isArray(value)) throw new Error('weaponDamage must be an array')
+  return value.map((entry, index) => parseWeaponDamageComponent(entry, index))
+}
+
+function parseWeaponDamageComponent(value: unknown, index: number) {
+  if (!value || typeof value !== 'object') throw new Error(`weaponDamage[${index}] must be an object`)
+  const body = value as Record<string, unknown>
+  const damageType = body.damageType
+  if (!isWeaponDamageType(damageType)) throw new Error(`weaponDamage[${index}].damageType invalid`)
+  const amount = body.amount
+  if (typeof amount !== 'number' || !Number.isFinite(amount) || amount < 0) {
+    throw new Error(`weaponDamage[${index}].amount must be a non-negative number`)
+  }
+  return { damageType, amount }
+}
+
+function requireOverlayId(body: Record<string, unknown>): string {
+  const overlayId = body.overlayId
+  if (typeof overlayId !== 'string' || !overlayId.trim()) throw new Error('overlayId required')
+  return overlayId
+}
+
+function parseDamageOverlay(body: Record<string, unknown>, overlayId: string): EnchantmentOverlay {
+  const damageType = body.damageType
+  if (!isWeaponDamageType(damageType)) throw new Error('damageType invalid')
+  const bonus = body.bonus
+  if (typeof bonus !== 'number' || !Number.isFinite(bonus)) throw new Error('bonus must be a number')
+  return { overlayId, kind: 'damage', damageType, bonus }
+}
+
+function parseOnHitOverlay(body: Record<string, unknown>, overlayId: string): EnchantmentOverlay {
+  const onHitEffectId = body.onHitEffectId
+  if (typeof onHitEffectId !== 'string' || !onHitEffectId.trim()) throw new Error('onHitEffectId required')
+  return { overlayId, kind: 'onHit', onHitEffectId }
+}
+
+function parseEnchantmentOverlay(value: unknown): EnchantmentOverlay {
+  if (!value || typeof value !== 'object') throw new Error('overlay object required')
+  const body = value as Record<string, unknown>
+  const overlayId = requireOverlayId(body)
+  const kind = body.kind
+  if (kind === 'damage') return parseDamageOverlay(body, overlayId)
+  if (kind === 'onHit') return parseOnHitOverlay(body, overlayId)
+  throw new Error('overlay kind must be damage or onHit')
+}
+
+function optionalEnchantmentOverlays(payload: Record<string, unknown>): EnchantmentOverlay[] | undefined {
+  const value = payload.enchantmentOverlays
+  if (value === undefined) return undefined
+  if (!Array.isArray(value)) throw new Error('enchantmentOverlays must be an array')
+  return value.map((entry) => parseEnchantmentOverlay(entry))
 }
 
 function parseInstanceState(payload: unknown): ItemInstanceState | undefined {
@@ -91,8 +151,8 @@ function parseInstanceState(payload: unknown): ItemInstanceState | undefined {
   if (charges !== undefined) state.charges = charges
   const customName = optionalString(body, 'customName')
   if (customName !== undefined) state.customName = customName
-  const enchantmentRefs = optionalStringArray(body, 'enchantmentRefs')
-  if (enchantmentRefs !== undefined) state.enchantmentRefs = enchantmentRefs
+  const enchantmentOverlays = optionalEnchantmentOverlays(body)
+  if (enchantmentOverlays !== undefined) state.enchantmentOverlays = enchantmentOverlays
   return state
 }
 
@@ -176,7 +236,7 @@ function inventoryEndpoints(service: ItemService): EngineEndpoint[] {
   ]
 }
 
-function mutationEndpoints(service: ItemService): EngineEndpoint[] {
+function inventoryMutationEndpoints(service: ItemService): EngineEndpoint[] {
   return [
     {
       name: 'addItem',
@@ -205,8 +265,46 @@ function mutationEndpoints(service: ItemService): EngineEndpoint[] {
         const body = asRecord(payload)
         return service.unequip(requireString(body, 'characterId'), requireTarget(body))
       }
+    },
+    {
+      name: 'getItemInstance',
+      description: 'Return one item instance by id',
+      invoke: (payload) => service.getItemInstance(requireString(asRecord(payload), 'instanceId'))
     }
   ]
+}
+
+function enchantmentEndpoints(service: ItemService): EngineEndpoint[] {
+  return [
+    {
+      name: 'applyEnchantment',
+      description: 'Apply one enchantment overlay to an item instance',
+      invoke: (payload) => {
+        const body = asRecord(payload)
+        return service.applyEnchantment(
+          requireString(body, 'instanceId'),
+          parseEnchantmentOverlay(body.overlay)
+        )
+      }
+    },
+    {
+      name: 'removeEnchantment',
+      description: 'Remove one enchantment overlay from an item instance',
+      invoke: (payload) => {
+        const body = asRecord(payload)
+        return service.removeEnchantment(requireString(body, 'instanceId'), requireString(body, 'overlayId'))
+      }
+    },
+    {
+      name: 'getWeaponDamageProfile',
+      description: 'Return merged weapon damage components and on-hit effects for an item instance',
+      invoke: (payload) => service.getWeaponDamageProfile(requireString(asRecord(payload), 'instanceId'))
+    }
+  ]
+}
+
+function mutationEndpoints(service: ItemService): EngineEndpoint[] {
+  return [...inventoryMutationEndpoints(service), ...enchantmentEndpoints(service)]
 }
 
 function currencyEndpoints(currency: CurrencyService): EngineEndpoint[] {
