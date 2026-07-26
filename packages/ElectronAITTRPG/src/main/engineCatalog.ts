@@ -5,6 +5,7 @@ import { worldEngine } from '@weaver/world-engine'
 import { regionalEngine } from '@weaver/regional-engine'
 import { civilizationEngine } from '@weaver/civilization-engine'
 import { dungeonEngine } from '@weaver/dungeon-engine'
+import { weatherEngine } from '@weaver/weather-engine'
 import { narrationEngine } from '@weaver/narration-engine'
 import { itemEngine } from '@weaver/item-engine'
 import { npcEngine } from '@weaver/npc-engine'
@@ -22,6 +23,7 @@ const engines = [
   regionalEngine,
   civilizationEngine,
   dungeonEngine,
+  weatherEngine,
   narrationEngine,
   itemEngine,
   npcEngine,

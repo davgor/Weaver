@@ -59,6 +59,7 @@ for (const cell of worldEngine.getWorldWhole(dataRoot, created.meta.worldId)) {
 | `getWorldBounds(dataRoot, worldId)` / `getWorldMeta(dataRoot, worldId)` | Returns current bounds or metadata without materializing cells. |
 | `getExpansion`, `listExpansions`, `getLatestExpansion` | Returns create/expand history for RegionalEngine scoped fills. |
 | `listWorlds`, `hasWorld`, `deleteWorld` | Discovery and lifecycle operations for stores under `dataRoot`. |
+| `setSparseOverlay` / `getSparseOverlay` / `listSparseOverlays` / `clearSparseOverlays` | Sparse overlay CRUD. Reserved key `landTypeOverride` (valid `LandType`) changes effective `landType` on cell reads without rewriting packed chunks — used by WeatherEngine. |
 | `call(endpoint, payload)` | Admin-callable endpoint surface. Payloads include `dataRoot`; `getWorldWhole` is materialized only for admin inspection. |
 
 ## Storage

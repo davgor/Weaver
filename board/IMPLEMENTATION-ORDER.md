@@ -4,4 +4,8 @@
 
 Epic ids are grouped by package/theme (e.g. `021`-`031` = CharacterEngine), **not** by dependency order. Picking tickets in numeric order alone will hand you one before something it depends on exists. Work wave by wave instead: everything in a wave has no unmet dependency on anything else still pending, so tickets within a wave can run in any order (including in parallel).
 
-0 waves, 0 pending epics.
+1 waves, 1 pending epics.
+
+## Wave 1
+
+- `094-WeatherEngine-Climate-And-World-Mutations` _(in-progress)_

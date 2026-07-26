@@ -220,6 +220,75 @@ function cellEndpoints(): EngineEndpoint[] {
   ]
 }
 
+function optionalBounds(body: Record<string, unknown>): Aabb | undefined {
+  if (body.bounds === undefined) return undefined
+  return parseBoundsValue(body.bounds)
+}
+
+function overlayEndpoints(): EngineEndpoint[] {
+  return [
+    {
+      name: 'setSparseOverlay',
+      description: 'Upsert a sparse overlay (landTypeOverride mutates effective cell reads)',
+      invoke: (payload) => {
+        const body = asRecord(payload)
+        return createWorldService(requireDataRoot(body)).setSparseOverlay({
+          worldId: requireString(body, 'worldId'),
+          x: requireNumber(body, 'x'),
+          y: requireNumber(body, 'y'),
+          key: requireString(body, 'key'),
+          value: requireString(body, 'value')
+        })
+      }
+    },
+    {
+      name: 'getSparseOverlay',
+      description: 'Read one sparse overlay by coordinates and key',
+      invoke: (payload) => {
+        const body = asRecord(payload)
+        return createWorldService(requireDataRoot(body)).getSparseOverlay({
+          worldId: requireString(body, 'worldId'),
+          x: requireNumber(body, 'x'),
+          y: requireNumber(body, 'y'),
+          key: requireString(body, 'key')
+        })
+      }
+    },
+    {
+      name: 'listSparseOverlays',
+      description: 'List sparse overlays filtered by optional keyPrefix and bounds',
+      invoke: (payload) => {
+        const body = asRecord(payload)
+        const filter: {
+          worldId: string
+          keyPrefix?: string
+          bounds?: Aabb
+        } = { worldId: requireString(body, 'worldId') }
+        if (typeof body.keyPrefix === 'string') filter.keyPrefix = body.keyPrefix
+        const bounds = optionalBounds(body)
+        if (bounds) filter.bounds = bounds
+        return createWorldService(requireDataRoot(body)).listSparseOverlays(filter)
+      }
+    },
+    {
+      name: 'clearSparseOverlays',
+      description: 'Clear sparse overlays filtered by optional keyPrefix and bounds',
+      invoke: (payload) => {
+        const body = asRecord(payload)
+        const filter: {
+          worldId: string
+          keyPrefix?: string
+          bounds?: Aabb
+        } = { worldId: requireString(body, 'worldId') }
+        if (typeof body.keyPrefix === 'string') filter.keyPrefix = body.keyPrefix
+        const bounds = optionalBounds(body)
+        if (bounds) filter.bounds = bounds
+        return createWorldService(requireDataRoot(body)).clearSparseOverlays(filter)
+      }
+    }
+  ]
+}
+
 export function buildEndpoints(): EngineEndpoint[] {
   return [
     {
@@ -231,6 +300,7 @@ export function buildEndpoints(): EngineEndpoint[] {
     ...discoveryEndpoints(),
     ...metaEndpoints(),
     ...expansionEndpoints(),
-    ...cellEndpoints()
+    ...cellEndpoints(),
+    ...overlayEndpoints()
   ]
 }

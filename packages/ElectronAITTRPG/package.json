@@ -20,6 +20,7 @@
     "@weaver/civilization-engine": "*",
     "@weaver/combat-engine": "*",
     "@weaver/dungeon-engine": "*",
+    "@weaver/weather-engine": "*",
     "@weaver/dm-engine": "*",
     "@weaver/enemy-engine": "*",
     "@weaver/item-engine": "*",

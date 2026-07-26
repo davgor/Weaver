@@ -72,12 +72,25 @@ export type ExpansionRecord = {
   cellCount?: number
 }
 
+/** Reserved overlay key: when set to a valid LandType, cell reads return that landType. */
+export const LAND_TYPE_OVERRIDE_KEY = 'landTypeOverride'
+
 export type SparseOverlay = {
   worldId: string
   x: number
   y: number
   key: string
   value: string
+}
+
+export function assertLandType(value: string): LandType {
+  if ((LAND_TYPES as readonly string[]).includes(value)) return value as LandType
+  throw new Error(`Invalid landTypeOverride: ${value}`)
+}
+
+export function applyLandTypeOverride(cell: Cell, overlayValue: string | null | undefined): Cell {
+  if (overlayValue === undefined || overlayValue === null) return cell
+  return { ...cell, landType: assertLandType(overlayValue) }
 }
 
 export function encodeLandType(landType: LandType): number {

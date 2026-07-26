@@ -11,14 +11,17 @@ export type {
 } from './types.js'
 export {
   CHUNK_SIZE,
+  LAND_TYPE_OVERRIDE_KEY,
   LAND_TYPES,
   aabbCellCount,
   aabbContainsPoint,
   aabbHeight,
   aabbIntersects,
   aabbWidth,
+  applyLandTypeOverride,
   assertAabb,
   assertExpansionRecord,
+  assertLandType,
   decodeLandType,
   encodeLandType,
   unionAabb

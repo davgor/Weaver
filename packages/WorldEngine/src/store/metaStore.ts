@@ -1,8 +1,24 @@
 import Database from 'better-sqlite3'
 import { existsSync, mkdirSync, readdirSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
-import type { Aabb, ChunkRecord, ExpansionRecord, NoiseParams, WorldMeta } from '../types.js'
+import type {
+  Aabb,
+  ChunkRecord,
+  ExpansionRecord,
+  NoiseParams,
+  SparseOverlay,
+  WorldMeta
+} from '../types.js'
+import { assertAabb, assertLandType, LAND_TYPE_OVERRIDE_KEY } from '../types.js'
 import { chunkBounds, chunkFileName } from './chunks.js'
+
+type OverlayRow = {
+  worldId: string
+  x: number
+  y: number
+  key: string
+  value: string
+}
 
 type SqliteDb = Database.Database
 
@@ -338,4 +354,96 @@ export function upsertChunkManifest(args: { dataRoot: string; worldId: string; c
   } finally {
     db.close()
   }
+}
+
+function rowToOverlay(row: OverlayRow): SparseOverlay {
+  return { worldId: row.worldId, x: row.x, y: row.y, key: row.key, value: row.value }
+}
+
+function validateOverlayValue(key: string, value: string): string {
+  if (key === LAND_TYPE_OVERRIDE_KEY) return assertLandType(value)
+  if (!key) throw new Error('overlay key required')
+  if (value === '') throw new Error('overlay value required')
+  return value
+}
+
+export function setSparseOverlay(
+  dataRoot: string,
+  overlay: Omit<SparseOverlay, 'worldId'> & { worldId: string }
+): SparseOverlay {
+  const value = validateOverlayValue(overlay.key, overlay.value)
+  const db = openDb(dataRoot, overlay.worldId)
+  try {
+    requireMetaRow(db, overlay.worldId)
+    db.prepare(
+      `INSERT INTO overlays (worldId, x, y, key, value) VALUES (@worldId, @x, @y, @key, @value)
+       ON CONFLICT(worldId, x, y, key) DO UPDATE SET value=@value`
+    ).run({ ...overlay, value })
+    return { ...overlay, value }
+  } finally {
+    db.close()
+  }
+}
+
+export function getSparseOverlay(
+  dataRoot: string,
+  args: { worldId: string; x: number; y: number; key: string }
+): SparseOverlay | null {
+  const db = openDb(dataRoot, args.worldId)
+  try {
+    requireMetaRow(db, args.worldId)
+    const row = db
+      .prepare('SELECT * FROM overlays WHERE worldId = ? AND x = ? AND y = ? AND key = ?')
+      .get(args.worldId, args.x, args.y, args.key) as OverlayRow | undefined
+    return row ? rowToOverlay(row) : null
+  } finally {
+    db.close()
+  }
+}
+
+export type ListOverlaysFilter = {
+  worldId: string
+  keyPrefix?: string
+  bounds?: Aabb
+}
+
+export function listSparseOverlays(dataRoot: string, filter: ListOverlaysFilter): SparseOverlay[] {
+  const db = openDb(dataRoot, filter.worldId)
+  try {
+    requireMetaRow(db, filter.worldId)
+    return queryOverlays(db, filter).map(rowToOverlay)
+  } finally {
+    db.close()
+  }
+}
+
+export function clearSparseOverlays(dataRoot: string, filter: ListOverlaysFilter): number {
+  const db = openDb(dataRoot, filter.worldId)
+  try {
+    requireMetaRow(db, filter.worldId)
+    const rows = queryOverlays(db, filter)
+    if (rows.length === 0) return 0
+    const stmt = db.prepare('DELETE FROM overlays WHERE worldId = ? AND x = ? AND y = ? AND key = ?')
+    for (const row of rows) stmt.run(row.worldId, row.x, row.y, row.key)
+    return rows.length
+  } finally {
+    db.close()
+  }
+}
+
+function queryOverlays(db: SqliteDb, filter: ListOverlaysFilter): OverlayRow[] {
+  const bounds = filter.bounds ? assertAabb(filter.bounds) : null
+  const prefix = filter.keyPrefix
+  let sql = 'SELECT * FROM overlays WHERE worldId = ?'
+  const params: Array<string | number> = [filter.worldId]
+  if (prefix !== undefined) {
+    sql += ' AND key LIKE ?'
+    params.push(`${prefix}%`)
+  }
+  if (bounds) {
+    sql += ' AND x >= ? AND x <= ? AND y >= ? AND y <= ?'
+    params.push(bounds.minX, bounds.maxX, bounds.minY, bounds.maxY)
+  }
+  sql += ' ORDER BY y, x, key'
+  return db.prepare(sql).all(...params) as OverlayRow[]
 }
