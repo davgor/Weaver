@@ -61,14 +61,15 @@ await questEngine.call('listWorldQuests', { campaignId: 'campaign-1' })
 
 ## Integration contract (DM campaign-gen)
 
-Intended stage order after peers exist (regions, civilizations/places, NPCs, items):
+Stage order after peers exist (regions, civilizations/places, NPCs, items):
 
 1. Collect id pools from World/Regional/Civilization/NPC/Item.
 2. Call `seedWorldQuests({ campaignId, worldId, seed, pools, lookup? })`.
 3. Later offer/assign via DMEngine `proposeQuest` using seeded `questId`s into CharacterEngine’s log.
 
-Pipeline wiring into `runCampaignGeneration` is tracked as follow-up
-`102-DMEngine-Campaign-Gen-Quest-Seed-Stage` — this package ships the seed API + contract.
+`runCampaignGeneration` invokes this as a post-peers hook (after narration stages /
+`persist`, not a Narration skeleton stage) via `CampaignGenerationDeps.quest`
+(`102-DMEngine-Campaign-Gen-Quest-Seed-Stage`).
 
 ## Scripts
 

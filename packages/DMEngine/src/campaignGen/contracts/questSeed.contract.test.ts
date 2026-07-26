@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, rmSync } from 'node:fs'
+import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -18,7 +18,11 @@ import {
   constructNpc,
   createFaction
 } from '@weaver/npc-engine'
-import { seedWorldQuests } from '@weaver/quest-engine'
+import {
+  clearQuestStores,
+  listWorldQuests,
+  seedWorldQuests
+} from '@weaver/quest-engine'
 import { regionalEngine } from '@weaver/regional-engine'
 import { worldEngine } from '@weaver/world-engine'
 import { createCampaign } from '../../persistence/campaignPersistence.js'
@@ -32,6 +36,7 @@ beforeEach(() => {
   clearFactionStore()
   clearEnemyStore()
   clearNpcPlaceholderStore()
+  clearQuestStores()
 })
 
 afterEach(() => {
@@ -41,12 +46,12 @@ afterEach(() => {
   }
 })
 
-describe('DMEngine campaign generation peer persistence contract', () => {
+describe('DMEngine campaign-gen -> QuestEngine seed contract (102)', () => {
   it(
-    'persists through real World/Regional/Civilization/NPC/Enemy/Campaign APIs',
+    'seeds world quests from peer pools via real seedWorldQuests',
     async () => {
       const root = tempRoot()
-      const campaignId = 'campaign-peer-contract'
+      const campaignId = 'campaign-quest-seed-contract'
       setCampaignRaceRoster(campaignId, [{ raceId: 'human', name: 'Human' }])
 
       const result = await runCampaignGeneration(
@@ -56,24 +61,29 @@ describe('DMEngine campaign generation peer persistence contract', () => {
           campaignFilePath: join(root, 'campaign.sqlite'),
           regionCount: 1,
           npcsPerRegion: 1,
-          seed: 'peer-contract',
+          seed: 'quest-seed-contract',
           maxSeedRetries: 1
         },
         realDeps(scriptedCompleter())
       )
 
-      expect(worldEngine.hasWorld(join(root, 'data'), result.worldId)).toBe(true)
-      expect(result.regions).toHaveLength(1)
-      expect(result.civilizations.length).toBeGreaterThan(0)
-      expect(result.npcs).toHaveLength(1)
-      expect(result.foes).toHaveLength(1)
-      expect(result.catalogEntries.map((entry) => entry.id)).toEqual([
-        'summary',
-        'canon',
-        'story',
-        'bestiary'
-      ])
-      expect(existsSync(join(root, 'campaign.sqlite'))).toBe(true)
+      const listed = listWorldQuests(campaignId)
+      expect(listed.length).toBeGreaterThan(0)
+      expect(result.quests).toEqual(listed)
+      expect(result.quests[0]?.campaignId).toBe(campaignId)
+      expect(result.quests[0]?.worldId).toBe(result.worldId)
+
+      const npcIds = new Set(result.npcs.map((npc) => npc.npcId))
+      const placeIds = new Set(result.civilizations.map((civ) => civ.civilizationId))
+      const itemIds = new Set(getItemTemplateCatalog().map((template) => template.id))
+      for (const quest of result.quests) {
+        expect(quest.objectives.length).toBeGreaterThan(0)
+        for (const objective of quest.objectives) {
+          if (objective.kind === 'talk_to_npc') expect(npcIds.has(objective.targetId)).toBe(true)
+          if (objective.kind === 'reach_place') expect(placeIds.has(objective.targetId)).toBe(true)
+          if (objective.kind === 'obtain_item') expect(itemIds.has(objective.targetId)).toBe(true)
+        }
+      }
     },
     30_000
   )
@@ -85,7 +95,10 @@ function realDeps(completer: TextCompleter): CampaignGenerationDeps {
     completer,
     world: worldEngine,
     regional: regionalEngine,
-    civilization: { fillCivilizations: civilizationEngine.fillCivilizations, ensureNpcPlaceholders },
+    civilization: {
+      fillCivilizations: civilizationEngine.fillCivilizations,
+      ensureNpcPlaceholders
+    },
     npc: { constructNpc, createFaction, addNpcToFaction },
     enemy: { listBestiary, generateEncounterFoes },
     campaign: { createCampaign },
@@ -119,7 +132,7 @@ function scriptedCompleter(): TextCompleter {
 }
 
 function tempRoot(): string {
-  const root = mkdtempSync(join(tmpdir(), 'dm-campaign-gen-contract-'))
+  const root = mkdtempSync(join(tmpdir(), 'dm-campaign-quest-seed-'))
   roots.push(root)
   return root
 }

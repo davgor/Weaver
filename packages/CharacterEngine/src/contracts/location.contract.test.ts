@@ -10,9 +10,8 @@ import {
 /**
  * Pins location ownership through published helpers + endpoints.
  *
- * DMEngine travel (`resolveTravelIntent`) still advances days only; intended
- * follow-up is to call `setCharacterLocation` after a successful destination
- * check. This epic does not invent that DM orchestration.
+ * DMEngine travel (`resolveTravelIntent`) advances days and calls
+ * `setCharacterLocation` with opaque destination placement after success.
  */
 describe('CharacterEngine location ownership contract', () => {
   beforeEach(() => {

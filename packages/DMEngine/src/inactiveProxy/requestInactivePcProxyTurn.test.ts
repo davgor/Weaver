@@ -232,9 +232,23 @@ function minimalTurnDeps(overrides: Partial<ResolveTurnDeps> = {}): ResolveTurnD
         campaignId,
         advancedDays: proposedDays,
         day: proposedDays
+      }),
+      setCharacterLocation: (input) => ({
+        characterId: input.characterId,
+        campaignId: input.campaignId,
+        regionId: input.regionId,
+        locationKind: input.locationKind,
+        ...(input.placeId === undefined ? {} : { placeId: input.placeId }),
+        ...(input.updatedDay === undefined ? {} : { updatedDay: input.updatedDay })
       })
     },
-    destinations: { isGenerated: () => true },
+    destinations: {
+      isGenerated: () => true,
+      resolvePlacement: () => ({
+        regionId: 'opaque-region-inactive',
+        locationKind: 'overworld'
+      })
+    },
     narration: {
       llm: sceneCompleter('The companion acts.'),
       npcs: { getNpc: () => undefined },

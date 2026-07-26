@@ -105,8 +105,25 @@ function deps(overrides: Partial<ResolveTurnDeps> = {}): ResolveTurnDeps {
       getBalance: (characterId) => currency.getBalance(characterId),
       clampProposedPrice
     },
-    travel: { advanceTravelDays: (campaignId, days) => ({ campaignId, advancedDays: days, day: days }) },
-    destinations: { isGenerated: () => true },
+    travel: {
+      advanceTravelDays: (campaignId, days) => ({ campaignId, advancedDays: days, day: days }),
+      setCharacterLocation: (input) => ({
+        characterId: input.characterId,
+        campaignId: input.campaignId,
+        regionId: input.regionId,
+        locationKind: input.locationKind,
+        ...(input.placeId === undefined ? {} : { placeId: input.placeId }),
+        ...(input.updatedDay === undefined ? {} : { updatedDay: input.updatedDay })
+      })
+    },
+    destinations: {
+      isGenerated: () => true,
+      resolvePlacement: (destinationId) => ({
+        regionId: destinationId,
+        placeId: destinationId,
+        locationKind: 'settlement'
+      })
+    },
     narration: {
       llm: proseCompleter(),
       npcs: { getNpc: () => undefined },

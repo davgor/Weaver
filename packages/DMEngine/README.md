@@ -96,7 +96,7 @@ classifyPlayerIntent('I buy the iron sword') // 'buy'
 | `createCampaign` / `openCampaign` | Campaign file lifecycle helpers used by the singleton |
 | `CURRENT_CAMPAIGN_SCHEMA_VERSION` | Latest supported campaign schema version |
 | `classifyPlayerIntent` / `resolvePlayerIntent` | Heuristic intent branch targets for future 053 router |
-| `resolveBuyIntent` / `resolveSellIntent` / `resolveTravelIntent` | Commerce/travel handlers via ItemEngine + CharacterEngine |
+| `resolveBuyIntent` / `resolveSellIntent` / `resolveTravelIntent` | Commerce/travel handlers via ItemEngine + CharacterEngine; travel advances campaign day and sets traveler placement via `setCharacterLocation` (opaque destination ids) |
 | `proposeQuest` / `updateQuestProgress` / `completeQuest` / `failQuest` | Quest orchestration against CharacterEngine quest log |
 | `Campaign*` / `CatalogSeed*` / `DmEngineApi` / `DmEngineDeps` / `EngineEndpoint` | Types (`DmEngineDeps` includes injected peer APIs) |
 

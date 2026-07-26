@@ -50,6 +50,7 @@ function requireSellFields(input: ResolvePlayerIntentInput) {
 
 function requireTravelFields(input: ResolvePlayerIntentInput) {
   return {
+    characterId: requireText(input.characterId, 'characterId'),
     campaignId: requireText(input.campaignId, 'campaignId'),
     destinationId: requireText(input.destinationId, 'destinationId'),
     proposedDays: requireNumber(input.proposedDays, 'proposedDays')

@@ -294,9 +294,24 @@ function defaultResolveTurnDeps(
         campaignId,
         advancedDays: proposedDays,
         day: proposedDays
+      }),
+      setCharacterLocation: (input) => ({
+        characterId: input.characterId,
+        campaignId: input.campaignId,
+        regionId: input.regionId,
+        locationKind: input.locationKind,
+        ...(input.placeId === undefined ? {} : { placeId: input.placeId }),
+        ...(input.updatedDay === undefined ? {} : { updatedDay: input.updatedDay })
       })
     },
-    destinations: rest.destinations ?? { isGenerated: () => true },
+    destinations: rest.destinations ?? {
+      isGenerated: () => true,
+      resolvePlacement: () => ({
+        regionId: 'opaque-region-turn',
+        placeId: 'opaque-place-turn',
+        locationKind: 'settlement'
+      })
+    },
     narration: narrationPeers(narration),
     combat: rest.combat ?? combatApi(store),
     persist: rest.persist ?? (() => undefined)

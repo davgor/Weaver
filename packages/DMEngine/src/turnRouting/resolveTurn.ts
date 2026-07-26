@@ -155,7 +155,8 @@ function buildTravelInput(
     intent: plan.intent,
     travel: deps.travel,
     destinations: deps.destinations,
-    campaignId: input.campaignId
+    campaignId: input.campaignId,
+    characterId: input.characterId
   }
   if (input.destinationId !== undefined) {
     branch.destinationId = input.destinationId

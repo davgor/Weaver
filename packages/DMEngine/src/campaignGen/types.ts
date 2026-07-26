@@ -35,6 +35,10 @@ import type {
   GeneratedFoeRef
 } from '@weaver/enemy-engine'
 import type {
+  SeedWorldQuestsInput,
+  WorldQuest
+} from '@weaver/quest-engine'
+import type {
   CampaignHandle,
   CampaignOpenOptions,
   CatalogSeedEntry
@@ -91,6 +95,7 @@ export type CampaignGenerationResult = {
   foes: GeneratedFoeRef[]
   bestiaryFlavor: string
   storyPremise: string
+  quests: WorldQuest[]
   campaign: Omit<CampaignHandle, 'close'>
   catalogEntries: CatalogSeedEntry[]
 }
@@ -178,6 +183,10 @@ export type CampaignGenerationDeps = {
   campaign: {
     createCampaign: (options: CampaignOpenOptions) => CampaignHandle
   }
+  quest: {
+    seedWorldQuests: (input: SeedWorldQuestsInput) => WorldQuest[]
+    listSeedItemIds: () => readonly string[]
+  }
 }
 
 export type GenerationState = {
@@ -196,6 +205,7 @@ export type GenerationState = {
   foes: GeneratedFoeRef[]
   bestiaryFlavor?: string
   storyPremise?: string
+  quests: WorldQuest[]
   campaign?: Omit<CampaignHandle, 'close'>
   catalogEntries: CatalogSeedEntry[]
 }

@@ -181,9 +181,24 @@ function smokeDeps(store: EncounterStore): ResolveTurnDeps {
         campaignId,
         advancedDays: days,
         day: days
+      }),
+      setCharacterLocation: (input) => ({
+        characterId: input.characterId,
+        campaignId: input.campaignId,
+        regionId: input.regionId,
+        locationKind: input.locationKind,
+        ...(input.placeId === undefined ? {} : { placeId: input.placeId }),
+        ...(input.updatedDay === undefined ? {} : { updatedDay: input.updatedDay })
       })
     },
-    destinations: { isGenerated: () => true },
+    destinations: {
+      isGenerated: () => true,
+      resolvePlacement: (destinationId) => ({
+        regionId: destinationId,
+        placeId: destinationId,
+        locationKind: 'settlement'
+      })
+    },
     narration: {
       llm: proseCompleter(),
       npcs: { getNpc: () => undefined },

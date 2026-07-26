@@ -1,8 +1,19 @@
 import type {
   CampaignTravelDayAdvance,
+  CharacterLocationSnapshot,
   CurrencyBalanceSnapshot,
-  PriceClampOptions
+  PriceClampOptions,
+  SetTravelCharacterLocationInput,
+  TravelDestinationPlacement,
+  TravelLocationKind
 } from './peerTypes.js'
+
+export type {
+  CharacterLocationSnapshot,
+  SetTravelCharacterLocationInput,
+  TravelDestinationPlacement,
+  TravelLocationKind
+}
 
 export type PlayerIntentKind = 'buy' | 'sell' | 'travel' | 'narration'
 
@@ -15,11 +26,13 @@ export type ItemCurrencyApi = {
 
 export type CharacterTravelApi = {
   advanceTravelDays: (campaignId: string, proposedDays: number) => CampaignTravelDayAdvance
+  setCharacterLocation: (input: SetTravelCharacterLocationInput) => CharacterLocationSnapshot
 }
 
 export type TravelDestinationLookup = {
   isGenerated: (destinationId: string) => boolean
   ensureGenerated?: (destinationId: string) => void
+  resolvePlacement: (destinationId: string) => TravelDestinationPlacement
 }
 
 export type BuyIntentRequest = {
@@ -37,6 +50,7 @@ export type SellIntentRequest = {
 }
 
 export type TravelIntentRequest = {
+  characterId: string
   campaignId: string
   destinationId: string
   proposedDays: number

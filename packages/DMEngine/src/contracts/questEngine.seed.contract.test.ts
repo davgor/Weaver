@@ -10,9 +10,9 @@ import { proposeQuest } from '../quests/questOrchestration.js'
 /**
  * DMEngine -> QuestEngine seed contract + CharacterEngine log id compatibility.
  *
- * Campaign-gen pipeline stage wiring is deferred to
- * `102-DMEngine-Campaign-Gen-Quest-Seed-Stage`. This pins the intended call:
- * seed world quests, then propose/upsert using the same questId strings.
+ * Campaign-gen pipeline wiring lives in
+ * `campaignGen/contracts/questSeed.contract.test.ts` (102). This pins seed +
+ * propose/upsert using the same questId strings.
  */
 describe('DMEngine -> QuestEngine seed contract (097)', () => {
   beforeEach(() => {
