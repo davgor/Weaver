@@ -86,13 +86,17 @@ jobs:
       - run: npm run build:engines
       - run: npm run package:win
 
+      - name: Stage Windows release artifacts
+        run: >
+          node scripts/stage-release-artifacts.mjs staged-release
+          packages/ElectronAITTRPG/release
+          packages/ElectronAdmin/release
+
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
         with:
           name: windows-release
-          path: |
-            packages/ElectronAITTRPG/release/*
-            packages/ElectronAdmin/release/*
+          path: staged-release/*
           if-no-files-found: error
 
   package-mac:
@@ -115,13 +119,17 @@ jobs:
           CSC_IDENTITY_AUTO_DISCOVERY: false
         run: npm run package:mac
 
+      - name: Stage macOS release artifacts
+        run: >
+          node scripts/stage-release-artifacts.mjs staged-release
+          packages/ElectronAITTRPG/release
+          packages/ElectronAdmin/release
+
       - name: Upload macOS artifacts
         uses: actions/upload-artifact@v4
         with:
           name: mac-release
-          path: |
-            packages/ElectronAITTRPG/release/*
-            packages/ElectronAdmin/release/*
+          path: staged-release/*
           if-no-files-found: error
 
   release:

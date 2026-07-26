@@ -1,6 +1,7 @@
 import { existsSync, readdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
+import { flattenNestedReleaseDownloads } from './stage-release-artifacts.mjs'
 
 const REQUIRED_META = ['latest.yml', 'ai-admin.yml']
 const OPTIONAL_META = ['latest-mac.yml', 'ai-admin-mac.yml']
@@ -109,6 +110,10 @@ export function verifyUpdaterMetadata(releaseDir) {
 }
 
 export function runVerifyReleaseArtifacts(releaseDir = 'release') {
+  const flattened = flattenNestedReleaseDownloads(releaseDir)
+  for (const name of flattened) {
+    console.log(`flattened: ${name}`)
+  }
   const renamed = sanitizeReleaseFilenames(releaseDir)
   for (const line of renamed) {
     console.log(`sanitized: ${line}`)
