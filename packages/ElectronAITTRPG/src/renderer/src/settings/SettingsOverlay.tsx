@@ -12,6 +12,7 @@ import {
   type TextProviderId,
   type UpdateSettingsRequest
 } from '../../../shared/settings/types'
+import { LocalModelSection } from './LocalModelSection'
 import './settings.css'
 
 type SettingsOverlayProps = {
@@ -39,6 +40,7 @@ export function SettingsOverlay({ open, onClose }: SettingsOverlayProps): JSX.El
           <p className="settings-loading">Loading settings...</p>
         ) : (
           <SettingsBody
+            open={open}
             snapshot={snapshot}
             busy={busy}
             message={message}
@@ -105,6 +107,7 @@ function SettingsHeader({ onClose }: { onClose: () => void }): JSX.Element {
 }
 
 type SettingsBodyProps = {
+  open: boolean
   snapshot: SettingsSnapshot
   busy: boolean
   message: string | null
@@ -116,6 +119,7 @@ type SettingsBodyProps = {
 function SettingsBody(props: SettingsBodyProps): JSX.Element {
   return (
     <div className="settings-body">
+      <LocalModelSection open={props.open} busy={props.busy} />
       <TextProviderSection snapshot={props.snapshot} busy={props.busy} onUpdate={props.onUpdate} />
       <ImageRailsSection snapshot={props.snapshot} busy={props.busy} onUpdate={props.onUpdate} />
       <EmbeddingSection snapshot={props.snapshot} busy={props.busy} onUpdate={props.onUpdate} />
@@ -123,6 +127,7 @@ function SettingsBody(props: SettingsBodyProps): JSX.Element {
         busy={props.busy}
         message={props.message}
         connection={props.connection}
+        provider={props.snapshot.text.provider}
         onCheckConnection={props.onCheckConnection}
       />
     </div>
@@ -178,7 +183,8 @@ function ProviderTextInputs(props: {
   credentials: ProviderCredentialSettings
   busy: boolean
   onUpdate: (request: UpdateSettingsRequest) => Promise<void>
-}): JSX.Element {
+}): JSX.Element | null {
+  if (props.provider === 'local') return null
   return (
     <>
       <label>
@@ -273,14 +279,16 @@ function ConnectionSection(props: {
   busy: boolean
   message: string | null
   connection: SettingsConnectionResult | null
+  provider: TextProviderId
   onCheckConnection: () => void
 }): JSX.Element {
   const connectionClass = props.connection?.ok ? 'settings-status-ok' : 'settings-status-error'
+  const label = props.provider === 'local' ? 'Check local model' : 'Check selected provider'
   return (
     <section className="settings-section">
       <h2>Connection check</h2>
       <button type="button" disabled={props.busy} onClick={props.onCheckConnection}>
-        Check selected provider
+        {label}
       </button>
       {props.message === null ? null : <p className="settings-help">{props.message}</p>}
       {props.connection === null ? null : (

@@ -1,7 +1,12 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { createMemoryEncounterStore, getEncounter, startEncounter, submitCombatAction } from '@weaver/combat-engine'
+import { createMemoryEncounterStore, startEncounter } from '@weaver/combat-engine'
 import { clearNarrationStore, type TextCompleter } from '@weaver/narration-engine'
-import { resolveTurn, type ResolveTurnDeps } from '@weaver/dm-engine'
+import {
+  createStoreCombatTurnApi,
+  resolveTurn,
+  withCombatResolutionStubs,
+  type ResolveTurnDeps
+} from '@weaver/dm-engine'
 import { createCurrencyService, clampProposedPrice } from '@weaver/item-engine'
 
 beforeEach(() => {
@@ -43,15 +48,12 @@ describe('ElectronAITTRPG contract: DMEngine turn routing success paths', () => 
         combatAction: 'Slash'
       },
       deps({
-        combat: {
-          getEncounter: (encounterId) => getEncounter({ encounterId, store }),
-          submitCombatAction: (input) => submitCombatAction({ ...input, store })
-        }
+        combat: createStoreCombatTurnApi(store)
       })
     )
 
     expect(result.route).toBe('combat')
-    expect(result.resolution).toMatchObject({ kind: 'combat' })
+    expect(result.resolution).toMatchObject({ kind: 'combat', outcome: { type: 'typed' } })
   })
 })
 
@@ -111,7 +113,10 @@ function deps(overrides: Partial<ResolveTurnDeps> = {}): ResolveTurnDeps {
       items: { hasItem: () => true },
       locations: { isKnownLocation: () => true }
     },
-    combat: { getEncounter: () => undefined, submitCombatAction: () => missingCombat() },
+    combat: withCombatResolutionStubs({
+      getEncounter: () => undefined,
+      submitCombatAction: () => missingCombat()
+    }),
     persist: () => undefined,
     ...overrides
   }

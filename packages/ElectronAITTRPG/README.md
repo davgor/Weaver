@@ -15,7 +15,7 @@ Product chrome and IPC only: windowing, preload bridges, React UI, packaging, an
 | Updater channel | `latest` |
 | Artifacts | NSIS + portable (Win), DMG (Mac) |
 
-Deeper rebuild notes (vision, stack, historical layout): [`docs/REBUILD_SPEC.md`](docs/REBUILD_SPEC.md). Prefer live monorepo conventions in the root README when they diverge from older AI-DND-Matrix copy in that doc.
+Deeper rebuild notes (vision, stack, historical layout): [`docs/REBUILD_SPEC.md`](docs/REBUILD_SPEC.md). Playability smoke checklist: [`docs/runbooks/playability-smoke.md`](docs/runbooks/playability-smoke.md). Prefer live monorepo conventions in the root README when they diverge from older AI-DND-Matrix copy in that doc.
 
 ## Boundaries
 
@@ -25,7 +25,7 @@ Deeper rebuild notes (vision, stack, historical layout): [`docs/REBUILD_SPEC.md`
 
 ## Status (today)
 
-Shell is playable as chrome: custom titlebar, startup loading/boot snapshot against Weaver engines, campaign sidebar list, empty main panel, update banner. Full campaign play (Social/Scene, SQLite campaign hub, agent loops) is still ahead — engines are mostly scaffolds except LLMEngine.
+Campaign create → onboard → hub → play → combat/death wiring is in place (Wave 10 play-path). See the playability smoke runbook for the §15 spine and automated scripted-provider coverage.
 
 ## Run & package
 
@@ -55,6 +55,7 @@ npm run package:mac
 | `src/shared/` | Branding, game API types, engine health helpers |
 | `build/` | Icons |
 | `docs/REBUILD_SPEC.md` | Historical rebuild contract |
+| `docs/runbooks/` | Playability smoke and operator checklists |
 
 ## Scripts (workspace)
 

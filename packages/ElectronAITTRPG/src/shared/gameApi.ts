@@ -1,6 +1,7 @@
 import type { CharacterSheetApi } from './characterSheet/types.js'
 import type { NpcDossierApi } from './npcDossier/types.js'
 import type { SettingsApi } from './settings/types.js'
+import type { SettingsIntroApi } from './settings/settingsIntroTypes.js'
 import type { CampaignCreateApi } from './campaignCreate/types.js'
 import type { OnboardingApi } from './onboarding/types.js'
 import type { CampaignsApi } from './campaigns/types.js'
@@ -33,6 +34,7 @@ export type GameApi = {
   characterSheet: CharacterSheetApi
   npcDossier: NpcDossierApi
   settings: SettingsApi
+  settingsIntro: SettingsIntroApi
   app: {
     getVersion: () => Promise<string>
   }

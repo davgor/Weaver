@@ -7,7 +7,7 @@ import {
 } from '../../shared/settings/types.js'
 import { createSettingsStore } from './settingsStore.js'
 
-describe('settingsStore', () => {
+describe('settingsStore partial updates', () => {
   it('applies partial updates without losing independent provider rails', async () => {
     const written: SettingsSnapshot[] = []
     const store = createSettingsStore({
@@ -40,6 +40,15 @@ describe('settingsStore', () => {
     expect(snapshot.image.provider).toBe('local')
     expect(snapshot.embeddings.mode).toBe('gemini')
     expect(written).toHaveLength(1)
+  })
+})
+
+describe('settingsStore intro and embedder validation', () => {
+  it('tracks intro dismissal separately from provider settings', async () => {
+    const store = createSettingsStore()
+    expect(store.isIntroDismissed()).toBe(false)
+    await store.dismissIntro()
+    expect(store.isIntroDismissed()).toBe(true)
   })
 
   it('rejects dead embedder modes that are not supported by the live description', async () => {

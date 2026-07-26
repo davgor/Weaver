@@ -20,6 +20,7 @@ export type CampaignCreateGenerationPort = {
   generate: (input: CampaignGenerationInput) => Promise<CampaignGenerationResult>
   resolvePaths: (campaignId: string) => { dataRoot: string; campaignFilePath: string }
   createCampaignId: () => string
+  setCampaignDeathMode: (campaignId: string, mode: CampaignCreateDraft['deathMode']) => void
 }
 
 export type CampaignCreateService = {
@@ -90,6 +91,7 @@ async function startGeneration(
   delete state.errorMessage
   try {
     state.result = await runGeneration(port, state.campaignId, draft, 'start')
+    port.setCampaignDeathMode(state.campaignId, draft.deathMode)
     state.status = 'ready'
   } catch (error) {
     state.status = 'error'

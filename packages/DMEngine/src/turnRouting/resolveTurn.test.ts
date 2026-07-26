@@ -12,9 +12,9 @@ import {
   createMemoryEncounterStore,
   getEncounter,
   startEncounter,
-  submitCombatAction,
   type EncounterStore
 } from '@weaver/combat-engine'
+import { createStoreCombatTurnApi } from './combatApi.js'
 import type { ItemCurrencyApi } from '../intents/types.js'
 import { resolveTurn } from './resolveTurn.js'
 import type { ResolveTurnDeps, TurnPersistRecord } from './types.js'
@@ -146,6 +146,87 @@ describe('resolveTurn combat exclusivity', () => {
   })
 })
 
+describe('resolveTurn ad-hoc encounter start', () => {
+  it('starts an ad-hoc encounter for combat-routed play with no encounter id', async () => {
+    const store = createMemoryEncounterStore()
+    const result = await resolveTurn(
+      {
+        channel: 'play',
+        campaignId: 'camp-start',
+        characterId: 'hero-start',
+        text: 'attack the goblin',
+        combatAction: 'Draw steel',
+        encounterStart: {
+          mode: 'adHoc',
+          knownCombatants: [
+            { id: 'hero-start', kind: 'character', abilityScores: scores() },
+            { id: 'goblin-start', kind: 'enemy', abilityScores: scores() }
+          ],
+          foeGeneration: { difficulty: 'easy', count: 1 }
+        }
+      },
+      baseDeps({
+        combat: createStoreCombatTurnApi(store, {
+          start: { roller: () => 12 },
+          adHoc: { roller: () => 12, generateEncounterFoes: () => [] }
+        }),
+        createEncounterId: () => 'enc-started',
+        routingCompleter: combatRouteCompleter()
+      })
+    )
+
+    expect(result.route).toBe('combat')
+    expect(result.resolution).toMatchObject({
+      kind: 'combat',
+      encounter: { encounterId: 'enc-started', startMode: 'ad-hoc' }
+    })
+    expect(getEncounter({ encounterId: 'enc-started', store })?.status).toBe('active')
+  })
+})
+
+describe('resolveTurn combat rewards', () => {
+  it('surfaces victory XP, loot, and level-up rewards on the turn result', async () => {
+    const store = createMemoryEncounterStore()
+    seedExecutableEncounter(store)
+    const result = await resolveTurn(
+      {
+        channel: 'play',
+        campaignId: 'camp-rewards',
+        characterId: 'hero-rewards',
+        text: 'execute the helpless goblin',
+        encounterId: 'enc-rewards',
+        encounterRewards: { xpDifficulty: 'impossible' },
+        combatIntent: { kind: 'execute', targetId: 'goblin-rewards', lootSeed: 'reward-seed' }
+      },
+      baseDeps({
+        combat: createStoreCombatTurnApi(store, {
+          resolution: {
+            generateLoot: () => [{ templateId: 'template.healing_potion', quantity: 1 }]
+          }
+        }),
+        progression: {
+          awardXp: (characterId) => ({
+            characterId,
+            level: 2,
+            xp: 0,
+            xpAwarded: 100,
+            levelsGained: 1
+          })
+        }
+      })
+    )
+
+    expect(result.resolution).toMatchObject({
+      kind: 'combat',
+      encounter: { status: 'resolved' },
+      rewards: {
+        loot: [{ templateId: 'template.healing_potion', quantity: 1 }],
+        levelUp: { fromLevel: 1, toLevel: 2, xpAwarded: 100 }
+      }
+    })
+  })
+})
+
 describe('resolveTurn turn lock', () => {
   it('rejects concurrent turns for the same campaign and character', async () => {
     let releasePersist: (() => void) | undefined
@@ -194,6 +275,17 @@ function baseDeps(overrides: DepOverrides = {}): ResolveTurnDeps {
   const { routingCompleter, narrationCompleter, ...rest } = overrides
   const store = createMemoryEncounterStore()
   const narration = narrationCompleter ?? sceneCompleter('The merchant nods.')
+  const deps = defaultResolveTurnDeps(store, narration, routingCompleter, rest)
+  applyOptionalDepOverrides(deps, rest)
+  return deps
+}
+
+function defaultResolveTurnDeps(
+  store: EncounterStore,
+  narration: TextCompleter,
+  routingCompleter: TextCompleter | undefined,
+  rest: Omit<DepOverrides, 'routingCompleter' | 'narrationCompleter'>
+): ResolveTurnDeps {
   return {
     completer: routingCompleter ?? rest.completer ?? routingCompleterForNarration(),
     currency: rest.currency ?? createCurrencyApi(),
@@ -209,6 +301,15 @@ function baseDeps(overrides: DepOverrides = {}): ResolveTurnDeps {
     combat: rest.combat ?? combatApi(store),
     persist: rest.persist ?? (() => undefined)
   }
+}
+
+function applyOptionalDepOverrides(
+  deps: ResolveTurnDeps,
+  rest: Omit<DepOverrides, 'routingCompleter' | 'narrationCompleter'>
+): void {
+  if (rest.actions !== undefined) deps.actions = rest.actions
+  if (rest.progression !== undefined) deps.progression = rest.progression
+  if (rest.createEncounterId !== undefined) deps.createEncounterId = rest.createEncounterId
 }
 
 function createCurrencyApi(): ItemCurrencyApi {
@@ -252,6 +353,15 @@ function neverCalledCompleter(): TextCompleter & { calls: number } {
   }
 }
 
+function combatRouteCompleter(): TextCompleter {
+  return {
+    completeText: async () => ({
+      text: '{"intent":"attack goblin","route":"combat"}',
+      backend: 'scripted'
+    })
+  }
+}
+
 function narrationPeers(completer: TextCompleter): ResolveTurnDeps['narration'] {
   return {
     llm: completer,
@@ -262,10 +372,7 @@ function narrationPeers(completer: TextCompleter): ResolveTurnDeps['narration'] 
 }
 
 function combatApi(store: EncounterStore): ResolveTurnDeps['combat'] {
-  return {
-    getEncounter: (encounterId) => getEncounter({ encounterId, store }),
-    submitCombatAction: (input) => submitCombatAction({ ...input, store })
-  }
+  return createStoreCombatTurnApi(store)
 }
 
 function seedActiveEncounter(store: EncounterStore): string {
@@ -282,6 +389,30 @@ function seedActiveEncounter(store: EncounterStore): string {
     { roller: () => 15 }
   )
   return heroId
+}
+
+function seedExecutableEncounter(store: EncounterStore): void {
+  const encounter = startEncounter(
+    {
+      encounterId: 'enc-rewards',
+      combatants: [
+        { id: 'hero-rewards', kind: 'character', abilityScores: scores() },
+        {
+          id: 'goblin-rewards',
+          kind: 'enemy',
+          abilityScores: scores(),
+          conditions: ['helpless']
+        }
+      ],
+      store
+    },
+    { roller: () => 15 }
+  )
+  store.saveEncounter({
+    ...encounter,
+    currentTurnIndex: encounter.turnOrder.indexOf('hero-rewards'),
+    currentTurn: { combatantId: 'hero-rewards', actionUsed: false, movementUsed: false }
+  })
 }
 
 function scores() {

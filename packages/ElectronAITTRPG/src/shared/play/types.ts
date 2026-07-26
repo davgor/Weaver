@@ -1,6 +1,7 @@
 import type { SceneBlock, SocialLine } from '@weaver/narration-engine'
 import type { CombatConditionId, HitPointState } from '@weaver/combat-engine'
 import type { AskDmHistoryEntry } from '@weaver/dm-engine'
+import type { DeathMode } from '../campaignCreate/types.js'
 
 export type { AskDmHistoryEntry } from '@weaver/dm-engine'
 
@@ -43,12 +44,37 @@ export type CombatChromeSnapshot =
       turnOrder: CombatChromeCombatant[]
     }
 
+export type PlayDeathOutcome =
+  | {
+      mode: DeathMode
+      status: 'dead'
+      cause: string
+      obituary: string
+    }
+  | {
+      mode: 'standard'
+      status: 'alive'
+      restoredFromAutosave: true
+    }
+  | {
+      mode: 'respawn'
+      status: 'alive'
+      respawn: {
+        relocatedTo: string
+        costPaid: number
+        respawnsUsed: number
+        respawnsRemaining: number
+        goldRemaining: number
+      }
+    }
+
 export type SubmitPlayActionSuccess = {
   ok: true
   scene: SceneBlock[]
   social: SocialLine[]
   combat: CombatChromeSnapshot
   roll: D20RollFeedback | null
+  death: PlayDeathOutcome | null
 }
 
 type SubmitPlayActionFailure = {

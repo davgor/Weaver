@@ -1,6 +1,8 @@
 export { lockTurn } from './lockTurn.js'
 export { heuristicRoute } from './heuristicRoute.js'
 export { interpretIntentAndRoute } from './interpretIntentAndRoute.js'
+export { createStoreCombatTurnApi } from './combatApi.js'
+export { withCombatResolutionStubs } from './combatApiStubs.js'
 export { resolveTurn } from './resolveTurn.js'
 export { resolveCommerceBranch } from './branches/commerce.js'
 export { resolveTravelBranch } from './branches/travel.js'
@@ -13,8 +15,11 @@ export {
 export {
   TurnRoutingError,
   type BranchResolution,
+  type CombatActionsApi,
   type CombatBranchInput,
   type CombatBranchResolution,
+  type CombatIntent,
+  type CombatOutcome,
   type CombatTurnApi,
   type InterpretIntentInput,
   type ResolveTurnDeps,

@@ -4,7 +4,7 @@ import { buildDefaultSettingsSnapshot } from '../../shared/settings/types.js'
 import { createSettingsRuntime } from './applySettings.js'
 import type { TextCompletionClientFactory } from './settingsPorts.js'
 
-describe('applySettings', () => {
+describe('applySettings hot-swap', () => {
   it('hot-swaps the active text completion client whenever settings change', async () => {
     const providers: string[] = []
     let disposed = 0
@@ -51,6 +51,35 @@ describe('applySettings', () => {
     expect(baseline.ok).toBe(true)
     expect(failed).toMatchObject({ ok: false, provider: 'claude', message: 'missing key' })
     expect(runtime.getActiveTextClient()).not.toBeNull()
+  })
+})
+
+describe('applySettings local provider', () => {
+  it('injects a local runtime adapter when the local provider is selected', async () => {
+    let sawLocalRuntime = false
+    const createTextClient: TextCompletionClientFactory = (options) => {
+      sawLocalRuntime = options.localRuntime !== undefined
+      return {
+        completeText: async () => ({ text: 'local ok', backend: 'cpu' }),
+        dispose: async () => undefined
+      }
+    }
+    const runtime = createSettingsRuntime({
+      createTextClient,
+      localEngine: {
+        completeText: async () => ({ text: 'local ok', backend: 'cpu' })
+      }
+    })
+    const snapshot = {
+      ...buildDefaultSettingsSnapshot(),
+      text: { ...buildDefaultSettingsSnapshot().text, provider: 'local' as const }
+    }
+
+    await expect(runtime.applySettings(snapshot)).resolves.toMatchObject({
+      ok: true,
+      provider: 'local'
+    })
+    expect(sawLocalRuntime).toBe(true)
   })
 })
 

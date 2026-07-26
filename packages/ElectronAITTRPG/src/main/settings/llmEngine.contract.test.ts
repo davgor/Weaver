@@ -11,6 +11,7 @@ import { snapshotToProviderSettings } from './providerSettings.js'
 describe('settings LLMEngine contract (067)', () => {
   it('maps settings into ProviderSettings consumed by createTextCompletionClient', providerSettingsContract)
   it('uses LLMEngine status APIs for local connection health checks', localStatusContract)
+  it('installs the pinned model through LLMEngine install with progress', localInstallContract)
 })
 
 async function providerSettingsContract(): Promise<void> {
@@ -33,15 +34,37 @@ async function providerSettingsContract(): Promise<void> {
 }
 
 async function localStatusContract(): Promise<void> {
-  const engine = createLlmEngine({
+  const engine = createContractEngine(new Set<string>())
+  expect(engine.health().ok).toBe(true)
+  expect(providerIds).toContain('player2')
+  await expect(engine.resolveBackend()).resolves.toBe('cpu')
+  await expect(engine.getStatus()).resolves.toMatchObject({ phase: 'not_installed' })
+}
+
+async function localInstallContract(): Promise<void> {
+  const existing = new Set<string>()
+  const engine = createContractEngine(existing)
+  const progress: Array<{ fraction: number | null }> = []
+
+  await expect(engine.getStatus()).resolves.toMatchObject({ phase: 'not_installed' })
+  const status = await engine.install((event) => progress.push(event))
+  expect(progress).toHaveLength(1)
+  expect(status).toMatchObject({ phase: 'ready', backend: 'cpu' })
+}
+
+function createContractEngine(existing: Set<string>) {
+  return createLlmEngine({
     dataDir: '/tmp/weaver-contract',
     files: {
-      exists: () => false,
+      exists: (path) => existing.has(path),
       ensureDir: () => undefined,
       join: (...parts) => parts.join('/')
     },
     downloader: {
-      download: async () => undefined
+      download: async (_url, destPath, onProgress) => {
+        onProgress({ phase: 'installing', bytesDownloaded: 100, bytesTotal: 200, fraction: 0.5 })
+        existing.add(destPath)
+      }
     },
     probe: {
       supportsVulkan: async () => false
@@ -51,11 +74,6 @@ async function localStatusContract(): Promise<void> {
       dispose: async () => undefined
     })
   })
-
-  expect(engine.health().ok).toBe(true)
-  expect(providerIds).toContain('player2')
-  await expect(engine.resolveBackend()).resolves.toBe('cpu')
-  await expect(engine.getStatus()).resolves.toMatchObject({ phase: 'not_installed' })
 }
 
 function openAiSnapshot() {

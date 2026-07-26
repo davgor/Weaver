@@ -1,4 +1,20 @@
-import type { EncounterState, SubmitCombatActionInput } from '@weaver/combat-engine'
+import type { AppliedEffect, UseActionInput, UseActionResult } from '@weaver/action-engine'
+import type {
+  ApplySurrenderInput,
+  ApplySurrenderResult,
+  AttemptFleeInput,
+  AttemptFleeResult,
+  EncounterState,
+  ExecuteCombatantInput,
+  OutcomeResolutionResult,
+  ResolveAttackInput,
+  ResolveAttackResult,
+  ResolveNonLethalInput,
+  StartAdHocEncounterInput,
+  StartEncounterInput,
+  SubmitCombatActionInput
+} from '@weaver/combat-engine'
+import type { LootDrop } from '@weaver/item-engine'
 import type { SceneBlock, SocialLine, TextCompleter } from '@weaver/narration-engine'
 import type { NarrationPeers } from '@weaver/narration-engine'
 import type {
@@ -9,6 +25,13 @@ import type {
   TravelDestinationLookup,
   TravelSuccess
 } from '../intents/types.js'
+import type {
+  CharacterProgressionApi,
+  CombatRewards,
+  EncounterIdFactory,
+  EncounterRewardRequest,
+  EncounterStartRequest
+} from '../encounterLoop/types.js'
 
 export type TurnChannel = 'play' | 'askDm'
 
@@ -49,10 +72,61 @@ export type BranchResolution =
   | CombatBranchResolution
   | NarrationIntentResult
 
+export type CombatOutcome =
+  | {
+      type: 'attack'
+      hit: boolean
+      totalDamage: number
+      critical: boolean
+      targetId: string
+      targetHp: { current: number; max: number } | null
+      conditions: readonly string[]
+    }
+  | {
+      type: 'flee'
+      success: boolean
+      roll: number
+      total: number
+      dc: number
+    }
+  | { type: 'surrender' }
+  | { type: 'nonLethal'; targetId: string; loot: readonly LootDrop[] }
+  | { type: 'execute'; targetId: string; loot: readonly LootDrop[] }
+  | {
+      type: 'action'
+      actionId: string
+      appliedEffects: readonly AppliedEffect[]
+      lockout: { actionTurns: number }
+    }
+  | { type: 'typed'; action: string }
+
 export type CombatBranchResolution = {
   kind: 'combat'
   encounter: EncounterState
+  outcome: CombatOutcome
+  rewards?: CombatRewards
 }
+
+export type CombatIntent =
+  | {
+      kind: 'attack'
+      targetId: string
+      weaponInstanceId: string
+      attackAbility: 'Body' | 'Agility' | 'Mind' | 'Presence'
+      proficient?: boolean
+      proficiencyBonus?: number
+    }
+  | { kind: 'flee'; dc?: number }
+  | { kind: 'surrender' }
+  | { kind: 'nonLethal'; targetId: string; lootSeed: string }
+  | { kind: 'execute'; targetId: string; lootSeed: string }
+  | {
+      kind: 'action'
+      actionId: string
+      targetIds: readonly string[]
+      distanceFeet: number
+      weaponReachFeet?: number
+    }
 
 export type TurnNarrationOutcome = {
   kind: 'scene' | 'social'
@@ -75,13 +149,28 @@ export type ResolveTurnInput = {
   destinationId?: string
   proposedDays?: number
   encounterId?: string
+  encounterStart?: EncounterStartRequest
+  encounterRewards?: EncounterRewardRequest
   combatAction?: string
+  combatIntent?: CombatIntent
   socialSpeakerId?: string
 }
 
 export type CombatTurnApi = {
   getEncounter: (encounterId: string) => EncounterState | undefined
+  startEncounter: (input: Omit<StartEncounterInput, 'store'>) => EncounterState
+  startAdHocEncounter: (input: Omit<StartAdHocEncounterInput, 'store'>) => EncounterState
+  resolveEncounter: (encounterId: string) => EncounterState
   submitCombatAction: (input: SubmitCombatActionInput) => EncounterState
+  resolveAttack: (input: Omit<ResolveAttackInput, 'store'>) => ResolveAttackResult
+  attemptFlee: (input: Omit<AttemptFleeInput, 'store'>) => AttemptFleeResult
+  applySurrender: (input: Omit<ApplySurrenderInput, 'store'>) => ApplySurrenderResult
+  resolveNonLethalVictory: (input: Omit<ResolveNonLethalInput, 'store'>) => OutcomeResolutionResult
+  executeHelplessCombatant: (input: Omit<ExecuteCombatantInput, 'store'>) => OutcomeResolutionResult
+}
+
+export type CombatActionsApi = {
+  useAction: (input: UseActionInput) => UseActionResult
 }
 
 export type TurnPersistRecord = {
@@ -99,6 +188,9 @@ export type ResolveTurnDeps = {
   destinations: TravelDestinationLookup
   narration: NarrationPeers
   combat: CombatTurnApi
+  actions?: CombatActionsApi
+  progression?: CharacterProgressionApi
+  createEncounterId?: EncounterIdFactory
   persist: (record: TurnPersistRecord) => void | Promise<void>
 }
 
@@ -138,6 +230,8 @@ export type CombatBranchInput = {
   encounterId?: string
   combatantId: string
   combatAction?: string
+  combatIntent?: CombatIntent
+  actions?: CombatActionsApi
 }
 
 export type NarrationFacts = {

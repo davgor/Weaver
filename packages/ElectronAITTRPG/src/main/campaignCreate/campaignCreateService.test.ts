@@ -21,6 +21,19 @@ describe('campaignCreateService generation', () => {
     expect(snapshot.factions).toHaveLength(1)
     expect(snapshot.worldSummary).toContain('forest')
   })
+
+  it('persists the chosen campaign death mode after generation succeeds', async () => {
+    const calls: Array<{ campaignId: string; mode: CampaignCreateDraft['deathMode'] }> = []
+    const service = createTestService({
+      setCampaignDeathMode: (campaignId, mode) => {
+        calls.push({ campaignId, mode })
+      }
+    })
+
+    await service.startGeneration({ ...validDraft(), deathMode: 'legendary' })
+
+    expect(calls).toEqual([{ campaignId: 'campaign-test-1', mode: 'legendary' }])
+  })
 })
 
 describe('campaignCreateService review edits', () => {
@@ -107,7 +120,8 @@ describe('campaignCreateService gates', () => {
         dataRoot: `/tmp/${campaignId}/data`,
         campaignFilePath: `/tmp/${campaignId}/campaign.sqlite`
       }),
-      createCampaignId: () => 'campaign-fail'
+      createCampaignId: () => 'campaign-fail',
+      setCampaignDeathMode: () => undefined
     })
     const snapshot = await service.startGeneration(validDraft())
     expect(snapshot.status).toBe('error')
@@ -186,7 +200,9 @@ describe('campaignCreateService regenerate', () => {
   })
 })
 
-function createTestService(): CampaignCreateService {
+function createTestService(
+  overrides: Partial<CampaignCreateGenerationPort> = {}
+): CampaignCreateService {
   const port: CampaignCreateGenerationPort = {
     generate: async (input) => {
       const variant = input.seed?.includes('regen') ? 'alt' : 'default'
@@ -196,7 +212,9 @@ function createTestService(): CampaignCreateService {
       dataRoot: `/tmp/${campaignId}/data`,
       campaignFilePath: `/tmp/${campaignId}/campaign.sqlite`
     }),
-    createCampaignId: () => 'campaign-test-1'
+    createCampaignId: () => 'campaign-test-1',
+    setCampaignDeathMode: () => undefined,
+    ...overrides
   }
   return createCampaignCreateService(port)
 }

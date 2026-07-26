@@ -1,6 +1,7 @@
 import type { SceneBlock, SocialLine } from '@weaver/narration-engine'
 import type {
   CombatChromeSnapshot,
+  PlayDeathOutcome,
   SubmitPlayActionSuccess
 } from '../../../shared/play/types'
 
@@ -10,6 +11,7 @@ export type PlayTurnUiState = {
   combat: CombatChromeSnapshot
   draftText: string
   turnError: string | null
+  deathOutcome: PlayDeathOutcome | null
   busy: boolean
 }
 
@@ -27,6 +29,7 @@ export function createPlayTurnUiState(): PlayTurnUiState {
     combat: { active: false },
     draftText: '',
     turnError: null,
+    deathOutcome: null,
     busy: false
   }
 }
@@ -68,6 +71,7 @@ function applySuccess(
     turnError: null,
     scene: [...result.scene],
     social: [...result.social],
-    combat: result.combat
+    combat: result.combat,
+    deathOutcome: result.death
   }
 }

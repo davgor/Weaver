@@ -114,3 +114,47 @@
   color: var(--color-error);
   background: var(--color-error-bg);
 }
+
+.settings-intro-overlay {
+  z-index: 240;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.settings-intro-panel {
+  width: min(520px, 100%);
+  padding: 1.25rem;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.settings-intro-panel h1 {
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.settings-intro-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.settings-install-progress {
+  position: relative;
+  height: 0.55rem;
+  border-radius: 999px;
+  background: var(--border-subtle);
+  overflow: hidden;
+}
+
+.settings-install-progress-bar {
+  height: 100%;
+  background: rgba(94, 174, 120, 0.85);
+  transition: width 120ms linear;
+}
+
+.settings-install-progress .settings-help {
+  display: block;
+  margin-top: 0.35rem;
+}

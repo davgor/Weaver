@@ -1,7 +1,13 @@
 import { ipcMain } from 'electron'
+import {
+  getCharacterProgression,
+  getCharacterStats,
+  recordAutosaveSnapshot,
+  resolveCharacterDeath
+} from '@weaver/character-engine'
 import { createCurrencyService, clampProposedPrice } from '@weaver/item-engine'
-import { createMemoryEncounterStore, getEncounter, submitCombatAction } from '@weaver/combat-engine'
-import { askTheDm, resolveTurn, type ResolveTurnDeps } from '@weaver/dm-engine'
+import { createMemoryEncounterStore } from '@weaver/combat-engine'
+import { askTheDm, createStoreCombatTurnApi, resolveTurn, type ResolveTurnDeps } from '@weaver/dm-engine'
 import { fillAndValidate, type TextCompleter } from '@weaver/narration-engine'
 import type { AskDmRequest, SubmitPlayActionRequest } from '../../shared/play/types.js'
 import { createAskDmService, type AskDmService } from './askDmService.js'
@@ -18,7 +24,13 @@ function createLivePlayHandlerDeps(): PlayHandlerDeps {
     turnService: createTurnService({
       resolveTurn,
       deps: turnDeps,
-      getEncounter: (encounterId) => turnDeps.combat.getEncounter(encounterId)
+      getEncounter: (encounterId) => turnDeps.combat.getEncounter(encounterId),
+      character: {
+        getCharacterStats,
+        getCharacterProgression,
+        recordAutosaveSnapshot,
+        resolveCharacterDeath
+      }
     }),
     askDmService: createAskDmService({
       askTheDm,
@@ -55,10 +67,7 @@ function createLiveResolveTurnDeps(): ResolveTurnDeps {
       items: { hasItem: () => true },
       locations: { isKnownLocation: () => true }
     },
-    combat: {
-      getEncounter: (encounterId) => getEncounter({ encounterId, store }),
-      submitCombatAction: (input) => submitCombatAction({ ...input, store })
-    },
+    combat: createStoreCombatTurnApi(store),
     persist: () => undefined
   }
 }

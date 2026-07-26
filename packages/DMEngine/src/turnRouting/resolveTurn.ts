@@ -1,9 +1,9 @@
 import { lockTurn } from './lockTurn.js'
 import { interpretIntentAndRoute } from './interpretIntentAndRoute.js'
 import { resolveCommerceBranch } from './branches/commerce.js'
-import { resolveCombatBranch } from './branches/combat.js'
 import { narrateTurnOutcome, resolveNarrationBranch } from './branches/narration.js'
 import { resolveTravelBranch } from './branches/travel.js'
+import { resolveEncounterLoop } from '../encounterLoop/encounterLoop.js'
 import {
   TurnRoutingError,
   type BranchResolution,
@@ -111,7 +111,18 @@ function resolveBranch(
     return resolveTravelBranch(buildTravelInput(input, deps, plan))
   }
   if (plan.route === 'combat') {
-    return resolveCombatBranch(buildCombatInput(input, deps))
+    return resolveEncounterLoop({
+      branch: buildCombatInput(input, deps),
+      context: {
+        campaignId: input.campaignId,
+        characterId: input.characterId,
+        text: input.text
+      },
+      ...(input.encounterStart === undefined ? {} : { encounterStart: input.encounterStart }),
+      ...(input.encounterRewards === undefined ? {} : { rewards: input.encounterRewards }),
+      ...(deps.progression === undefined ? {} : { progression: deps.progression }),
+      ...(deps.createEncounterId === undefined ? {} : { createEncounterId: deps.createEncounterId })
+    })
   }
   return resolveNarrationBranch(input.text)
 }
@@ -165,6 +176,12 @@ function buildCombatInput(input: ResolveTurnInput, deps: ResolveTurnDeps): Comba
   }
   if (input.combatAction !== undefined) {
     branch.combatAction = input.combatAction
+  }
+  if (input.combatIntent !== undefined) {
+    branch.combatIntent = input.combatIntent
+  }
+  if (deps.actions !== undefined) {
+    branch.actions = deps.actions
   }
   return branch
 }

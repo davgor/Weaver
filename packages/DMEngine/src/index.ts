@@ -151,10 +151,42 @@ export type {
   ResolvedPlaceProposal
 } from './playPopulation/index.js'
 
+// Inactive PC proxy in play (epic 100).
+export {
+  InactiveProxyError,
+  requestInactivePcProxyTurn
+} from './inactiveProxy/index.js'
+export type {
+  InactivePcProxyTurnResult,
+  InactiveProxyCharacterApi,
+  InactiveProxyErrorCode,
+  RequestInactivePcProxyTurnDeps,
+  RequestInactivePcProxyTurnInput,
+  ResolveTurnFn
+} from './inactiveProxy/index.js'
+
+// Encounter start/rewards orchestration (epic 096).
+export {
+  finalizeCombatResolution,
+  resolveEncounterLoop,
+  startEncounterForTurn
+} from './encounterLoop/index.js'
+export type {
+  CharacterProgressionApi,
+  CombatLevelUpSummary,
+  CombatRewards,
+  EncounterIdContext,
+  EncounterIdFactory,
+  EncounterRewardRequest,
+  EncounterStartRequest
+} from './encounterLoop/index.js'
+
 // Turn routing (epic 053).
 export {
   TurnRoutingError,
   buildTurnNarrationPrompt,
+  createStoreCombatTurnApi,
+  withCombatResolutionStubs,
   heuristicRoute,
   interpretIntentAndRoute,
   lockTurn,
@@ -167,7 +199,10 @@ export {
 } from './turnRouting/index.js'
 export type {
   BranchResolution,
+  CombatActionsApi,
   CombatBranchResolution,
+  CombatIntent,
+  CombatOutcome,
   CombatTurnApi,
   InterpretIntentInput,
   ResolveTurnDeps,
