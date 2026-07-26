@@ -9,6 +9,9 @@ import { OVERLAY_KEYS } from '../overlayContract.js'
 import { createWorldOverlayAdapter } from '../store/worldOverlayAdapter.js'
 
 const roots: string[] = []
+/** Windows CI SQLite world+region fill often exceeds Vitest's 5s default. */
+const SLOW_MS = 20_000
+const SMALL_BOUNDS = { minX: 0, minY: 0, maxX: 5, maxY: 5 }
 
 function tempRoot(): string {
   const root = mkdtempSync(join(tmpdir(), 'weaver-civ-contract-'))
@@ -24,56 +27,72 @@ afterEach(() => {
 })
 
 describe('CivilizationEngine -> RegionalEngine contract', () => {
-  it('reads region summary/cells via published RegionalEngine APIs for placement', () => {
-    const dataRoot = tempRoot()
-    const world = createWorldService(dataRoot)
-    const regional = createRegionalService({ dataRoot, world })
-    world.createWorld({
-      worldId: 'contract-world',
-      seed: 321,
-      bounds: { minX: 0, minY: 0, maxX: 11, maxY: 11 }
-    })
-    const regions = regional.fillRegions('contract-world')
-    const land = regions.find((region) => !region.isOcean)
-    if (!land) throw new Error('expected land region')
-    const summary = regional.getRegionSummary('contract-world', land.regionId)
-    const cells = regional.getRegionCells('contract-world', land.regionId)
-    expect(summary?.regionId).toBe(land.regionId)
-    expect(cells.length).toBe(land.cellCount)
+  it(
+    'reads region summary/cells via published RegionalEngine APIs for placement',
+    () => {
+      const dataRoot = tempRoot()
+      const world = createWorldService(dataRoot)
+      const regional = createRegionalService({ dataRoot, world })
+      world.createWorld({
+        worldId: 'contract-world',
+        seed: 321,
+        bounds: SMALL_BOUNDS
+      })
+      const regions = regional.fillRegions('contract-world')
+      const land = regions.find((region) => !region.isOcean)
+      if (!land) throw new Error('expected land region')
+      const summary = regional.getRegionSummary('contract-world', land.regionId)
+      const cells = regional.getRegionCells('contract-world', land.regionId)
+      expect(summary?.regionId).toBe(land.regionId)
+      expect(cells.length).toBe(land.cellCount)
 
-    const civ = createCivilizationService({ dataRoot, regional, world })
-    const candidates = civ.proposeCivilizations('contract-world', land.regionId, { maxCount: 1 })
-    expect(candidates.length).toBeGreaterThan(0)
-    expect(candidates[0]?.regionId).toBe(land.regionId)
-  })
+      const civ = createCivilizationService({ dataRoot, regional, world })
+      const candidates = civ.proposeCivilizations('contract-world', land.regionId, {
+        maxCount: 1
+      })
+      expect(candidates.length).toBeGreaterThan(0)
+      expect(candidates[0]?.regionId).toBe(land.regionId)
+    },
+    SLOW_MS
+  )
 })
 
 describe('CivilizationEngine -> WorldEngine contract', () => {
-  it('uses WorldEngine seed/meta and writes SparseOverlay rows into world.sqlite', () => {
-    const dataRoot = tempRoot()
-    const world = createWorldService(dataRoot)
-    const regional = createRegionalService({ dataRoot, world })
-    const { meta } = world.createWorld({
-      worldId: 'overlay-world',
-      seed: 654,
-      bounds: { minX: 0, minY: 0, maxX: 11, maxY: 11 }
-    })
-    expect(world.getWorldMeta('overlay-world').seed).toBe(meta.seed)
-    const regions = regional.fillRegions('overlay-world')
-    const land = regions.find((region) => !region.isOcean)
-    if (!land) throw new Error('expected land region')
-    const civ = createCivilizationService({ dataRoot, regional, world })
-    const created = civ.fillCivilizations('overlay-world', { regionId: land.regionId })
-    expect(created.length).toBeGreaterThan(0)
-    const settlement = created[0]
-    if (!settlement) throw new Error('expected settlement')
-    const overlays = createWorldOverlayAdapter(dataRoot).listOverlaysAt(
-      'overlay-world',
-      settlement.origin.x,
-      settlement.origin.y
-    )
-    expect(overlays.some((row) => row.key === OVERLAY_KEYS.civilizationId)).toBe(true)
-    expect(overlays.some((row) => row.key === OVERLAY_KEYS.landUse)).toBe(true)
-    expect(world.getCell({ worldId: 'overlay-world', x: settlement.origin.x, y: settlement.origin.y })).toBeTruthy()
-  })
+  it(
+    'uses WorldEngine seed/meta and writes SparseOverlay rows into world.sqlite',
+    () => {
+      const dataRoot = tempRoot()
+      const world = createWorldService(dataRoot)
+      const regional = createRegionalService({ dataRoot, world })
+      const { meta } = world.createWorld({
+        worldId: 'overlay-world',
+        seed: 654,
+        bounds: SMALL_BOUNDS
+      })
+      expect(world.getWorldMeta('overlay-world').seed).toBe(meta.seed)
+      const regions = regional.fillRegions('overlay-world')
+      const land = regions.find((region) => !region.isOcean)
+      if (!land) throw new Error('expected land region')
+      const civ = createCivilizationService({ dataRoot, regional, world })
+      const created = civ.fillCivilizations('overlay-world', { regionId: land.regionId })
+      expect(created.length).toBeGreaterThan(0)
+      const settlement = created[0]
+      if (!settlement) throw new Error('expected settlement')
+      const overlays = createWorldOverlayAdapter(dataRoot).listOverlaysAt(
+        'overlay-world',
+        settlement.origin.x,
+        settlement.origin.y
+      )
+      expect(overlays.some((row) => row.key === OVERLAY_KEYS.civilizationId)).toBe(true)
+      expect(overlays.some((row) => row.key === OVERLAY_KEYS.landUse)).toBe(true)
+      expect(
+        world.getCell({
+          worldId: 'overlay-world',
+          x: settlement.origin.x,
+          y: settlement.origin.y
+        })
+      ).toBeTruthy()
+    },
+    SLOW_MS
+  )
 })

@@ -2,6 +2,8 @@ import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
+
+const SLOW_MS = 20_000
 import { createWorldService } from '@weaver/world-engine'
 import { createRegionalService } from '@weaver/regional-engine'
 import { createCivilizationService } from './civilizationService.js'
@@ -47,7 +49,7 @@ describe('ProposeCivilizations', () => {
     expect(candidates.length).toBeGreaterThan(0)
     expect(service.countCivilizations(worldId)).toBe(before)
     expect(candidates.every((c) => c.overlays.length > 0)).toBe(true)
-  })
+  }, SLOW_MS)
 
   it('uses a seeded city density field deterministically', () => {
     // Single boot: Windows CI cannot afford two full world+region fills under 5s.
@@ -76,7 +78,7 @@ describe('ProposeCivilizations', () => {
     }
     expect(a).toEqual(b)
     expect(a[0]?.overlays.some((o) => o.density !== undefined)).toBe(true)
-  })
+  }, SLOW_MS)
 })
 
 describe('CreateCivilization', () => {
@@ -109,7 +111,7 @@ describe('CreateCivilization', () => {
         cell.y
       )?.civilizationId
     ).toBe(created.civilizationId)
-  })
+  }, SLOW_MS)
 })
 
 describe('FillCivilizations', () => {
@@ -134,7 +136,7 @@ describe('FillCivilizations', () => {
     const again = service.fillCivilizations('w1', { expansionId: expansion.expansionId })
     expect(first.length + second.length).toBeGreaterThan(0)
     expect(again).toEqual([])
-  })
+  }, SLOW_MS)
 })
 
 describe('Population and NPC placeholders', () => {
@@ -169,7 +171,7 @@ describe('Population and NPC placeholders', () => {
     expect(service.reconcilePopulation(worldId).population).toBe(
       service.getPopulation(worldId).population
     )
-  })
+  }, SLOW_MS)
 })
 
 describe('Query and lifecycle', () => {
@@ -200,7 +202,7 @@ describe('Query and lifecycle', () => {
         width: civ.bounds.maxY - civ.bounds.minY + 1
       }).length
     ).toBeGreaterThan(0)
-  })
+  }, SLOW_MS)
 
   it('supports delete and clear lifecycle', () => {
     const { service, worldId, regionId } = boot(23)
@@ -211,7 +213,7 @@ describe('Query and lifecycle', () => {
     expect(service.getCivilization(worldId, civ.civilizationId)).toBeNull()
     service.clearCivilizations(worldId)
     expect(service.countCivilizations(worldId)).toBe(0)
-  })
+  }, SLOW_MS)
 })
 
 describe('kindRules fixture typing', () => {
@@ -235,5 +237,5 @@ describe('kindRules fixture typing', () => {
       extraStats: {}
     }
     expect(fixture.cellCount).toBe(4)
-  })
+  }, SLOW_MS)
 })
