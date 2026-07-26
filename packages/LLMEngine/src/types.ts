@@ -1,4 +1,4 @@
-import type { LlmBackend } from './backend.js'
+import type { LlmBackend, LocalLlmBackend } from './backend.js'
 import type { ModelSpec } from './modelCatalog.js'
 
 export type InstallPhase = 'not_installed' | 'installing' | 'ready' | 'error'
@@ -61,14 +61,16 @@ export type Downloader = {
   ) => Promise<void>
 }
 
-export type LlmRuntime = {
+export type ProviderAdapter = {
   completeText: (request: TextRequest) => Promise<TextResponse>
   dispose: () => Promise<void>
 }
 
+export type LlmRuntime = ProviderAdapter
+
 export type CreateRuntime = (options: {
   modelPath: string
-  backend: LlmBackend
+  backend: LocalLlmBackend
 }) => Promise<LlmRuntime>
 
 export type EngineEndpoint = {

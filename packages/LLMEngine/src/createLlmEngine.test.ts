@@ -27,7 +27,7 @@ describe('createLlmEngine — completeText contract', () => {
     }>()
     expectTypeOf<TextResponse>().toEqualTypeOf<{
       text: string
-      backend: 'vulkan' | 'cpu'
+      backend: 'vulkan' | 'cpu' | 'claude' | 'openai' | 'gemini' | 'grok' | 'player2'
     }>()
   })
 })
