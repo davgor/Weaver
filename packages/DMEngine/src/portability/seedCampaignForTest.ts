@@ -100,7 +100,13 @@ function seedNpc(campaignId: string, worldId: string): void {
       assignedNpcId: 'npc-guide'
     },
     identity: {
-      race: { raceId: 'human', name: 'Human' },
+      race: {
+        campaignId,
+        characterId: 'npc-guide',
+        raceId: 'human',
+        name: 'Human',
+        lore: 'Common folk of the roads.'
+      },
       alignment: 'neutral',
       temperament: 'helpful',
       nonSpeaking: false
