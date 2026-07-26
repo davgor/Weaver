@@ -12,17 +12,21 @@ export type SettingsStore = {
   get: () => SettingsSnapshot
   replace: (snapshot: SettingsSnapshot) => Promise<SettingsSnapshot>
   update: (request: UpdateSettingsRequest) => Promise<SettingsSnapshot>
+  isIntroDismissed: () => boolean
+  dismissIntro: () => Promise<void>
 }
 
 type SettingsStoreOptions = {
   initialSnapshot?: SettingsSnapshot
+  introDismissed?: boolean
   write?: (snapshot: SettingsSnapshot) => Promise<void> | void
   now?: () => Date
 }
 
 export function createSettingsStore(options: SettingsStoreOptions = {}): SettingsStore {
   const state = {
-    snapshot: options.initialSnapshot ?? buildDefaultSettingsSnapshot(options.now?.())
+    snapshot: options.initialSnapshot ?? buildDefaultSettingsSnapshot(options.now?.()),
+    introDismissed: options.introDismissed ?? false
   }
   const now = options.now ?? (() => new Date())
   const write = options.write ?? (() => undefined)
@@ -37,6 +41,10 @@ export function createSettingsStore(options: SettingsStoreOptions = {}): Setting
       state.snapshot = applySettingsUpdate(state.snapshot, request, now())
       await write(state.snapshot)
       return state.snapshot
+    },
+    isIntroDismissed: () => state.introDismissed,
+    dismissIntro: async () => {
+      state.introDismissed = true
     }
   }
 }
@@ -80,6 +88,7 @@ function mergeModelSelections(
   updates: UpdateSettingsRequest['providerModels']
 ): Record<TextProviderId, ProviderModelSelection> {
   return {
+    local: mergeModelSelection('local', current.local, updates?.local),
     claude: mergeModelSelection('claude', current.claude, updates?.claude),
     openai: mergeModelSelection('openai', current.openai, updates?.openai),
     gemini: mergeModelSelection('gemini', current.gemini, updates?.gemini),
@@ -108,6 +117,7 @@ function mergeCredentials(
   updates: UpdateSettingsRequest['providerCredentials']
 ): Record<TextProviderId, ProviderCredentialSettings> {
   return {
+    local: mergeCredential(current.local, updates?.local),
     claude: mergeCredential(current.claude, updates?.claude),
     openai: mergeCredential(current.openai, updates?.openai),
     gemini: mergeCredential(current.gemini, updates?.gemini),
@@ -127,7 +137,7 @@ function mergeCredential(
 }
 
 function assertSupportedTextProvider(provider: TextProviderId): void {
-  if (!['claude', 'openai', 'gemini', 'grok', 'player2'].includes(provider)) {
+  if (!['local', 'claude', 'openai', 'gemini', 'grok', 'player2'].includes(provider)) {
     throw new Error(`Unsupported text provider: ${provider}`)
   }
 }

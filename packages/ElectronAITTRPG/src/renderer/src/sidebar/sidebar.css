@@ -69,3 +69,33 @@
 .sidebar-footer button {
   width: 100%;
 }
+
+.sidebar-footer-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.sidebar-footer-actions button {
+  width: 100%;
+  font-size: 11px;
+  padding: 0.35rem 0.4rem;
+}
+
+.sidebar-campaign-button-selected {
+  background: var(--surface-sidebar-hover);
+  box-shadow: inset 0 0 0 1px var(--border-medium);
+}
+
+.sidebar-status {
+  margin: 0;
+  padding: 0 10px 8px;
+  color: var(--text-dim);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.sidebar-import-input {
+  display: none;
+}

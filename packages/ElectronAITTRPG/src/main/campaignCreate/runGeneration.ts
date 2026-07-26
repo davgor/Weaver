@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { join } from 'node:path'
-import { setCampaignRaceRoster } from '@weaver/character-engine'
+import { setCampaignDeathMode, setCampaignRaceRoster } from '@weaver/character-engine'
 import {
   civilizationEngine,
   clearNpcPlaceholderStore,
@@ -53,7 +53,8 @@ export function createLiveGenerationPort(
   return {
     generate: (input) => invokeRunCampaignGeneration(input, deps),
     resolvePaths: (campaignId) => resolveCampaignPaths(campaignsRoot, campaignId),
-    createCampaignId: () => `campaign-${randomUUID()}`
+    createCampaignId: () => `campaign-${randomUUID()}`,
+    setCampaignDeathMode
   }
 }
 

@@ -133,10 +133,12 @@ describe('checkSettingsConnection local provider failures', () => {
 })
 
 function localLlm(phase: LlmStatus['phase'], backend: 'vulkan' | 'cpu'): LocalLlmStatusPort {
+  const status = statusFor(phase, backend)
   return {
     health: () => ({ ok: true, package: '@weaver/llm-engine', version: '0.1.0' }),
-    getStatus: async () => statusFor(phase, backend),
-    resolveBackend: async () => backend
+    getStatus: async () => status,
+    resolveBackend: async () => backend,
+    install: async () => status
   }
 }
 

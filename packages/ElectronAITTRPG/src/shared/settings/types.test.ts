@@ -12,6 +12,7 @@ import {
 describe('settings metadata', () => {
   it('exposes curated text, image, and embedding choices for the settings UI', () => {
     expect(textProviderOptions.map((option) => option.id)).toEqual([
+      'local',
       'claude',
       'openai',
       'gemini',
@@ -23,6 +24,7 @@ describe('settings metadata', () => {
     expect(curatedModelIds('gemini')).toContain('gemini-1.5-flash')
     expect(curatedModelIds('grok')).toContain('grok-3-latest')
     expect(curatedModelIds('player2')).toEqual(['player2'])
+    expect(curatedModelIds('local')).toEqual(['qwen2.5-7b-instruct-q4_k_m'])
     expect(imageProviderOptions.map((option) => option.id)).toEqual(['cloud', 'player2', 'local'])
     expect(embedderModeOptions.map((option) => option.id)).toEqual([
       'lexical',

@@ -1,7 +1,12 @@
 import type { ProviderId } from '@weaver/llm-engine'
 import type { EmbedderMode, ImageProviderId } from '@weaver/narration-engine'
+import type { LocalModelInstallProgress, LocalModelStatus } from './localModelTypes.js'
+import type { SettingsIntroApi } from './settingsIntroTypes.js'
 
-export type TextProviderId = Exclude<ProviderId, 'local'>
+export type { LocalModelInstallProgress, LocalModelStatus, SettingsIntroApi }
+export type { SettingsIntroSnapshot } from './settingsIntroTypes.js'
+
+export type TextProviderId = ProviderId
 
 type SettingsOption<T extends string> = {
   id: T
@@ -80,9 +85,15 @@ export type SettingsApi = {
   get: () => Promise<SettingsSnapshot>
   update: (request: UpdateSettingsRequest) => Promise<SettingsUpdateResponse>
   checkConnection: (request?: CheckConnectionRequest) => Promise<SettingsConnectionResult>
+  getLocalModelStatus: () => Promise<LocalModelStatus | null>
+  installLocalModel: () => Promise<LocalModelStatus>
+  onLocalModelInstallProgress: (
+    listener: (progress: LocalModelInstallProgress) => void
+  ) => () => void
 }
 
 export const textProviderOptions: readonly SettingsOption<TextProviderId>[] = [
+  option('local', 'Local Qwen', 'Offline Qwen2.5 7B Instruct after model install.'),
   option('claude', 'Claude', 'Anthropic Claude with curated Sonnet defaults.'),
   option('openai', 'OpenAI', 'OpenAI chat-completions compatible models.'),
   option('gemini', 'Gemini', 'Google Gemini generation models.'),
@@ -104,6 +115,7 @@ export const embedderModeOptions: readonly SettingsOption<EmbedderMode>[] = [
 ] as const
 
 const curatedModels: Record<TextProviderId, readonly string[]> = {
+  local: ['qwen2.5-7b-instruct-q4_k_m'],
   claude: ['claude-3-5-sonnet-latest', 'claude-3-5-haiku-latest'],
   openai: ['gpt-4o-mini', 'gpt-4o'],
   gemini: ['gemini-1.5-flash', 'gemini-1.5-pro'],
@@ -161,6 +173,7 @@ function option<T extends string>(id: T, label: string, description: string): Se
 
 function defaultModelSelections(): Record<TextProviderId, ProviderModelSelection> {
   return {
+    local: modelSelection('local'),
     claude: modelSelection('claude'),
     openai: modelSelection('openai'),
     gemini: modelSelection('gemini'),
@@ -179,6 +192,7 @@ function modelSelection(provider: TextProviderId): ProviderModelSelection {
 function defaultCredentials(): Record<TextProviderId, ProviderCredentialSettings> {
   const empty = { apiKey: '', baseUrl: '' }
   return {
+    local: { ...empty },
     claude: { ...empty },
     openai: { ...empty },
     gemini: { ...empty },

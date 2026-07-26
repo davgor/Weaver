@@ -4,6 +4,7 @@ import type {
   AskDmHistoryEntry,
   CombatChromeSnapshot,
   D20RollFeedback,
+  PlayDeathOutcome,
   PlayContext,
   SubmitPlayActionResult
 } from '../../../shared/play/types'
@@ -49,6 +50,7 @@ export function PlayViewScreen(props: PlayViewScreenProps): JSX.Element {
     <main className="main-panel play-view">
       <CombatChrome combat={ui.combat} />
       <TurnFailureBanner message={ui.turnError} onDismiss={() => setUi((c) => reducePlayTurnUi(c, { type: 'clear-error' }))} />
+      <DeathOutcomeBanner outcome={ui.deathOutcome} />
       <section className="play-view-columns">
         <SceneColumn scene={ui.scene} />
         <SocialColumn social={ui.social} streamingText={streamingText} glowIds={glowIds} />
@@ -104,6 +106,36 @@ function TurnFailureBanner(props: {
       </button>
     </aside>
   )
+}
+
+function DeathOutcomeBanner(props: { outcome: PlayDeathOutcome | null }): JSX.Element | null {
+  if (props.outcome === null) return null
+  const copy = deathOutcomeCopy(props.outcome)
+  return (
+    <aside className="play-death-outcome" role="status">
+      <h2>{copy.title}</h2>
+      <p>{copy.body}</p>
+    </aside>
+  )
+}
+
+function deathOutcomeCopy(outcome: PlayDeathOutcome): { title: string; body: string } {
+  if (outcome.status === 'dead') {
+    return {
+      title: outcome.mode === 'legendary' ? 'Legendary death recorded' : 'Final death recorded',
+      body: outcome.obituary
+    }
+  }
+  if (outcome.mode === 'standard') {
+    return {
+      title: 'Standard restore applied',
+      body: 'You were restored from the latest autosave snapshot.'
+    }
+  }
+  return {
+    title: 'Respawn complete',
+    body: `You return at ${outcome.respawn.relocatedTo}; cost paid: ${outcome.respawn.costPaid}.`
+  }
 }
 
 function SceneColumn(props: { scene: SceneBlock[] }): JSX.Element {

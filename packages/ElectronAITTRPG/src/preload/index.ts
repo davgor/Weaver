@@ -32,11 +32,19 @@ import type {
   UpdateReviewFieldRequest
 } from '../shared/gameApi.js'
 import type {
+  DeleteCampaignRequest,
+  ExportCampaignRequest,
+  ImportCampaignRequest
+} from '../shared/campaigns/types.js'
+import type {
   LoadNpcDossierRequest,
   NpcDossierSnapshot,
   NpcRelationshipSnapshot
 } from '../shared/npcDossier/types.js'
 import type { SettingsApi } from '../shared/settings/types.js'
+import type { SettingsIntroApi } from '../shared/settings/settingsIntroTypes.js'
+import { LOCAL_MODEL_INSTALL_EVENT_CHANNEL } from '../shared/settings/localModelTypes.js'
+import type { LocalModelInstallProgress } from '../shared/settings/localModelTypes.js'
 
 const api: GameApi = {
   windowControls: {
@@ -49,7 +57,10 @@ const api: GameApi = {
   },
   campaigns: {
     list: (): Promise<CampaignSummary[]> => ipcRenderer.invoke('campaigns:list'),
-    open: (request: OpenCampaignRequest) => ipcRenderer.invoke('campaigns:open', request)
+    open: (request: OpenCampaignRequest) => ipcRenderer.invoke('campaigns:open', request),
+    export: (request: ExportCampaignRequest) => ipcRenderer.invoke('campaigns:export', request),
+    import: (request: ImportCampaignRequest) => ipcRenderer.invoke('campaigns:import', request),
+    delete: (request: DeleteCampaignRequest) => ipcRenderer.invoke('campaigns:delete', request)
   },
   campaignCreate: {
     startGeneration: (draft: CampaignCreateDraft) =>
@@ -123,7 +134,24 @@ const api: GameApi = {
     checkConnection: (
       request?: Parameters<SettingsApi['checkConnection']>[0]
     ): ReturnType<SettingsApi['checkConnection']> =>
-      ipcRenderer.invoke('settings:checkConnection', request)
+      ipcRenderer.invoke('settings:checkConnection', request),
+    getLocalModelStatus: (): ReturnType<SettingsApi['getLocalModelStatus']> =>
+      ipcRenderer.invoke('settings:getLocalModelStatus'),
+    installLocalModel: (): ReturnType<SettingsApi['installLocalModel']> =>
+      ipcRenderer.invoke('settings:installLocalModel'),
+    onLocalModelInstallProgress: (
+      listener: (progress: LocalModelInstallProgress) => void
+    ): (() => void) => {
+      const handler = (_event: IpcRendererEvent, payload: LocalModelInstallProgress): void => {
+        listener(payload)
+      }
+      ipcRenderer.on(LOCAL_MODEL_INSTALL_EVENT_CHANNEL, handler)
+      return () => ipcRenderer.removeListener(LOCAL_MODEL_INSTALL_EVENT_CHANNEL, handler)
+    }
+  },
+  settingsIntro: {
+    get: (): ReturnType<SettingsIntroApi['get']> => ipcRenderer.invoke('settingsIntro:get'),
+    dismiss: (): ReturnType<SettingsIntroApi['dismiss']> => ipcRenderer.invoke('settingsIntro:dismiss')
   },
   app: {
     getVersion: (): Promise<string> => ipcRenderer.invoke('app:getVersion')

@@ -7,7 +7,7 @@ import {
   reducePlayTurnUi
 } from './playTurnState'
 
-describe('playTurnState', () => {
+describe('playTurnState submit failures', () => {
   it('keeps the draft text when a turn fails so the player can retry the same input', () => {
     const state = createPlayTurnUiState()
     const submitting = reducePlayTurnUi(state, { type: 'submit-started', text: 'open the door' })
@@ -24,7 +24,9 @@ describe('playTurnState', () => {
     expect(failed.scene).toEqual([])
     expect(failed.social).toEqual([])
   })
+})
 
+describe('playTurnState successful turns', () => {
   it('applies projections only after a successful turn and clears the draft', () => {
     const state = reducePlayTurnUi(createPlayTurnUiState(), {
       type: 'submit-started',
@@ -38,8 +40,34 @@ describe('playTurnState', () => {
     expect(next.turnError).toBeNull()
     expect(next.scene).toEqual(success.scene)
     expect(next.social).toEqual(success.social)
+    expect(next.deathOutcome).toBeNull()
     expect(nextSessionDraftAfterOutcome('look around', 'success')).toBe('')
     expect(nextSessionDraftAfterOutcome('look around', 'failure')).toBe('look around')
+  })
+})
+
+describe('playTurnState death outcomes', () => {
+  it('stores death outcomes so the play surface can distinguish mode copy', () => {
+    const next = applyPlayTurnOutcome(createPlayTurnUiState(), {
+      ...successResult(),
+      death: {
+        mode: 'respawn',
+        status: 'alive',
+        respawn: {
+          relocatedTo: 'The Lantern Shrine',
+          costPaid: 5,
+          respawnsUsed: 1,
+          respawnsRemaining: 2,
+          goldRemaining: 15
+        }
+      }
+    })
+
+    expect(next.deathOutcome).toMatchObject({
+      mode: 'respawn',
+      status: 'alive',
+      respawn: { relocatedTo: 'The Lantern Shrine' }
+    })
   })
 })
 
@@ -49,6 +77,7 @@ function successResult(): SubmitPlayActionSuccess {
     scene: [{ id: 'scene-1', text: 'The door opens.', at: 1 }],
     social: [{ id: 'social-1', kind: 'npc', speakerId: 'mira', text: 'This way.', at: 2 }],
     combat: { active: false },
-    roll: { visible: true, label: 'narration check', roll: 12 }
+    roll: { visible: true, label: 'narration check', roll: 12 },
+    death: null
   }
 }

@@ -12,6 +12,7 @@ import { PlayErrorBoundary } from './playView/PlayErrorBoundary'
 import { PlayViewScreen } from './playView/PlayViewScreen'
 import { NpcDossierOverlay } from './npcDossier/NpcDossierOverlay'
 import { SettingsOverlay } from './settings/SettingsOverlay'
+import { SettingsIntroOverlay } from './settings/SettingsIntroOverlay'
 import { JourneyOverlays } from './app/JourneyOverlays'
 import { useAppBoot } from './app/useAppBoot'
 import type { JourneyStage, MainSurface } from './app/journeyTypes'
@@ -54,6 +55,7 @@ export function App(): JSX.Element {
           onOpenNpc={ui.setNpcDossierRequest}
           onNewCampaign={() => ui.setJourney('create')}
           onOpenCampaign={(campaignId) => void openCampaign(campaignId, ui.setSurface)}
+          onCampaignsChanged={refreshCampaigns}
           onAddCharacter={ui.beginOnboarding}
           onPlayAs={ui.playAs}
           surface={ui.surface}
@@ -75,6 +77,12 @@ export function App(): JSX.Element {
         setOnboardingRequest={ui.setOnboardingRequest}
         onOnboardingComplete={ui.completeOnboarding}
       />
+      {boot.phase === 'ready' ? (
+        <SettingsIntroOverlay
+          onOpenSettings={() => ui.setSettingsOpen(true)}
+          settingsOpen={ui.settingsOpen}
+        />
+      ) : null}
       <UpdateBanner />
     </div>
   )
@@ -152,6 +160,7 @@ function ReadyAppBody(props: {
   onOpenNpc: (request: LoadNpcDossierRequest) => void
   onNewCampaign: () => void
   onOpenCampaign: (campaignId: string) => void
+  onCampaignsChanged: () => void | Promise<void>
   onAddCharacter: (request: BeginOnboardingRequest) => void
   onPlayAs: (character: { campaignId: string; characterId: string; characterName: string }) => void
   surface: MainSurface
@@ -162,6 +171,7 @@ function ReadyAppBody(props: {
         campaigns={props.campaigns}
         onNewCampaign={props.onNewCampaign}
         onOpenCampaign={props.onOpenCampaign}
+        onCampaignsChanged={props.onCampaignsChanged}
       />
       <PlayViewShell onOpenCharacterSheet={props.onOpenCharacterSheet}>
         <MainSurfaceView

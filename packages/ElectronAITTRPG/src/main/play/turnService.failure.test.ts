@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { clearNarrationStore, type TextCompleter } from '@weaver/narration-engine'
-import { resolveTurn, type ResolveTurnDeps, type TurnPersistRecord } from '@weaver/dm-engine'
+import {
+  resolveTurn,
+  withCombatResolutionStubs,
+  type ResolveTurnDeps,
+  type TurnPersistRecord
+} from '@weaver/dm-engine'
 import { createCurrencyService, clampProposedPrice } from '@weaver/item-engine'
 import { TURN_FAILURE_MESSAGE } from '../../shared/play/recoveryCopy.js'
 import { createTurnService } from './turnService.js'
@@ -57,12 +62,12 @@ function failingProviderDeps(
       items: { hasItem: () => true },
       locations: { isKnownLocation: () => true }
     },
-    combat: {
+    combat: withCombatResolutionStubs({
       getEncounter: () => undefined,
       submitCombatAction: () => {
         throw new Error('combat should not run')
       }
-    },
+    }),
     persist: (record) => {
       persisted.push(record)
     }
