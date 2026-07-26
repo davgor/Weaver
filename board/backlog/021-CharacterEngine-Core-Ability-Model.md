@@ -4,9 +4,19 @@ Stand up `packages/CharacterEngine` (`@weaver/character-engine`): the determinis
 
 **Ported from:** AI-DND-Matrix's rules engine (`board/done/004-engine.md` and the "Rules Engine" section of its README) — Body/Agility/Mind/Presence, `floor((score-10)/2)` modifiers, advantage/disadvantage (2d20 take higher/lower), no fixed skill list (DM flags ability + proficiency boolean; engine owns the bonus amount), AC = `10 + Agility mod + armor`.
 
-**Depends on:** none (foundation epic, parallel to `012-WorldEngine-Chunked-Map-Store`). **Feeds:** every other CharacterEngine epic, plus CombatEngine (`048-CombatEngine-Encounter-Lifecycle`).
+**Depends on:** none (foundation epic; may proceed in parallel with `012-WorldEngine-Chunked-Map-Store`). **Feeds:** every other CharacterEngine epic, plus CombatEngine (`048-CombatEngine-Encounter-Lifecycle`).
 
 **LLM boundary:** deterministic only — no Electron imports, no LLM calls. DMEngine/NarrationEngine may propose which ability + whether proficiency applies; this package always owns the actual bonus math and the roll.
+
+## Sub-tickets
+
+| Id | Summary |
+|----|---------|
+| `021.1` | Scaffold `packages/CharacterEngine` + Admin/AITTRPG registry wiring |
+| `021.2` | Four abilities + modifier math (`floor((score-10)/2)`), boundary-tested |
+| `021.3` | Core resolution API (d20 + mod + proficiency, advantage/disadvantage) |
+| `021.4` | AC formula as pure function consuming ItemEngine-supplied armor bonus |
+| `021.5` | Package README + root README table + explicit LLM-free boundary |
 
 ## Acceptance criteria
 
@@ -16,3 +26,4 @@ Stand up `packages/CharacterEngine` (`@weaver/character-engine`): the determinis
 - [ ] Package scaffolded matching sibling engines (`health` / `listEndpoints` / `call`), added to root README package table and `build:engines`
 - [ ] Wired into both existing engine registries — `ElectronAdmin/src/main/index.ts`'s `engines` array (so it shows up in AI ADMIN's endpoint tester, per board `078`) and `ElectronAITTRPG/src/shared/engineHealth.ts`'s `REQUIRED_ENGINE_IDS` (so boot health checks for it) — these are hardcoded lists, not auto-discovered, and are easy to forget since every sibling engine is already in both
 - [ ] Explicit: deterministic, LLM-free; Electron apps and DMEngine call this package, they do not reimplement resolution math
+- [ ] Sub-tickets listed above exist as `board/backlog/021.*` files; none implemented until separately completed

@@ -65,5 +65,5 @@ Expose as typed methods and admin-callable endpoints (`health` / `listEndpoints`
 
 - [ ] Epic documents the four core APIs, expansion metadata, supporting query/lifecycle APIs, and hybrid chunk + SQLite persistence for million-cell targets
 - [ ] `ExpandWorld` yields scoped bounds so region fill need not re-ingest the whole world
-- [ ] Sub-tickets listed above; none implemented until separately completed
+- [ ] Sub-tickets listed above exist as `board/backlog/012.*` files; none implemented until separately completed
 - [ ] Explicit: deterministic, LLM-free; Electron apps call the engine, do not own map logic

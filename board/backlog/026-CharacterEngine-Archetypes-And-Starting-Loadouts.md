@@ -4,7 +4,7 @@ Port the five seed archetypes and the starting-loadout selection flow (state/sel
 
 **Ported from:** `board/done/047-starting-equipment-selection.md` and `board/done/093-fighter-greatsword-starting-weapon.md`.
 
-**Depends on:** `021-CharacterEngine-Core-Ability-Model`. **Feeds:** `036-ItemEngine-Starting-Gear-Catalog` (catalog data this epic selects from), `025-CharacterEngine-Xp-And-Level-Up` (L1–20 progression envelope).
+**Depends on:** `021-CharacterEngine-Core-Ability-Model`, `036-ItemEngine-Starting-Gear-Catalog` (catalog data this epic selects from). **Feeds:** `025-CharacterEngine-Xp-And-Level-Up` (L1–20 progression envelope), `061-DMEngine-Guided-Character-Creation-Orchestration`, `070-ElectronAITTRPG-Onboarding-Wizard-Ui`.
 
 ## Acceptance criteria
 

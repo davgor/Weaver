@@ -159,4 +159,4 @@ NPCEngine (later)
 - [ ] NPC placeholders are created without constructing NPCs; claim/release reserved for later assignment
 - [ ] Map enrichment goes through WorldEngine sparse overlays + CivilizationEngine records
 - [ ] Explicit: deterministic, LLM-free; depends on 012 + 013
-- [ ] Sub-tickets listed above; none implemented until separately completed
+- [ ] Sub-tickets listed above exist as `board/backlog/016.*` files (`016.1` in `done/`); none implemented until separately completed

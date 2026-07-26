@@ -2,7 +2,7 @@
 
 Refine `@weaver/llm-engine` so its **core generation surface** is a dumb passthrough: other engines and packages own prompts; LLMEngine only runs the local model and returns raw text. One request shape in, one text string out. No JSON-mode, schema forcing, tool/function calling, or game orchestration in this package.
 
-**Builds on:** `011-LLMEngine-Local-Qwen-Runtime` (install, backend probe, `node-llama-cpp` runtime). **Feeds:** NarrationEngine (prose invention), DMEngine (orchestration — including any multi-step / tool-style loops). Deterministic engines stay LLM-free and never call this package directly for invention.
+**Depends on:** none (`011-LLMEngine-Local-Qwen-Runtime` is done — install, backend probe, `node-llama-cpp` runtime). **Feeds:** NarrationEngine (prose invention), DMEngine (orchestration — including any multi-step / tool-style loops). Deterministic engines stay LLM-free and never call this package directly for invention.
 
 **LLM boundary:** runtime + passthrough only. **DMEngine** owns any “LLM makes calls / picks APIs” behavior by composing multiple `complete`-style calls and peer engine APIs itself. **NarrationEngine** owns validated story prose. LLMEngine must not invent facts or decide which engines to invoke.
 
@@ -84,6 +84,6 @@ Deterministic engines
 
 - [ ] Epic defines a single core generation API: prompt + optional context in, raw text out
 - [ ] Explicit: no JSON formatting / structured-output / tool-calling inside LLMEngine; DMEngine owns multi-step API orchestration
-- [ ] Sub-tickets listed above; none implemented until separately completed
+- [ ] Sub-tickets listed above exist as `board/backlog/019.*` files; none implemented until separately completed
 - [ ] Builds on 011 runtime/install; does not re-litigate model pin or Vulkan/CPU preference
 - [ ] Peer boundary documented: Narration/DM (and Admin for exercise) call LLMEngine; deterministic engines do not

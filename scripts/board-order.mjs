@@ -18,7 +18,11 @@ const OUT_PATH = join(BOARD, 'IMPLEMENTATION-ORDER.md')
 export function parseDependsOn(content) {
   const match = content.match(/\*\*Depends on:\*\*([\s\S]*?)(?:\*\*Feeds:\*\*|\n\n|$)/)
   if (!match) return []
-  return [...new Set(match[1].match(/\d{3}/g) || [])]
+  const span = match[1].trim()
+  // Authors write "none (… parallel to `012-…`)" for foundation epics; those
+  // backtick refs are illustrations, not dependencies.
+  if (/^none\b/i.test(span)) return []
+  return [...new Set(span.match(/\d{3}/g) || [])]
 }
 
 /**
