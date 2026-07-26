@@ -105,6 +105,34 @@ export function clearCompanionStore(): void {
   nextCompanionId = 1
 }
 
+export function listCompanionsForCampaign(campaignId: string): CompanionRecord[] {
+  return [...companionRecords.values()]
+    .filter((record) => record.campaignId === campaignId)
+    .map(copyCompanion)
+}
+
+export function clearCompanionsForCampaign(campaignId: string): void {
+  for (const record of listCompanionsForCampaign(campaignId)) {
+    companionRecords.delete(record.characterId)
+    for (const [ownerId, companionIds] of companionsByOwner.entries()) {
+      companionsByOwner.set(
+        ownerId,
+        companionIds.filter((companionId) => companionId !== record.characterId)
+      )
+    }
+  }
+}
+
+export function restoreCompanionsForCampaign(records: readonly CompanionRecord[]): void {
+  for (const record of records) {
+    companionRecords.set(record.characterId, copyCompanion(record))
+    const existing = companionsByOwner.get(record.ownerCharacterId) ?? []
+    if (!existing.includes(record.characterId)) {
+      companionsByOwner.set(record.ownerCharacterId, [...existing, record.characterId])
+    }
+  }
+}
+
 function assertCreateInput(input: CreateCompanionInput): void {
   assertNonEmpty(input.ownerCharacterId, 'ownerCharacterId')
   assertNonEmpty(input.campaignId, 'campaignId')

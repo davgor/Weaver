@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import type { CampaignSummary, StartupBootSnapshot } from '../../shared/gameApi'
+import type { BeginOnboardingRequest, CampaignSummary, StartupBootSnapshot } from '../../shared/gameApi'
 import { Titlebar } from './titlebar/Titlebar'
 import { Sidebar } from './sidebar/Sidebar'
 import { LoadingScreen } from './startup/LoadingScreen'
@@ -9,9 +9,13 @@ import { CharacterSheetOverlay } from './characterSheet/CharacterSheetOverlay'
 import { PlayViewShell } from './characterSheet/PlayViewShell'
 import { NpcDossierOverlay } from './npcDossier/NpcDossierOverlay'
 import { SettingsOverlay } from './settings/SettingsOverlay'
+import { CampaignStartModal } from './campaignStart/CampaignStartModal'
+import { CampaignReviewScreen } from './campaignReview/CampaignReviewScreen'
+import { OnboardingWizard } from './onboarding/OnboardingWizard'
 import type { LoadNpcDossierRequest } from '../../shared/npcDossier/types'
 
 type KnownNpcLinks = Array<LoadNpcDossierRequest & { displayName: string }>
+type JourneyStage = 'idle' | 'create' | 'review' | 'onboarding' | 'play'
 
 const DEMO_NPC_CAMPAIGN_ID = 'demo.campaign.npc-dossier'
 
@@ -45,6 +49,8 @@ export function App(): JSX.Element {
   const [sheetOpen, setSheetOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [npcDossierRequest, setNpcDossierRequest] = useState<LoadNpcDossierRequest | null>(null)
+  const [journey, setJourney] = useState<JourneyStage>('idle')
+  const [onboardingRequest, setOnboardingRequest] = useState<BeginOnboardingRequest | null>(null)
   const knownNpcLinks = demoKnownNpcLinks()
 
   useEffect(() => {
@@ -72,8 +78,10 @@ export function App(): JSX.Element {
         <ReadyAppBody
           campaigns={campaigns}
           knownNpcLinks={knownNpcLinks}
+          journey={journey}
           onOpenCharacterSheet={() => setSheetOpen(true)}
           onOpenNpc={setNpcDossierRequest}
+          onNewCampaign={() => setJourney('create')}
         />
       )}
       <AppOverlays
@@ -81,9 +89,13 @@ export function App(): JSX.Element {
         settingsOpen={settingsOpen}
         npcDossierRequest={npcDossierRequest}
         knownNpcLinks={knownNpcLinks}
+        journey={journey}
+        onboardingRequest={onboardingRequest}
         setSheetOpen={setSheetOpen}
         setSettingsOpen={setSettingsOpen}
         setNpcDossierRequest={setNpcDossierRequest}
+        setJourney={setJourney}
+        setOnboardingRequest={setOnboardingRequest}
       />
       <UpdateBanner />
     </div>
@@ -95,9 +107,13 @@ function AppOverlays(props: {
   settingsOpen: boolean
   npcDossierRequest: LoadNpcDossierRequest | null
   knownNpcLinks: KnownNpcLinks
+  journey: JourneyStage
+  onboardingRequest: BeginOnboardingRequest | null
   setSheetOpen: (open: boolean) => void
   setSettingsOpen: (open: boolean) => void
   setNpcDossierRequest: (request: LoadNpcDossierRequest | null) => void
+  setJourney: (stage: JourneyStage) => void
+  setOnboardingRequest: (request: BeginOnboardingRequest | null) => void
 }): JSX.Element {
   return (
     <>
@@ -116,19 +132,55 @@ function AppOverlays(props: {
         onOpenNpc={props.setNpcDossierRequest}
       />
       <SettingsOverlay open={props.settingsOpen} onClose={() => props.setSettingsOpen(false)} />
+      <CampaignStartModal
+        open={props.journey === 'create'}
+        onClose={() => props.setJourney('idle')}
+        onReviewReady={() => props.setJourney('review')}
+      />
+      <CampaignReviewScreen
+        open={props.journey === 'review'}
+        onBack={() => props.setJourney('create')}
+        onContinue={() => void continueToOnboarding(props)}
+      />
+      {props.onboardingRequest !== null ? (
+        <OnboardingWizard
+          request={props.onboardingRequest}
+          onComplete={() => {
+            props.setJourney('play')
+            props.setOnboardingRequest(null)
+          }}
+        />
+      ) : null}
     </>
   )
+}
+
+async function continueToOnboarding(props: {
+  setJourney: (stage: JourneyStage) => void
+  setOnboardingRequest: (request: BeginOnboardingRequest | null) => void
+}): Promise<void> {
+  await window.aiTtrpg.campaignCreate.assertCanContinue()
+  const review = await window.aiTtrpg.campaignCreate.getReview()
+  if (review === null) return
+  props.setOnboardingRequest({
+    campaignId: review.campaignId,
+    characterId: `${review.campaignId}.pc1`,
+    characterName: 'Adventurer'
+  })
+  props.setJourney('onboarding')
 }
 
 function ReadyAppBody(props: {
   campaigns: CampaignSummary[]
   knownNpcLinks: KnownNpcLinks
+  journey: JourneyStage
   onOpenCharacterSheet: () => void
   onOpenNpc: (request: LoadNpcDossierRequest) => void
+  onNewCampaign: () => void
 }): JSX.Element {
   return (
     <div className="app-body">
-      <Sidebar campaigns={props.campaigns} />
+      <Sidebar campaigns={props.campaigns} onNewCampaign={props.onNewCampaign} />
       <PlayViewShell onOpenCharacterSheet={props.onOpenCharacterSheet}>
         <EmptyMainPanel knownPeople={props.knownNpcLinks} onOpenNpc={props.onOpenNpc} />
       </PlayViewShell>

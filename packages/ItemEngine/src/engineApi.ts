@@ -49,6 +49,8 @@ export type ItemEngineApi = {
   debit: (characterId: string, amount: number) => CurrencyBalanceSnapshot
   getBalance: (characterId: string) => number
   clampProposedPrice: (proposed: number, opts?: PriceClampOptions) => number
+  snapshotCampaignBalances: (characterIds: readonly string[]) => Record<string, number>
+  restoreCampaignBalances: (balances: Record<string, number>) => void
   generateLoot: (request: GenerateLootRequest) => LootDrop[]
   getStartingLoadout: (archetype: StartingGearArchetype) => StartingLoadout
 }
@@ -123,6 +125,12 @@ export const itemEngine: ItemEngineApi = {
   },
   clampProposedPrice(proposed, opts) {
     return clampProposedPrice(proposed, opts)
+  },
+  snapshotCampaignBalances(characterIds) {
+    return singletonCurrency.snapshotBalances(characterIds)
+  },
+  restoreCampaignBalances(balances) {
+    singletonCurrency.restoreBalances(balances)
   },
   generateLoot(request) {
     return generateLoot(request)

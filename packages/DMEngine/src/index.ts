@@ -129,6 +129,127 @@ export type {
   StageOutput
 } from './campaignGen/types.js'
 
+// Turn routing (epic 053).
+export {
+  TurnRoutingError,
+  buildTurnNarrationPrompt,
+  heuristicRoute,
+  interpretIntentAndRoute,
+  lockTurn,
+  narrateTurnOutcome,
+  resolveCombatBranch,
+  resolveCommerceBranch,
+  resolveNarrationBranch,
+  resolveTravelBranch,
+  resolveTurn
+} from './turnRouting/index.js'
+export type {
+  BranchResolution,
+  CombatBranchResolution,
+  CombatTurnApi,
+  InterpretIntentInput,
+  ResolveTurnDeps,
+  ResolveTurnInput,
+  ResolveTurnResult,
+  RoutePlan,
+  RoutedIntent,
+  RoutedIntentKind,
+  TurnChannel,
+  TurnNarrationOutcome,
+  TurnPersistRecord,
+  TurnProjections,
+  TurnRoute,
+  TurnRoutingErrorCode
+} from './turnRouting/index.js'
+
+// Ask-the-DM OOC (epic 057).
+export {
+  appendAskDmEntry,
+  askTheDm,
+  assembleAskDmContext,
+  exportAskDmHistory,
+  getAskDmHistory,
+  importAskDmHistory,
+  resetAskDmHistoryStore
+} from './askDm/index.js'
+export type {
+  AskDmContextInput,
+  AskDmHistory,
+  AskDmHistoryEntry,
+  AskDmNarrationApi,
+  AskDmSpeaker,
+  AskTheDmInput,
+  AskTheDmResult
+} from './askDm/index.js'
+
+// Shared time & hub recap (epic 058).
+export {
+  appendCausalEvent,
+  buildSessionRecap,
+  compareCausalOrder,
+  exportCausalTimelineStore,
+  exportCharacterSessionCursorStore,
+  getCharacterSessionCursor,
+  getSharedCampaignDay,
+  importCausalTimelineStore,
+  importCharacterSessionCursorStore,
+  listCausalEvents,
+  listEventsSince,
+  recordCharacterSessionCursor,
+  resetCausalTimelineStore,
+  resetCharacterSessionCursorStore,
+  sortEventsByCausalOrder
+} from './sharedTime/index.js'
+export type {
+  AppendCausalEventInput,
+  CausalEvent,
+  CharacterDayCounterApi,
+  CharacterSessionCursor,
+  SessionRecap,
+  SessionRecapInput
+} from './sharedTime/index.js'
+
+// Campaign portability (epic 059).
+export {
+  PORTABLE_PACKAGE_VERSION,
+  PortabilitySchemaError,
+  createDefaultCampaignImportDeps,
+  createDefaultCampaignPortabilityDeps,
+  exportCampaignPackage,
+  importCampaignPackage
+} from './portability/index.js'
+export type {
+  CampaignImportDeps,
+  CampaignPortabilityContext,
+  CampaignPortabilityDeps,
+  CampaignPortablePackage,
+  ExportCampaignPackageInput,
+  ImportCampaignPackageInput
+} from './portability/index.js'
+
+// Context efficiency & RAG (epic 062).
+export {
+  ContextBudgetExceededError,
+  TRUNCATION_MARKER,
+  assembleAgentContext,
+  buildCombatNarrationPrompt,
+  buildLootNarrationPrompt,
+  buildXpNarrationPrompt,
+  estimateTokens,
+  formatAlwaysOnGrounding,
+  truncateToTokenBudget,
+  windowGuidedTranscript
+} from './context/index.js'
+export type {
+  AlwaysOnGrounding,
+  AssembleAgentContextInput,
+  AssembleAgentContextResult,
+  CombatNarrationSlots,
+  LootNarrationSlots,
+  RagContextChunk,
+  XpNarrationSlots
+} from './context/index.js'
+
 export type DmEngineDeps = {
   combat: CombatEngineApi
   world: WorldEngineApi

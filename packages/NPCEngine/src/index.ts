@@ -3,7 +3,7 @@ export type * from './types.js'
 export { NpcEngineError } from './errors.js'
 export type { NpcEngineErrorCode } from './errors.js'
 export { constructNpc } from './construction.js'
-export { clearNpcStore, getNpc } from './store.js'
+export { clearNpcStore, getNpc, listNpcsForCampaign, saveNpc } from './store.js'
 export { appendNpcMemory, appendWorldFact, listWorldFactsMentioningNpc, queryNpcGroundingContext } from './memory.js'
 export { clearDmOpinionStore, getNpcDossier, upsertDmNpcOpinion } from './dossier.js'
 export { hydrateNpcCombatTier, setNpcDefeatDisposition } from './combatDisposition.js'
@@ -45,3 +45,12 @@ export const npcEngine: NpcEngineApi = {
     return await match.invoke(payload)
   }
 }
+
+export {
+  exportCampaignSlice as exportNpcCampaignSlice,
+  importCampaignSlice as importNpcCampaignSlice,
+  NPC_SLICE_VERSION,
+  NpcPortabilitySchemaError,
+  type NpcCampaignSlice,
+  type NpcPortabilityContext
+} from './portability/index.js'

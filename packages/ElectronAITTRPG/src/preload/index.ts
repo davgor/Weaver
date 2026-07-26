@@ -5,22 +5,32 @@ import type {
 } from '../shared/autoUpdate/types.js'
 import { AUTO_UPDATE_EVENT_CHANNEL } from '../shared/autoUpdate/types.js'
 import type {
+  BeginOnboardingRequest,
+  BackgroundStepRequest,
+  CampaignCreateDraft,
   CampaignSummary,
   CharacterSheetSnapshot,
+  CompanionsStepRequest,
   EquipItemRequest,
+  EquipmentStepRequest,
   GameApi,
+  GenerateRegionNpcRequest,
+  GuidedIdentityRequest,
   LoadCharacterSheetRequest,
+  MechanicalSetupRequest,
+  OnboardingContextRequest,
+  RaceStepRequest,
+  RegenerateSectionRequest,
   StartupBootSnapshot,
-  UnequipItemRequest
+  UnequipItemRequest,
+  UpdateReviewFieldRequest
 } from '../shared/gameApi.js'
 import type {
   LoadNpcDossierRequest,
   NpcDossierSnapshot,
   NpcRelationshipSnapshot
 } from '../shared/npcDossier/types.js'
-import type {
-  SettingsApi
-} from '../shared/settings/types.js'
+import type { SettingsApi } from '../shared/settings/types.js'
 
 const api: GameApi = {
   windowControls: {
@@ -33,6 +43,47 @@ const api: GameApi = {
   },
   campaigns: {
     list: (): Promise<CampaignSummary[]> => ipcRenderer.invoke('campaigns:list')
+  },
+  campaignCreate: {
+    startGeneration: (draft: CampaignCreateDraft) =>
+      ipcRenderer.invoke('campaignCreate:startGeneration', draft),
+    getReview: () => ipcRenderer.invoke('campaignCreate:getReview'),
+    updateReviewField: (request: UpdateReviewFieldRequest) =>
+      ipcRenderer.invoke('campaignCreate:updateReviewField', request),
+    regenerateSection: (request: RegenerateSectionRequest) =>
+      ipcRenderer.invoke('campaignCreate:regenerateSection', request),
+    generateRegionNpc: (request: GenerateRegionNpcRequest) =>
+      ipcRenderer.invoke('campaignCreate:generateRegionNpc', request),
+    confirmReview: () => ipcRenderer.invoke('campaignCreate:confirmReview'),
+    assertCanContinue: () => ipcRenderer.invoke('campaignCreate:assertCanContinue')
+  },
+  onboarding: {
+    begin: (request: BeginOnboardingRequest) => ipcRenderer.invoke('onboarding:begin', request),
+    getState: (request: OnboardingContextRequest) =>
+      ipcRenderer.invoke('onboarding:getState', request),
+    saveMechanicalSetup: (request: MechanicalSetupRequest) =>
+      ipcRenderer.invoke('onboarding:saveMechanicalSetup', request),
+    saveRace: (request: RaceStepRequest) => ipcRenderer.invoke('onboarding:saveRace', request),
+    saveBackground: (request: BackgroundStepRequest) =>
+      ipcRenderer.invoke('onboarding:saveBackground', request),
+    saveEquipment: (request: EquipmentStepRequest) =>
+      ipcRenderer.invoke('onboarding:saveEquipment', request),
+    saveCompanions: (request: CompanionsStepRequest) =>
+      ipcRenderer.invoke('onboarding:saveCompanions', request),
+    startGuidedIdentity: (request: OnboardingContextRequest) =>
+      ipcRenderer.invoke('onboarding:startGuidedIdentity', request),
+    submitGuidedIdentity: (request: GuidedIdentityRequest) =>
+      ipcRenderer.invoke('onboarding:submitGuidedIdentity', request),
+    generateOpeningScene: (request: OnboardingContextRequest) =>
+      ipcRenderer.invoke('onboarding:generateOpeningScene', request),
+    confirmOpeningScene: (request: OnboardingContextRequest) =>
+      ipcRenderer.invoke('onboarding:confirmOpeningScene', request),
+    goBack: (request: OnboardingContextRequest) => ipcRenderer.invoke('onboarding:goBack', request),
+    listArchetypes: () => ipcRenderer.invoke('onboarding:listArchetypes'),
+    listRaces: (campaignId: string) => ipcRenderer.invoke('onboarding:listRaces', campaignId),
+    listBackgrounds: (campaignId: string) =>
+      ipcRenderer.invoke('onboarding:listBackgrounds', campaignId),
+    rollAbilityScores: () => ipcRenderer.invoke('onboarding:rollAbilityScores')
   },
   characterSheet: {
     load: (request: LoadCharacterSheetRequest): Promise<CharacterSheetSnapshot> =>

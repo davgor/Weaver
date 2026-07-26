@@ -92,3 +92,11 @@ export type {
 } from './weaponDamage.js'
 export { itemEngine } from './engineApi.js'
 export type { ItemEngineApi } from './engineApi.js'
+export {
+  exportCampaignSlice as exportItemCampaignSlice,
+  importCampaignSlice as importItemCampaignSlice,
+  ITEM_SLICE_VERSION,
+  ItemPortabilitySchemaError,
+  type ItemCampaignSlice,
+  type ItemPortabilityContext
+} from './portability/index.js'
