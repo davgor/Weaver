@@ -92,28 +92,35 @@ function activeEncounter(): EncounterState {
     turnOrder: ['pc-1', 'goblin'],
     turnLog: [],
     combatants: [
-      combatant('pc-1', 'character', 'Ilyra', 7, 10, []),
-      combatant('goblin', 'enemy', 'Goblin', 3, 6, ['restrained'])
+      combatant({ id: 'pc-1', kind: 'character', displayName: 'Ilyra', current: 7, max: 10 }),
+      combatant({
+        id: 'goblin',
+        kind: 'enemy',
+        displayName: 'Goblin',
+        current: 3,
+        max: 6,
+        conditions: ['restrained']
+      })
     ]
   }
 }
 
-function combatant(
-  id: string,
-  kind: 'character' | 'enemy',
-  displayName: string,
-  current: number,
-  max: number,
-  conditions: ['restrained'] | []
-) {
+function combatant(input: {
+  id: string
+  kind: 'character' | 'enemy'
+  displayName: string
+  current: number
+  max: number
+  conditions?: string[]
+}) {
   return {
-    id,
-    kind,
-    displayName,
+    id: input.id,
+    kind: input.kind,
+    displayName: input.displayName,
     abilityScores: { Body: 10, Agility: 10, Mind: 10, Presence: 10 },
-    hp: { current, max },
+    hp: { current: input.current, max: input.max },
     armorClass: 12,
-    conditions,
+    conditions: input.conditions ?? [],
     characterConditions: [],
     damageResistances: [],
     damageVulnerabilities: [],

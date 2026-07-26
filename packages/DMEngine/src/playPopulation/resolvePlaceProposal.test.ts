@@ -2,12 +2,13 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { clearPlaceProposalRegistry, resolvePlaceProposal } from './resolvePlaceProposal.js'
 import type { LivePopulationDeps, PlaceProposal } from './types.js'
 
+type Counters = { regions: number; settlements: number; npcs: number; lootSeeds: number }
+
 describe('resolvePlaceProposal', () => {
   beforeEach(() => clearPlaceProposalRegistry())
 
   it('mints a place through peer APIs once for an idempotency key', () => {
-    const counters = { regions: 0, settlements: 0, npcs: 0, lootSeeds: 0 }
-    const deps = fakeDeps(counters)
+    const counters: Counters = { regions: 0, settlements: 0, npcs: 0, lootSeeds: 0 }
     const proposal: PlaceProposal = {
       proposalKey: 'roadside-inn',
       worldId: 'world-live',
@@ -17,8 +18,8 @@ describe('resolvePlaceProposal', () => {
       lootSeed: 'roadside-inn-loot'
     }
 
-    const first = resolvePlaceProposal(proposal, deps)
-    const second = resolvePlaceProposal(proposal, deps)
+    const first = resolvePlaceProposal(proposal, fakeDeps(counters))
+    const second = resolvePlaceProposal(proposal, fakeDeps(counters))
 
     expect(second).toEqual(first)
     expect(counters).toEqual({ regions: 1, settlements: 1, npcs: 1, lootSeeds: 1 })
@@ -32,42 +33,11 @@ describe('resolvePlaceProposal', () => {
   })
 })
 
-function fakeDeps(counters: { regions: number; settlements: number; npcs: number; lootSeeds: number }): LivePopulationDeps {
+function fakeDeps(counters: Counters): LivePopulationDeps {
   return {
-    world: {
-      getWorldMeta: () => ({
-        worldId: 'world-live',
-        seed: 1,
-        bounds: bounds(),
-        noise: noise(),
-        createdAt: '2026-01-01T00:00:00.000Z',
-        updatedAt: '2026-01-01T00:00:00.000Z',
-        cellCount: 1
-      }),
-      getWorldBounds: () => bounds(),
-      getExpansion: () => null,
-      getCell: () => null,
-      getWorldSpecific: () => []
-    },
-    regional: {
-      fillRegions: () => {
-        counters.regions += 1
-        return [region()]
-      },
-      listRegions: () => [region()],
-      getRegion: () => region(),
-      getRegionSummary: () => region(),
-      getRegionCells: () => [],
-      getRegionsInBounds: () => [region()]
-    },
-    civilization: {
-      fillCivilizations: () => {
-        counters.settlements += 1
-        return [civilization()]
-      },
-      listCivilizationsInRegion: () => [civilization()],
-      ensureNpcPlaceholders: () => [slot()]
-    },
+    world: fakeWorld(),
+    regional: fakeRegional(counters),
+    civilization: fakeCivilization(counters),
     npc: {
       constructNpc: (input) => {
         counters.npcs += 1
@@ -81,6 +51,49 @@ function fakeDeps(counters: { regions: number; settlements: number; npcs: number
         return { placeId, drops }
       }
     }
+  }
+}
+
+function fakeWorld(): LivePopulationDeps['world'] {
+  return {
+    getWorldMeta: () => ({
+      worldId: 'world-live',
+      seed: 1,
+      bounds: bounds(),
+      noise: noise(),
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      cellCount: 1
+    }),
+    getWorldBounds: () => bounds(),
+    getExpansion: () => null,
+    getCell: () => null,
+    getWorldSpecific: () => []
+  }
+}
+
+function fakeRegional(counters: Counters): LivePopulationDeps['regional'] {
+  return {
+    fillRegions: () => {
+      counters.regions += 1
+      return [region()]
+    },
+    listRegions: () => [region()],
+    getRegion: () => region(),
+    getRegionSummary: () => region(),
+    getRegionCells: () => [],
+    getRegionsInBounds: () => [region()]
+  }
+}
+
+function fakeCivilization(counters: Counters): LivePopulationDeps['civilization'] {
+  return {
+    fillCivilizations: () => {
+      counters.settlements += 1
+      return [civilization()]
+    },
+    listCivilizationsInRegion: () => [civilization()],
+    ensureNpcPlaceholders: () => [slot()]
   }
 }
 

@@ -37,65 +37,81 @@ function demoKnownNpcLinks(): KnownNpcLinks {
 
 export function App(): JSX.Element {
   const { boot, campaigns, refreshCampaigns } = useAppBoot()
-  const [sheetOpen, setSheetOpen] = useState(false)
-  const [settingsOpen, setSettingsOpen] = useState(false)
-  const [npcDossierRequest, setNpcDossierRequest] = useState<LoadNpcDossierRequest | null>(null)
-  const [journey, setJourney] = useState<JourneyStage>('idle')
-  const [surface, setSurface] = useState<MainSurface>({ stage: 'empty' })
-  const [onboardingRequest, setOnboardingRequest] = useState<BeginOnboardingRequest | null>(null)
+  const ui = useAppUi(refreshCampaigns)
   const knownNpcLinks = demoKnownNpcLinks()
 
   return (
     <div className="app-root">
-      <Titlebar onOpenSettings={() => setSettingsOpen(true)} />
+      <Titlebar onOpenSettings={() => ui.setSettingsOpen(true)} />
       {boot.phase !== 'ready' ? (
         <LoadingScreen boot={boot} />
       ) : (
         <ReadyAppBody
           campaigns={campaigns}
           knownNpcLinks={knownNpcLinks}
-          onOpenCharacterSheet={() => setSheetOpen(true)}
-          onOpenNpc={setNpcDossierRequest}
-          onNewCampaign={() => setJourney('create')}
-          onOpenCampaign={(campaignId) => void openCampaign(campaignId, setSurface)}
-          onAddCharacter={(request) => {
-            setOnboardingRequest(request)
-            setJourney('onboarding')
-          }}
-          onPlayAs={(character) =>
-            setSurface({
-              stage: 'play',
-              campaignId: character.campaignId,
-              characterId: character.characterId,
-              characterName: character.characterName
-            })
-          }
-          surface={surface}
+          onOpenCharacterSheet={() => ui.setSheetOpen(true)}
+          onOpenNpc={ui.setNpcDossierRequest}
+          onNewCampaign={() => ui.setJourney('create')}
+          onOpenCampaign={(campaignId) => void openCampaign(campaignId, ui.setSurface)}
+          onAddCharacter={ui.beginOnboarding}
+          onPlayAs={ui.playAs}
+          surface={ui.surface}
         />
       )}
       <SheetOverlays
-        sheetOpen={sheetOpen}
-        settingsOpen={settingsOpen}
-        npcDossierRequest={npcDossierRequest}
+        sheetOpen={ui.sheetOpen}
+        settingsOpen={ui.settingsOpen}
+        npcDossierRequest={ui.npcDossierRequest}
         knownNpcLinks={knownNpcLinks}
-        setSheetOpen={setSheetOpen}
-        setSettingsOpen={setSettingsOpen}
-        setNpcDossierRequest={setNpcDossierRequest}
+        setSheetOpen={ui.setSheetOpen}
+        setSettingsOpen={ui.setSettingsOpen}
+        setNpcDossierRequest={ui.setNpcDossierRequest}
       />
       <JourneyOverlays
-        journey={journey}
-        onboardingRequest={onboardingRequest}
-        setJourney={setJourney}
-        setOnboardingRequest={setOnboardingRequest}
-        onOnboardingComplete={(request) => {
-          setJourney('hub')
-          setSurface({ stage: 'hub', campaignId: request.campaignId })
-          void refreshCampaigns()
-        }}
+        journey={ui.journey}
+        onboardingRequest={ui.onboardingRequest}
+        setJourney={ui.setJourney}
+        setOnboardingRequest={ui.setOnboardingRequest}
+        onOnboardingComplete={ui.completeOnboarding}
       />
       <UpdateBanner />
     </div>
   )
+}
+
+function useAppUi(refreshCampaigns: () => Promise<void>) {
+  const [sheetOpen, setSheetOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [npcDossierRequest, setNpcDossierRequest] = useState<LoadNpcDossierRequest | null>(null)
+  const [journey, setJourney] = useState<JourneyStage>('idle')
+  const [surface, setSurface] = useState<MainSurface>({ stage: 'empty' })
+  const [onboardingRequest, setOnboardingRequest] = useState<BeginOnboardingRequest | null>(null)
+
+  return {
+    sheetOpen,
+    setSheetOpen,
+    settingsOpen,
+    setSettingsOpen,
+    npcDossierRequest,
+    setNpcDossierRequest,
+    journey,
+    setJourney,
+    surface,
+    setSurface,
+    onboardingRequest,
+    setOnboardingRequest,
+    beginOnboarding: (request: BeginOnboardingRequest) => {
+      setOnboardingRequest(request)
+      setJourney('onboarding')
+    },
+    playAs: (character: { campaignId: string; characterId: string; characterName: string }) =>
+      setSurface({ stage: 'play', ...character }),
+    completeOnboarding: (request: BeginOnboardingRequest) => {
+      setJourney('hub')
+      setSurface({ stage: 'hub', campaignId: request.campaignId })
+      void refreshCampaigns()
+    }
+  }
 }
 
 function SheetOverlays(props: {

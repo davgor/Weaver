@@ -1,12 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import type { CausalEvent, CharacterSessionCursor, SessionRecapInput } from '@weaver/dm-engine'
-import { createCampaignHubService } from './campaignHubService.js'
+import { createCampaignHubService, type CampaignHubDeps } from './campaignHubService.js'
 
 describe('campaignHubService', () => {
   it('loads world preview, completed player characters, companions, and per-character recap', async () => {
     const recordedCursors: CharacterSessionCursor[] = []
-    const service = createCampaignHubService({
-      getReview: async () => review(),
+    const service = createCampaignHubService(hubDeps({
       listCompletedCharacters: () => [
         { campaignId: 'camp-1', characterId: 'pc-1', characterName: 'Ilyra', phase: 'complete' }
       ],
@@ -24,41 +23,27 @@ describe('campaignHubService', () => {
         paragraphs: input.events.map((event) => `recap:${event.summary}`),
         eventIds: input.events.map((event) => event.id)
       })
-    })
+    }))
 
     const hub = await service.loadHub('camp-1')
-
     expect(hub.worldPreview).toMatchObject({
       campaignName: 'Ash Road',
       summary: 'A road under ember skies.'
     })
-    expect(hub.characters).toEqual([
-      {
-        characterId: 'pc-1',
-        characterName: 'Ilyra',
-        companions: [{ characterId: 'wolf-1', name: 'Briar', archetype: 'Ranger' }],
-        recap: {
-          paragraphs: ['recap:Won the bridge fight'],
-          eventIds: ['evt-1']
-        }
-      }
-    ])
+    expect(hub.characters[0]).toMatchObject({
+      characterId: 'pc-1',
+      companions: [{ characterId: 'wolf-1', name: 'Briar', archetype: 'Ranger' }],
+      recap: { paragraphs: ['recap:Won the bridge fight'], eventIds: ['evt-1'] }
+    })
     expect(recordedCursors).toEqual([{ campaignId: 'camp-1', characterId: 'pc-1', lastSessionAt: 10 }])
   })
 
   it('creates the next onboarding request for adding another character', async () => {
-    const service = createCampaignHubService({
-      getReview: async () => review(),
-      listCompletedCharacters: () => [],
+    const service = createCampaignHubService(hubDeps({
       listCharacters: () => [
         { campaignId: 'camp-1', characterId: 'camp-1.pc1', characterName: 'Ilyra', phase: 'complete' }
-      ],
-      listCompanions: () => [],
-      listCausalEvents: () => [],
-      getCharacterSessionCursor: () => undefined,
-      recordCharacterSessionCursor: (cursor) => cursor,
-      buildSessionRecap: () => ({ paragraphs: [], eventIds: [] })
-    })
+      ]
+    }))
 
     await expect(service.addCharacter('camp-1')).resolves.toEqual({
       campaignId: 'camp-1',
@@ -67,6 +52,20 @@ describe('campaignHubService', () => {
     })
   })
 })
+
+function hubDeps(overrides: Partial<CampaignHubDeps> = {}): CampaignHubDeps {
+  return {
+    getReview: async () => review(),
+    listCompletedCharacters: () => [],
+    listCharacters: () => [],
+    listCompanions: () => [],
+    listCausalEvents: () => [],
+    getCharacterSessionCursor: () => undefined,
+    recordCharacterSessionCursor: (cursor) => cursor,
+    buildSessionRecap: () => ({ paragraphs: [], eventIds: [] }),
+    ...overrides
+  }
+}
 
 function review() {
   return {

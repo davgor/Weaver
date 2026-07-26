@@ -123,12 +123,24 @@ function worldPreview(
   campaignId: string,
   review: CampaignReviewSnapshot | null
 ): CampaignWorldPreview {
+  if (review === null) return emptyWorldPreview(campaignId)
   return {
     campaignId,
-    campaignName: review?.campaignName ?? campaignId,
-    premise: review?.storyPremise ?? '',
-    summary: review?.worldSummary ?? 'No world preview is available yet.',
-    regions: review?.regions ?? [],
-    npcs: review?.npcs ?? []
+    campaignName: review.campaignName,
+    premise: review.storyPremise,
+    summary: review.worldSummary,
+    regions: review.regions,
+    npcs: review.npcs
+  }
+}
+
+function emptyWorldPreview(campaignId: string): CampaignWorldPreview {
+  return {
+    campaignId,
+    campaignName: campaignId,
+    premise: '',
+    summary: 'No world preview is available yet.',
+    regions: [],
+    npcs: []
   }
 }

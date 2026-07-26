@@ -23,30 +23,11 @@ describe('travelHandler', () => {
   })
 
   it('rejects ungenerated destinations without live population', () => {
-    const travel: CharacterTravelApi = { advanceTravelDays }
-    const destinations: TravelDestinationLookup = {
-      isGenerated: () => false
-    }
-
-    expect(() =>
-      resolveTravelIntent(travel, destinations, {
-        campaignId: 'campaign-travel-fail',
-        destinationId: 'place.missing',
-        proposedDays: 3
-      })
-    ).toThrow(DmIntentError)
-
-    try {
-      resolveTravelIntent(travel, destinations, {
-        campaignId: 'campaign-travel-fail',
-        destinationId: 'place.missing',
-        proposedDays: 3
-      })
-    } catch (error) {
-      expect(error).toBeInstanceOf(DmIntentError)
-      expect((error as DmIntentError).code).toBe('DM_TRAVEL_REJECTED')
-      expect((error as Error).message).toMatch(/place\.missing/)
-    }
+    expectRejectedTravel({
+      campaignId: 'campaign-travel-fail',
+      destinationId: 'place.missing',
+      proposedDays: 3
+    })
   })
 
   it('mints an ungenerated destination through an optional live population hook before travel', () => {
@@ -76,4 +57,23 @@ describe('travelHandler', () => {
 
 function alwaysGenerated(): TravelDestinationLookup {
   return { isGenerated: () => true }
+}
+
+function expectRejectedTravel(request: {
+  campaignId: string
+  destinationId: string
+  proposedDays: number
+}): void {
+  const travel: CharacterTravelApi = { advanceTravelDays }
+  const destinations: TravelDestinationLookup = { isGenerated: () => false }
+
+  expect(() => resolveTravelIntent(travel, destinations, request)).toThrow(DmIntentError)
+
+  try {
+    resolveTravelIntent(travel, destinations, request)
+  } catch (error) {
+    expect(error).toBeInstanceOf(DmIntentError)
+    expect((error as DmIntentError).code).toBe('DM_TRAVEL_REJECTED')
+    expect((error as Error).message).toMatch(new RegExp(request.destinationId.replace('.', '\\.')))
+  }
 }

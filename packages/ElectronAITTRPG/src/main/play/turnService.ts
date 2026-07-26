@@ -7,7 +7,7 @@ import type {
 } from '../../shared/play/types.js'
 import { buildCombatChrome } from './combatChrome.js'
 
-export type TurnService<TDeps> = {
+export type TurnService = {
   submitAction: (request: SubmitPlayActionRequest) => Promise<SubmitPlayActionResult>
 }
 
@@ -17,7 +17,7 @@ export type TurnServiceDeps<TDeps> = {
   getEncounter?: (encounterId: string) => EncounterState | undefined
 }
 
-export function createTurnService<TDeps>(deps: TurnServiceDeps<TDeps>): TurnService<TDeps> {
+export function createTurnService<TDeps>(deps: TurnServiceDeps<TDeps>): TurnService {
   return {
     submitAction: (request) => submitAction(deps, request)
   }
