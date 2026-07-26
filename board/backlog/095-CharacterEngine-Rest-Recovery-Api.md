@@ -2,7 +2,7 @@
 
 Close the gap left by `031-CharacterEngine-Time-And-Rest`: `longRest` today only advances the campaign day counter and does **not** perform the full recovery that epic promised (“long rest … is the only source of full recovery”). Add a first-class **rest recovery API** on CharacterEngine so long rests restore PC vitality deterministically, stay LLM-free, and remain the single recovery path Combat/DM/UI call.
 
-**Depends on:** `023-CharacterEngine-Hp-Model`, `024-CharacterEngine-Damage-Conditions-Dying`, `031-CharacterEngine-Time-And-Rest`. **Feeds:** `058-DMEngine-Shared-Time-And-Hub-Recap` (hub/rest orchestration), WeatherEngine day advance (apply climate after rest day bump), ActionEngine lockout clear on rest (optional peer hook).
+**Depends on:** `023-CharacterEngine-Hp-Model`, `024-CharacterEngine-Damage-Conditions-Dying`, `031-CharacterEngine-Time-And-Rest`. **Feeds:** `058-DMEngine-Shared-Time-And-Hub-Recap` (hub/rest orchestration), WeatherEngine day advance (apply climate after rest day bump), ActionEngine lockout clear on rest (optional peer hook). Related CharacterEngine backlog: `096-CharacterEngine-Location-Ownership` (placement facts; independent of rest recovery).
 
 **Out of scope:** short-rest Hit-Die spend economy (not in current product rules); HTTP/REST transport (this epic is the CharacterEngine **rest** domain API, not a web server); story invention of “you feel rested” prose (NarrationEngine).
 
