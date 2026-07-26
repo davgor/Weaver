@@ -13,9 +13,9 @@ Owns encounter-ready enemy definitions and instances consumed by CombatEngine an
 
 ## Status
 
-Scaffold with health endpoints. Full design lives in epics [045](../../board/backlog/045-EnemyEngine-Bestiary-Catalog.md)–[047](../../board/backlog/047-EnemyEngine-Combat-Token-Hook.md).
+Bestiary catalog, scoped foe generation, CombatEngine-facing hydration, and non-blocking combat-token hooks for epics 045-047.
 
-## Public API (today)
+## Public API
 
 ```ts
 import { enemyEngine } from '@weaver/enemy-engine'
@@ -29,14 +29,18 @@ await enemyEngine.call('health')
 |--------|--------|
 | `enemyEngine` | Singleton `EnemyEngineApi` |
 | `EnemyEngineApi` / `EngineEndpoint` | Types |
+| `listBestiary` / `getBestiaryEntry` / `hydrateBestiaryEntry` | Seeded catalog and HP hydration |
+| `generateEncounterFoes` / `assignQuestFoes` | Deterministic encounter and quest foe refs |
+| `hydrateCombatantFromFoe` | CombatEngine-facing combatant snapshot |
+| `requestCombatToken` | Async NarrationEngine visual-token hook |
 
-## Planned direction (from epics 045–047)
+## Implemented epics
 
 | Epic | Intent |
 |------|--------|
-| [045](../../board/backlog/045-EnemyEngine-Bestiary-Catalog.md) | Bestiary catalog: species/variants, seeded creature content |
-| [046](../../board/backlog/046-EnemyEngine-Dynamic-Foe-Generation.md) | Dynamic encounter foe generation + quest-foe assignment |
-| [047](../../board/backlog/047-EnemyEngine-Combat-Token-Hook.md) | Non-blocking combat-token generation hook |
+| [045](../../board/in-progress/045-EnemyEngine-Bestiary-Catalog.md) | Bestiary catalog: species/variants, seeded creature content |
+| [046](../../board/in-progress/046-EnemyEngine-Dynamic-Foe-Generation.md) | Dynamic encounter foe generation + quest-foe assignment |
+| [047](../../board/in-progress/047-EnemyEngine-Combat-Token-Hook.md) | Non-blocking combat-token generation hook |
 
 ## Scripts
 

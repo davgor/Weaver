@@ -12,19 +12,24 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run --config ../../vitest.config.ts"
   },
   "dependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@weaver/character-engine": "*",
     "@weaver/combat-engine": "*",
-    "@weaver/world-engine": "*",
-    "@weaver/narration-engine": "*",
+    "@weaver/enemy-engine": "*",
     "@weaver/item-engine": "*",
+    "@weaver/narration-engine": "*",
     "@weaver/npc-engine": "*",
-    "@weaver/enemy-engine": "*"
+    "@weaver/world-engine": "*",
+    "better-sqlite3": "^13.0.1"
   },
   "devDependencies": {
     "typescript": "^5.5.2"

@@ -1,10 +1,71 @@
 
+import type { CharacterEngineApi } from '@weaver/character-engine'
 import type { CombatEngineApi } from '@weaver/combat-engine'
 import type { WorldEngineApi } from '@weaver/world-engine'
 import type { NarrationEngineApi } from '@weaver/narration-engine'
 import type { ItemEngineApi } from '@weaver/item-engine'
 import type { NpcEngineApi } from '@weaver/npc-engine'
 import type { EnemyEngineApi } from '@weaver/enemy-engine'
+import {
+  createCampaign,
+  openCampaign,
+  type CampaignHandle,
+  type CampaignOpenOptions
+} from './persistence/campaignPersistence.js'
+
+export {
+  CURRENT_CAMPAIGN_SCHEMA_VERSION,
+  CampaignAlreadyExistsError,
+  CampaignIdentityError,
+  CampaignNotFoundError,
+  UnknownCampaignSchemaVersionError,
+  createCampaign,
+  openCampaign
+} from './persistence/campaignPersistence.js'
+
+export type {
+  CampaignHandle,
+  CampaignOpenOptions,
+  CatalogSeedContext,
+  CatalogSeedEntry,
+  CatalogSeedHook,
+  CatalogSeedWriter
+} from './persistence/campaignPersistence.js'
+
+export { DmIntentError } from './intents/errors.js'
+export { classifyPlayerIntent } from './intents/classifyIntent.js'
+export { resolveBuyIntent, resolveSellIntent } from './intents/commerceHandler.js'
+export { resolveTravelIntent } from './intents/travelHandler.js'
+export { resolvePlayerIntent } from './intents/resolvePlayerIntent.js'
+export type { ResolvePlayerIntentInput } from './intents/resolvePlayerIntent.js'
+export type {
+  BuyIntentRequest,
+  CharacterTravelApi,
+  CommerceSuccess,
+  ItemCurrencyApi,
+  NarrationIntentResult,
+  PlayerIntentKind,
+  ResolvedPlayerIntent,
+  SellIntentRequest,
+  TravelDestinationLookup,
+  TravelIntentRequest,
+  TravelSuccess
+} from './intents/types.js'
+
+export { DmQuestError } from './quests/errors.js'
+export {
+  completeQuest,
+  failQuest,
+  proposeQuest,
+  updateQuestProgress
+} from './quests/questOrchestration.js'
+export type {
+  CharacterQuestApi,
+  QuestProgressInput,
+  QuestProposalInput,
+  QuestReferenceLookup,
+  QuestTransitionInput
+} from './quests/types.js'
 
 export type DmEngineDeps = {
   combat: CombatEngineApi
@@ -13,6 +74,7 @@ export type DmEngineDeps = {
   items: ItemEngineApi
   npcs: NpcEngineApi
   enemies: EnemyEngineApi
+  characters: CharacterEngineApi
 }
 export type EngineEndpoint = {
   name: string
@@ -25,9 +87,13 @@ export type DmEngineApi = {
   title: string
   description: string
   health: () => { ok: true; package: string; version: string }
+  createCampaign: (options: CampaignOpenOptions) => CampaignHandle
+  openCampaign: (options: CampaignOpenOptions) => CampaignHandle
   listEndpoints: () => EngineEndpoint[]
   call: (endpoint: string, payload?: unknown) => Promise<unknown>
 }
+
+type CampaignEndpointResult = Omit<CampaignHandle, 'close'>
 
 const PACKAGE_NAME = '@weaver/dm-engine'
 const VERSION = '0.1.0'
@@ -45,6 +111,7 @@ function buildEndpoints(): EngineEndpoint[] {
       invoke: () => ({
         invents: false,
         pullsFrom: [
+          'character-engine',
           'combat-engine',
           'world-engine',
           'narration-engine',
@@ -54,6 +121,16 @@ function buildEndpoints(): EngineEndpoint[] {
         ],
         note: 'DMEngine orchestrates; it does not invent world or combat facts itself.'
       })
+    },
+    {
+      name: 'campaign.create',
+      description: 'Create and migrate a campaign store through the DM engine boundary',
+      invoke: (payload) => summarizeAndClose(createCampaign(readCampaignPayload(payload)))
+    },
+    {
+      name: 'campaign.open',
+      description: 'Open and migrate a campaign store through the DM engine boundary',
+      invoke: (payload) => summarizeAndClose(openCampaign(readCampaignPayload(payload)))
     }
   ]
 }
@@ -65,6 +142,12 @@ export const dmEngine: DmEngineApi = {
   health() {
     return { ok: true, package: PACKAGE_NAME, version: VERSION }
   },
+  createCampaign(options: CampaignOpenOptions) {
+    return createCampaign(options)
+  },
+  openCampaign(options: CampaignOpenOptions) {
+    return openCampaign(options)
+  },
   listEndpoints() {
     return buildEndpoints()
   },
@@ -75,4 +158,36 @@ export const dmEngine: DmEngineApi = {
     }
     return await match.invoke(payload)
   }
+}
+
+function summarizeAndClose(handle: CampaignHandle): CampaignEndpointResult {
+  try {
+    return {
+      campaignId: handle.campaignId,
+      filePath: handle.filePath,
+      schemaVersion: handle.schemaVersion,
+      appliedMigrations: handle.appliedMigrations
+    }
+  } finally {
+    handle.close()
+  }
+}
+
+function readCampaignPayload(payload?: unknown): CampaignOpenOptions {
+  if (!isRecord(payload)) {
+    throw new Error('Campaign endpoint payload must be an object')
+  }
+  const campaignId = payload.campaignId
+  const filePath = payload.filePath
+  if (typeof campaignId !== 'string' || campaignId.length === 0) {
+    throw new Error('Campaign endpoint payload requires campaignId')
+  }
+  if (typeof filePath !== 'string' || filePath.length === 0) {
+    throw new Error('Campaign endpoint payload requires filePath')
+  }
+  return { campaignId, filePath }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
 }

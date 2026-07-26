@@ -17,7 +17,7 @@ Any implementation work in this repo must follow `.cursor/skills/delivery-standa
    - `npm run lint`
    - `npm run build` (or `npm run build:engines` + Electron build when relevant)
    - `npm run deadcode` (ts-prune vs `.tsprune-ignore`; if export moves/deletes drift the baseline, run `npm run deadcode:refresh` after confirming the new findings are intentional)
-   - **`npm run ci:act`** — runs `.github/workflows/pr-checks.yml` and `.github/workflows/deadcode.yml` via `act` (see `act-ci-after-local-tasks` rule). Required, no exceptions. It checks Docker itself and fails fast with a message if Docker isn't running — if that happens, **pause and ask the user to start Docker** — do not silently skip or fall back to local-only commands.
+   - **Remote CI gate** (see `act-ci-after-local-tasks` rule): **cloud agents** wait for GitHub PR checks (`pr-checks` + `deadcode`) and **mark the PR ready when green** — do not run `act`. **Desktop/local** runs `npm run ci:act` (pause and ask to start Docker if unreachable).
 5. **Board traceability** — **ALWAYS write a ticket yourself.** Never ask the user whether to create one, which number to use, or whether to skip tracking. Create `/board/backlog/` (or move to `in-progress` when starting) with Description + checkable Acceptance Criteria before or as you start. Epic files use `XXXX-PACKAGE_NAME-Summary.md` (`Repo` for cross-cutting). If the user named a ticket id, use `complete-ticket` skill. Next free id: look at highest `XXXX` under `board/` and increment.
 
 ## Also required

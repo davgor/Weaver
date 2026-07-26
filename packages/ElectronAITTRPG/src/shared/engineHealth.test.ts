@@ -5,6 +5,8 @@ describe('summarizeEngineHealth', () => {
   it('reports ready when every engine id is present', () => {
     const summary = summarizeEngineHealth([
       { id: 'CombatEngine' },
+      { id: 'ActionEngine' },
+      { id: 'CharacterEngine' },
       { id: 'WorldEngine' },
       { id: 'RegionalEngine' },
       { id: 'CivilizationEngine' },
@@ -25,6 +27,8 @@ describe('summarizeEngineHealth', () => {
     const summary = summarizeEngineHealth([{ id: 'CombatEngine' }, { id: 'WorldEngine' }])
     expect(summary.ready).toBe(false)
     expect(summary.missing).toEqual([
+      'ActionEngine',
+      'CharacterEngine',
       'RegionalEngine',
       'CivilizationEngine',
       'DungeonEngine',

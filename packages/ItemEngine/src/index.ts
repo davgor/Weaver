@@ -1,46 +1,68 @@
-export type EngineEndpoint = {
-  name: string
-  description: string
-  invoke: (payload?: unknown) => Promise<unknown> | unknown
-}
-
-export type ItemEngineApi = {
-  id: 'ItemEngine'
-  title: string
-  description: string
-  health: () => { ok: true; package: string; version: string }
-  listEndpoints: () => EngineEndpoint[]
-  call: (endpoint: string, payload?: unknown) => Promise<unknown>
-}
-
-const PACKAGE_NAME = '@weaver/item-engine'
-const VERSION = '0.1.0'
-
-function buildEndpoints(): EngineEndpoint[] {
-  return [
-    {
-      name: 'health',
-      description: 'Return package health metadata',
-      invoke: () => ({ ok: true as const, package: PACKAGE_NAME, version: VERSION })
-    },
-  ]
-}
-
-export const itemEngine: ItemEngineApi = {
-  id: 'ItemEngine',
-  title: 'Item Engine',
-  description: 'Create and modify game items',
-  health() {
-    return { ok: true, package: PACKAGE_NAME, version: VERSION }
-  },
-  listEndpoints() {
-    return buildEndpoints()
-  },
-  async call(endpoint: string, payload?: unknown) {
-    const match = buildEndpoints().find((e) => e.name === endpoint)
-    if (!match) {
-      throw new Error(`Unknown endpoint: ${endpoint}`)
-    }
-    return await match.invoke(payload)
-  }
-}
+export type { EngineEndpoint } from './typesApi.js'
+export {
+  CurrencyError,
+  InsufficientFundsError,
+  InvalidCurrencyAmountError,
+  InvalidPriceBoundsError,
+  clampProposedPrice,
+  createCurrencyService
+} from './currencyService.js'
+export {
+  DEFAULT_LOOT_TABLE_ID,
+  LOOT_TABLES,
+  generateLoot
+} from './lootService.js'
+export {
+  EXPECTED_ACTION_ENGINE_ACTION_IDS,
+  STARTING_GEAR_ARCHETYPES,
+  STARTING_GEAR_CATALOG_VERSION,
+  getStartingLoadout,
+  isStartingGearArchetype
+} from './startingGear.js'
+export {
+  ITEM_TEMPLATE_CATALOG_VERSION,
+  TEMPLATE_IDS,
+  getItemTemplateCatalog,
+  seedItemTemplateCatalog
+} from './templateCatalog.js'
+export {
+  EQUIPMENT_SLOTS,
+  FIXED_EQUIPMENT_SLOTS,
+  createEmptyEquippedItems,
+  isEquipmentSlot,
+  isFixedEquipmentSlot
+} from './types.js'
+export type {
+  CurrencyBalanceSnapshot,
+  CurrencyErrorCode,
+  CurrencyService,
+  PriceClampOptions
+} from './currencyService.js'
+export type {
+  EquipmentSlot,
+  EquippedItems,
+  EquippedItemViews,
+  FixedEquipmentSlot,
+  InventorySnapshot,
+  ItemInstance,
+  ItemInstanceState,
+  ItemTemplate,
+  ItemView
+} from './types.js'
+export type {
+  GenerateLootRequest,
+  LootDifficulty,
+  LootDrop,
+  LootTable
+} from './lootService.js'
+export type {
+  StarterActionId,
+  StartingGearArchetype,
+  StartingLoadout,
+  StartingLoadoutItem
+} from './startingGear.js'
+export type { StarterItemTemplateId } from './templateCatalog.js'
+export { createItemService } from './itemService.js'
+export type { ItemService } from './itemService.js'
+export { itemEngine } from './engineApi.js'
+export type { ItemEngineApi } from './engineApi.js'

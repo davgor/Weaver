@@ -14,39 +14,62 @@ Enriches regions with settlements (farmhouse → city), authoritative population
 - Feeds NPCEngine assignment, EnemyEngine density, Narration/DM grounding
 - Consumers need `*.contract.test.ts` against the real API
 
-## Status
+## Peer usage (DMEngine / NPCEngine)
 
-Scaffold with health endpoints. Full design lives in epic [016](../../board/backlog/016-CivilizationEngine-Settlement-Placement.md). Package scaffold is done (`016.1`).
-
-## Public API (today)
+Typical pipeline after world + region fill:
 
 ```ts
-import { civilizationEngine } from '@weaver/civilization-engine'
+import { createWorldService } from '@weaver/world-engine'
+import { createRegionalService } from '@weaver/regional-engine'
+import { createCivilizationService } from '@weaver/civilization-engine'
+
+const world = createWorldService(dataRoot)
+const regional = createRegionalService({ dataRoot, world })
+const civ = createCivilizationService({ dataRoot, regional, world })
+
+regional.fillRegions(worldId, { expansionId })
+civ.fillCivilizations(worldId, { expansionId })
+
+// NPCEngine later:
+const slots = civ.listUnassignedNpcPlaceholders(worldId, { regionId })
+civ.claimNpcPlaceholder(worldId, slots[0].slotId, npcId)
+```
+
+DMEngine should call CivilizationEngine for settlement facts and population — never invent headcounts. NPCEngine claims placeholders; this package never constructs NPC actors.
+
+## Public API
+
+```ts
+import { civilizationEngine, createCivilizationService } from '@weaver/civilization-engine'
 
 civilizationEngine.health()
 civilizationEngine.listEndpoints()
-await civilizationEngine.call('health')
+await civilizationEngine.call('fillCivilizations', { dataRoot, worldId, expansionId })
 ```
 
 | Export | Notes |
 |--------|--------|
-| `civilizationEngine` | Singleton `CivilizationEngineApi` |
-| `CivilizationEngineApi` / `EngineEndpoint` | Types |
+| `createCivilizationService({ dataRoot, regional, world })` | Dependency-injected service |
+| `civilizationEngine` | Singleton with health, endpoint catalog, typed helpers |
+| `OVERLAY_KEYS` | Sparse overlay key contract (`civ.civilizationId`, `civ.landUse`, `civ.density`) |
 
-## Planned direction (from epic 016)
+## Service methods
 
-Settlement kinds: `farmHouse` | `hamlet` | `village` | `castle` | `city`, driven by regional stats (land area, water, elevation, coast/landlocked).
+| Area | APIs |
+|------|------|
+| Placement | `proposeCivilizations`, `createCivilization`, `fillCivilizations` |
+| Population | `getPopulation`, `getRegionPopulation`, `getCivilizationPopulation`, `adjustPopulation`, `reconcilePopulation` |
+| NPC placeholders | `listNpcPlaceholders`, `listUnassignedNpcPlaceholders`, `claimNpcPlaceholder`, `releaseNpcPlaceholder`, `ensureNpcPlaceholders` |
+| Query / lifecycle | `getCivilization`, `listCivilizations`, `listCivilizationsInRegion`, `getCivilizationAt`, `getCivilizationsInBounds`, summaries, `hasCivilizations`, `countCivilizations`, `deleteCivilization`, `clearCivilizations` |
 
-| Concern | Intent |
-|---------|--------|
-| Civilization records | Machine id, region/world, kind, bounds, seedSalt, population, NPC slot counts |
-| Population ledger | Authoritative on settlement; aggregates derived, never independently invented |
-| Overlays | Footprint / land-use written through WorldEngine sparse overlays |
-| NPC placeholders | Slots for later NPCEngine assignment — not full NPC construction |
+## Storage
+
+- `{dataRoot}/{worldId}/civilizations.sqlite` — civilization rows, cell claims, NPC placeholders
+- WorldEngine `{dataRoot}/{worldId}/world.sqlite` overlays table — settlement land-use via `OVERLAY_KEYS`
 
 ## Scripts
 
 ```bash
-npm test -- packages/CivilizationEngine
+npx vitest run packages/CivilizationEngine
 npm run build:engines
 ```

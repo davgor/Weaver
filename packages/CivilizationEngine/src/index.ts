@@ -1,47 +1,75 @@
-export type EngineEndpoint = {
-  name: string
-  description: string
-  invoke: (payload?: unknown) => Promise<unknown> | unknown
-}
-
-export type CivilizationEngineApi = {
-  id: 'CivilizationEngine'
-  title: string
-  description: string
-  health: () => { ok: true; package: string; version: string }
-  listEndpoints: () => EngineEndpoint[]
-  call: (endpoint: string, payload?: unknown) => Promise<unknown>
-}
-
-const PACKAGE_NAME = '@weaver/civilization-engine'
-const VERSION = '0.1.0'
-
-function buildEndpoints(): EngineEndpoint[] {
-  return [
-    {
-      name: 'health',
-      description: 'Return package health metadata',
-      invoke: () => ({ ok: true as const, package: PACKAGE_NAME, version: VERSION })
-    },
-  ]
-}
-
-export const civilizationEngine: CivilizationEngineApi = {
-  id: 'CivilizationEngine',
-  title: 'Civilization Engine',
-  description:
-    'Deterministic settlement placement, population tracking, and NPC placeholders for regions',
-  health() {
-    return { ok: true, package: PACKAGE_NAME, version: VERSION }
-  },
-  listEndpoints() {
-    return buildEndpoints()
-  },
-  async call(endpoint: string, payload?: unknown) {
-    const match = buildEndpoints().find((e) => e.name === endpoint)
-    if (!match) {
-      throw new Error(`Unknown endpoint: ${endpoint}`)
-    }
-    return await match.invoke(payload)
-  }
-}
+export type { EngineEndpoint } from './typesApi.js'
+export type {
+  Aabb,
+  Cell,
+  CivilizationCandidate,
+  CivilizationRecord,
+  CivilizationRegionalReader,
+  CivilizationServiceOptions,
+  CivilizationSummary,
+  CivilizationWorldOverlays,
+  CivilizationWorldReader,
+  DraftNpcSlot,
+  ExpansionRecord,
+  FillCivilizationsScope,
+  LandUse,
+  OverlayDraft,
+  Point,
+  PopulationAggregate,
+  PopulationByKind,
+  PopulationChange,
+  ProposeCivilizationsOpts,
+  RegionCivilizationSummary,
+  RegionRecord,
+  RegionSummary,
+  SettlementKind,
+  SparseOverlay,
+  WorldMeta
+} from './types.js'
+export {
+  CIVILIZATION_STATS_VERSION,
+  LAND_USES,
+  SETTLEMENT_KINDS
+} from './types.js'
+export { OVERLAY_KEYS, isOverlayKey, overlaysFromDraft, parseLandUse } from './overlayContract.js'
+export {
+  NPC_ROLE_HINTS,
+  applyClaim,
+  applyRelease,
+  assertRoleHint,
+  buildSlotId,
+  claimNpcPlaceholder,
+  clearNpcPlaceholderStore,
+  copySlot,
+  ensureNpcPlaceholders,
+  listNpcPlaceholders,
+  listUnassignedNpcPlaceholders,
+  matchesUnassignedFilter,
+  releaseNpcPlaceholder
+} from './npcPlaceholders.js'
+export type {
+  EnsureNpcPlaceholdersInput,
+  ListUnassignedFilter,
+  NpcPlaceholderSlot,
+  NpcPlaceholderStatus,
+  NpcRoleHint
+} from './npcPlaceholders.js'
+export {
+  capacityForKind,
+  clampPopulation,
+  eligibleKinds,
+  evaluateKindRules,
+  slotTargetForPopulation
+} from './kindRules.js'
+export type { KindCapacity } from './kindRules.js'
+export { classifyUrbanLandUse, urbanDensityAt } from './urbanDensity.js'
+export { proposeCivilizationsForRegion } from './propose.js'
+export type { ProposeContext } from './propose.js'
+export { aggregateFromRecords, applyPopulationChange, emptyAggregate } from './population.js'
+export { createCivilizationStore } from './store/civilizationStore.js'
+export type { CivilizationStore } from './store/civilizationStore.js'
+export { createWorldOverlayAdapter } from './store/worldOverlayAdapter.js'
+export { createCivilizationService } from './civilizationService.js'
+export type { CivilizationService } from './civilizationService.js'
+export { civilizationEngine } from './engineApi.js'
+export type { CivilizationEngineApi } from './engineApi.js'

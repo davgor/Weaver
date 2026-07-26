@@ -39,6 +39,8 @@ jobs:
         run: node scripts/npm-ci-with-retry.mjs
       - name: Ensure Electron binary is installed
         run: node node_modules/electron/install.js
+      - name: Build engine packages
+        run: npm run build:engines
       - run: node scripts/run-test-shard.mjs --index ${{ matrix.shard }} --target-ms 60000 --json-out shard-timings-${{ matrix.shard }}.json
 
   lint:

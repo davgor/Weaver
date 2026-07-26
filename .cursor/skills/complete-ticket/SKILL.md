@@ -55,7 +55,19 @@ Run the project's checks and only proceed once they're clean:
 
 If something fails, fix it — don't check off a criterion that doesn't actually pass, and don't mark the ticket done with failing checks.
 
-No body of work is complete until the actual PR-checks workflow has been run and is passing — not just the equivalent local commands. Run both required workflows in one shot:
+No body of work is complete until the real GitHub Actions workflows (`pr-checks` + `deadcode`) have passed — not just the equivalent local commands.
+
+### Cloud agents / Cursor Cloud (standing account preference)
+
+Do **not** run `act` / `npm run ci:act`. After local gates:
+
+1. Commit and push the branch; ensure a draft PR exists.
+2. Poll until GitHub PR checks are green (`gh pr checks`).
+3. **Mark the PR ready** (`gh pr ready <n>`). Do not leave a green PR in draft.
+
+### Desktop / local (Docker available)
+
+Run both required workflows in one shot:
 
 ```
 npm run ci:act
@@ -74,7 +86,7 @@ ACT="/c/Users/davgo/AppData/Local/Microsoft/WinGet/Packages/nektos.act_Microsoft
 - `--pull=false` uses the already-cached runner image instead of re-checking Docker Hub on every run. Without it, `act` occasionally fails every job at "Set up job" with `Error response from daemon: authentication required` — a transient Docker Hub pull/rate-limit hiccup, not a real failure. If that happens, run `docker pull catthehacker/ubuntu:act-latest` once to refresh the image, then retry `npm run ci:act`.
 
 - Confirm the output ends with `🏁 Job succeeded` for every job in the workflow (test, lint, build, and any others added later) — a job that errors or any job reporting `🏁 Job failed` means the work is not done yet, fix it and rerun.
-- `npm run ci:act` checks Docker itself and exits with a clear message if it's not reachable. If Docker is not running, **pause and ask the user to start Docker Desktop**, then retry after they confirm. Do **not** fall back to local-only commands and call the ticket done — the real workflows must be exercised via `act`, with no exceptions.
+- `npm run ci:act` checks Docker itself and exits with a clear message if it's not reachable. If Docker is not running **on a desktop session**, pause and ask the user to start Docker Desktop, then retry after they confirm. **Cloud sessions must use the PR-check path above** instead of asking for Docker.
 
 **If the ticket touches a native Node module (anything with a compiled `.node` binary) or wires new code into Electron `main`/`preload` for the first time**, passing `npm test` is not sufficient proof it works — Vitest runs under plain system Node, but the real app runs under Electron's bundled Node, which has a different ABI. Before considering such a ticket done:
 
@@ -117,9 +129,9 @@ When the user means the whole epic ("complete epic 4", "do 4.1 through 4.12", "c
    - The full text of the ticket(s) it owns (description + acceptance criteria) and any README excerpt it needs — don't make it re-derive ruleset details from scratch.
    - The exact files it owns to create/edit, so two agents never touch the same file.
    - The standing rules from section 3 (TDD-first, oxlint limits — complexity ≤10, ~50 lines/function, ≤4 params, depth ≤3 — no `any` escapes, no lint-relaxation, deterministic-engine import boundary, LLM package boundary).
-   - An instruction to self-check by running only its own new test file(s) (e.g. `npx vitest run packages/CombatEngine/src/foo.test.ts`), and explicitly **not** to run the full suite, lint, build, or `act` — those are integration steps you run once, after every agent reports back, so parallel runs don't race each other against the same working tree.
+   - An instruction to self-check by running only its own new test file(s) (e.g. `npx vitest run packages/CombatEngine/src/foo.test.ts`), and explicitly **not** to run the full suite, lint, build, `act`, or PR-check polling — those are integration steps you run once, after every agent reports back, so parallel runs don't race each other against the same working tree.
    - A request to report back what it created/changed, its test output, and anything it couldn't verify or had to deviate on.
 5. **Verify each sub-agent's work before trusting it** — skim the diff for scope creep, skipped TDD, or lint-shaped problems, per this project's "trust but verify" norm. Fix small issues yourself rather than re-dispatching an agent for them.
-6. **Run the whole-repo checks once, after every sub-ticket in scope is implemented**, exactly as section 4 describes: `npm test`, `npm run lint`, `npm run typecheck`, `npm run deadcode`, `npm run build` if relevant, the native-module/Electron verification from section 4 if any sub-ticket touched a native module or `main`/`preload`, and the real `act`-driven `pr-checks.yml` + `deadcode.yml` runs confirming `🏁 Job succeeded` for every job. Fix integration fallout yourself.
+6. **Run the whole-repo checks once, after every sub-ticket in scope is implemented**, exactly as section 4 describes: `npm test`, `npm run lint`, `npm run typecheck`, `npm run deadcode`, `npm run build` if relevant, the native-module/Electron verification from section 4 if any sub-ticket touched a native module or `main`/`preload`, and the remote CI gate (cloud: GitHub PR checks green + PR marked ready; desktop: `act`-driven `pr-checks.yml` + `deadcode.yml` with `🏁 Job succeeded`). Fix integration fallout yourself.
 7. **Check off criteria and close out per section 5**, for every sub-ticket, then close the epic file once every sub-ticket under it is done, then invoke the `collapse-epic` skill on this epic so its sub-ticket files get folded into the epic file.
 8. **Report back per section 7, organized by sub-ticket**, and note which ran in parallel vs. sequentially and why — if the epic's sub-tickets formed one long dependency chain with no parallelizable work, say so and explain you ran it sequentially instead of forcing sub-agents where they wouldn't help.

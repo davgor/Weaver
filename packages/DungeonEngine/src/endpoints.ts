@@ -1,6 +1,7 @@
 import type { EngineEndpoint } from './typesApi.js'
 import type { Aabb } from './types.js'
 import { createDungeonService, type CreateDungeonOptions } from './store/dungeonService.js'
+import { createWorldEngineLookup } from './worldLookup.js'
 
 const PACKAGE_NAME = '@weaver/dungeon-engine'
 const VERSION = '0.1.0'
@@ -85,6 +86,22 @@ function lifecycleEndpoints(): EngineEndpoint[] {
         createDungeonService(requireDataRoot(body)).deleteDungeon(requireString(body, 'dungeonId'))
         return { ok: true as const }
       }
+    },
+    {
+      name: 'resetDungeonInstance',
+      description: 'Clear instance overlays while preserving generated geometry',
+      invoke: (payload) => {
+        const body = asRecord(payload)
+        return createDungeonService(requireDataRoot(body)).resetDungeonInstance(requireString(body, 'dungeonId'))
+      }
+    },
+    {
+      name: 'restockDungeonInstance',
+      description: 'Clear restockable overlays and run the configured restock hook',
+      invoke: (payload) => {
+        const body = asRecord(payload)
+        return createDungeonService(requireDataRoot(body)).restockDungeonInstance(requireString(body, 'dungeonId'))
+      }
     }
   ]
 }
@@ -165,6 +182,108 @@ function cellQueryEndpoints(): EngineEndpoint[] {
   ]
 }
 
+function topologyEndpoints(): EngineEndpoint[] {
+  return [
+    {
+      name: 'listRooms',
+      description: 'List generated rooms for a dungeon or one floor',
+      invoke: (payload) => {
+        const body = asRecord(payload)
+        const floorIndex = optionalNumber(body, 'floorIndex')
+        return createDungeonService(requireDataRoot(body)).listRooms(requireString(body, 'dungeonId'), floorIndex)
+      }
+    },
+    {
+      name: 'getRoom',
+      description: 'Get one generated room by id',
+      invoke: (payload) => {
+        const body = asRecord(payload)
+        return createDungeonService(requireDataRoot(body)).getRoom(requireString(body, 'dungeonId'), requireString(body, 'roomId'))
+      }
+    },
+    {
+      name: 'listConnections',
+      description: 'List corridor and stair graph connections',
+      invoke: (payload) => {
+        const body = asRecord(payload)
+        const floorIndex = optionalNumber(body, 'floorIndex')
+        return createDungeonService(requireDataRoot(body)).listConnections(requireString(body, 'dungeonId'), floorIndex)
+      }
+    },
+    {
+      name: 'getTopology',
+      description: 'Return generated rooms and graph connections',
+      invoke: (payload) => {
+        const body = asRecord(payload)
+        const floorIndex = optionalNumber(body, 'floorIndex')
+        return createDungeonService(requireDataRoot(body)).getTopology(requireString(body, 'dungeonId'), floorIndex)
+      }
+    }
+  ]
+}
+
+function parseEntrance(payload: Record<string, unknown>): {
+  worldId: string
+  x: number
+  y: number
+  facing?: 'north' | 'south' | 'east' | 'west'
+} {
+  const entrance = payload.entrance
+  if (!entrance || typeof entrance !== 'object') throw new Error('entrance required')
+  const body = entrance as Record<string, unknown>
+  const x = optionalNumber(body, 'x')
+  const y = optionalNumber(body, 'y')
+  if (x === undefined || y === undefined) throw new Error('entrance.x and entrance.y required')
+  const facing = body.facing
+  const result: {
+    worldId: string
+    x: number
+    y: number
+    facing?: 'north' | 'south' | 'east' | 'west'
+  } = { worldId: requireString(body, 'worldId'), x, y }
+  if (
+    facing === 'north' ||
+    facing === 'south' ||
+    facing === 'east' ||
+    facing === 'west'
+  ) {
+    result.facing = facing
+  }
+  return result
+}
+
+function entranceEndpoints(): EngineEndpoint[] {
+  return [
+    {
+      name: 'setOverworldEntrance',
+      description: 'Link a dungeon to a WorldEngine overworld cell',
+      invoke: (payload) => {
+        const body = asRecord(payload)
+        return createDungeonService(requireDataRoot(body), {
+          worldLookup: createWorldEngineLookup(requireString(body, 'worldDataRoot'))
+        }).setOverworldEntrance(requireString(body, 'dungeonId'), parseEntrance(body))
+      }
+    },
+    {
+      name: 'getOverworldEntrance',
+      description: 'Read the overworld entrance for a dungeon',
+      invoke: (payload) => {
+        const body = asRecord(payload)
+        return createDungeonService(requireDataRoot(body)).getOverworldEntrance(requireString(body, 'dungeonId'))
+      }
+    },
+    {
+      name: 'clearOverworldEntrance',
+      description: 'Clear the overworld entrance for a dungeon',
+      invoke: (payload) => {
+        const body = asRecord(payload)
+        createDungeonService(requireDataRoot(body)).clearOverworldEntrance(requireString(body, 'dungeonId'))
+        return { ok: true as const }
+      }
+    }
+  ]
+}
+
 export function buildEndpoints(): EngineEndpoint[] {
   return [
     {
@@ -174,6 +293,8 @@ export function buildEndpoints(): EngineEndpoint[] {
     },
     ...lifecycleEndpoints(),
     ...metaQueryEndpoints(),
+    ...topologyEndpoints(),
+    ...entranceEndpoints(),
     ...cellQueryEndpoints()
   ]
 }

@@ -1,11 +1,12 @@
-import type { LlmBackend } from './backend.js'
+import type { LlmBackend, LocalLlmBackend } from './backend.js'
 import type { ModelSpec } from './modelCatalog.js'
 
 export type InstallPhase = 'not_installed' | 'installing' | 'ready' | 'error'
 
 export type LlmStatus = {
   phase: InstallPhase
-  backend: LlmBackend | null
+  /** Local install/runtime backend only — cloud providers use TextResponse.backend. */
+  backend: LocalLlmBackend | null
   model: ModelSpec
   modelPath: string | null
   error: string | null
@@ -27,15 +28,27 @@ export type ChatMessage = {
   content: string
 }
 
+export type TextRequest = {
+  prompt: string
+  context?: string
+  maxTokens?: number
+  /** Caller tag for usage metering (e.g. campaign-create, turn-narration). */
+  purpose?: string
+}
+
+export type TextResponse = {
+  text: string
+  backend: LlmBackend
+}
+
+/** @deprecated Use TextRequest / completeText for the public generation API. */
 export type ChatRequest = {
   messages: ChatMessage[]
   maxTokens?: number
 }
 
-export type ChatResponse = {
-  text: string
-  backend: LlmBackend
-}
+/** @deprecated Use TextResponse / completeText for the public generation API. */
+export type ChatResponse = TextResponse
 
 export type FileStore = {
   exists: (path: string) => boolean | Promise<boolean>
@@ -51,14 +64,16 @@ export type Downloader = {
   ) => Promise<void>
 }
 
-export type LlmRuntime = {
-  complete: (request: ChatRequest) => Promise<ChatResponse>
+export type ProviderAdapter = {
+  completeText: (request: TextRequest) => Promise<TextResponse>
   dispose: () => Promise<void>
 }
 
+export type LlmRuntime = ProviderAdapter
+
 export type CreateRuntime = (options: {
   modelPath: string
-  backend: LlmBackend
+  backend: LocalLlmBackend
 }) => Promise<LlmRuntime>
 
 export type EngineEndpoint = {

@@ -1,9 +1,46 @@
 import { createLlmEngine, type LlmEngineApi } from './createLlmEngine.js'
+import {
+  createTextCompletionClient,
+  type CreateTextCompletionClientOptions
+} from './createTextCompletionClient.js'
 import { createDefaultLlmEngine, defaultLlmDataDir } from './defaultEngine.js'
-import { resolvePreferredBackend, type BackendProbe, type LlmBackend } from './backend.js'
+import {
+  resolvePreferredBackend,
+  type BackendProbe,
+  type LlmBackend,
+  type LocalLlmBackend
+} from './backend.js'
 import { DEFAULT_MODEL, QWEN_2_5_7B_INSTRUCT_Q4_K_M, type ModelSpec } from './modelCatalog.js'
 import { createNodeLlamaRuntime, probeVulkanWithNodeLlama } from './nodeLlamaRuntime.js'
 import { fetchDownloader, nodeFileStore } from './nodeIo.js'
+import {
+  createProviderRuntime,
+  type CreateProviderRuntimeOptions,
+  type ProviderFetch
+} from './providerRuntime.js'
+import {
+  resolveProviderConfig,
+  type ApiProviderConfig,
+  type CloudProviderId,
+  type LocalProviderConfig,
+  type Player2ProviderConfig,
+  type ProviderEnv,
+  type ProviderId,
+  type ProviderSettings,
+  type ResolvedProviderConfig
+} from './providerConfig.js'
+import { retryWithBackoff, type RetryClassifier, type RetryOptions, type Sleep } from './retry.js'
+import { estimateCostUsd } from './estimateCost.js'
+import { wrapWithUsageMetering } from './meteredRuntime.js'
+import { createUsageMeter, sharedUsageMeter } from './usageMeter.js'
+import type {
+  TokenUsage,
+  UsageEvent,
+  UsageEventInput,
+  UsageMeter,
+  UsagePurposeAggregate,
+  UsageTimeRange
+} from './usageTypes.js'
 import type {
   ChatMessage,
   ChatRequest,
@@ -15,38 +52,73 @@ import type {
   InstallProgress,
   LlmRuntime,
   LlmStatus,
-  InstallPhase
+  InstallPhase,
+  ProviderAdapter,
+  TextRequest,
+  TextResponse
 } from './types.js'
 
 export type {
   BackendProbe,
+  ApiProviderConfig,
   ChatMessage,
   ChatRequest,
   ChatResponse,
+  CloudProviderId,
   CreateRuntime,
+  CreateProviderRuntimeOptions,
+  CreateTextCompletionClientOptions,
   Downloader,
   EngineEndpoint,
   FileStore,
   InstallPhase,
   InstallProgress,
+  LocalLlmBackend,
+  LocalProviderConfig,
   LlmBackend,
   LlmEngineApi,
   LlmRuntime,
   LlmStatus,
-  ModelSpec
+  ModelSpec,
+  Player2ProviderConfig,
+  ProviderAdapter,
+  ProviderEnv,
+  ProviderFetch,
+  ProviderId,
+  ProviderSettings,
+  ResolvedProviderConfig,
+  RetryClassifier,
+  RetryOptions,
+  Sleep,
+  TextRequest,
+  TextResponse,
+  TokenUsage,
+  UsageEvent,
+  UsageEventInput,
+  UsageMeter,
+  UsagePurposeAggregate,
+  UsageTimeRange
 }
 
 export {
+  createTextCompletionClient,
   createLlmEngine,
   createDefaultLlmEngine,
+  createProviderRuntime,
   createNodeLlamaRuntime,
+  createUsageMeter,
   defaultLlmDataDir,
   DEFAULT_MODEL,
+  estimateCostUsd,
   fetchDownloader,
   nodeFileStore,
   probeVulkanWithNodeLlama,
   QWEN_2_5_7B_INSTRUCT_Q4_K_M,
-  resolvePreferredBackend
+  resolveProviderConfig,
+  retryWithBackoff,
+  resolvePreferredBackend,
+  sharedUsageMeter,
+  wrapWithUsageMetering
 }
 
 /** Default singleton for Electron admin endpoint exercise (data under `.weaver-llm`). */

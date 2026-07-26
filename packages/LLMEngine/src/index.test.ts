@@ -12,6 +12,8 @@ describe('@weaver/llm-engine', () => {
     const endpoints = llmEngine.listEndpoints()
     expect(endpoints.some((e) => e.name === 'health')).toBe(true)
     expect(endpoints.some((e) => e.name === 'getStatus')).toBe(true)
+    expect(endpoints.some((e) => e.name === 'install')).toBe(true)
+    expect(endpoints.some((e) => e.name === 'completeText')).toBe(true)
   })
 
   it('invokes the health endpoint', async () => {

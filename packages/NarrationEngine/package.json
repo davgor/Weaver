@@ -20,6 +20,8 @@
   },
   "dependencies": {},
   "devDependencies": {
+    "@weaver/llm-engine": "*",
+    "@weaver/npc-engine": "*",
     "typescript": "^5.5.2"
   }
 }

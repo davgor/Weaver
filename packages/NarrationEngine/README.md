@@ -1,45 +1,52 @@
 # NarrationEngine (`@weaver/narration-engine`)
 
-LLM story invention **validated** against peer engine data.
+LLM story and visual-token invention **validated** against peer engine data.
 
 ## Role
 
-The **only** package allowed to invent narrative prose. Before accepting story claims, it must check them against world, items, NPCs, enemies, combat (and related) facts from peer engines.
+The **only** package allowed to invent narrative prose or generated portrait tokens. Before accepting story claims or portrait prompts, it must check them against world, items, NPCs, enemies, combat (and related) facts from peer engines.
 
 ## Boundaries
 
-- May use **LLMEngine** for generation (via orchestration paths owned with DMEngine)
+- May use **LLMEngine** for generation (via injected `completeText` peers)
+- Owns provider-agnostic NPC/enemy/companion/PC portrait generation rails
+- Owns Social (player/NPC dialogue, streaming) vs Scene (DM exposition) projections
 - Must **not** invent durable game facts — peers own those
 - Must **not** contain Electron UI
 - Consumers need `*.contract.test.ts` against the real API
 
 ## Status
 
-Scaffold. Exposes `health` plus `describeRole` documenting invent/validate responsibilities. Full design lives in epics [063](../../board/backlog/063-NarrationEngine-Scene-Social-Split-And-Streaming.md)–[066](../../board/backlog/066-NarrationEngine-Visual-Token-Generation.md).
+Exposes health, role description, portrait rails, and prose APIs: `projectSocial` / `projectScene`, `recordPlayerSocial`, `streamSocial`, `generateScene`, `decideSilentResolve`, plus claim extract/validate. Prose is accepted only after peer claim checks; contradicted drafts are rewritten once or rejected. Low-stakes quiet turns resolve silently.
 
-## Public API (today)
+## Public API
 
 ```ts
-import { narrationEngine } from '@weaver/narration-engine'
+import { generateScene, narrationEngine, streamSocial } from '@weaver/narration-engine'
 
 narrationEngine.health()
 await narrationEngine.call('describeRole')
-// → { inventsStories: true, validatesAgainst: [...], note: '...' }
+
+for await (const event of streamSocial(
+  { prompt: 'Mira replies.', speakerId: 'npc-mira', kind: 'npc', interest },
+  peers
+)) {
+  // incremental Social chunks, or { type: 'silent' }
+}
+
+await generateScene({ prompt: 'Describe the courtyard.' }, peers)
 ```
 
 | Export | Notes |
 |--------|--------|
 | `narrationEngine` | Singleton `NarrationEngineApi` |
-| `NarrationEngineApi` / `EngineEndpoint` | Types |
-
-## Planned direction (from epics 063–066)
-
-| Epic | Intent |
-|------|--------|
-| [063](../../board/backlog/063-NarrationEngine-Scene-Social-Split-And-Streaming.md) | Scene/Social split + streaming; claim extraction/validation before persisting narration |
-| [064](../../board/backlog/064-NarrationEngine-Tone-And-Terminology-Guards.md) | Plain-English fantasy tone; terminology scrub |
-| [065](../../board/backlog/065-NarrationEngine-Rag-Retrieval.md) | RAG hybrid retrieval (lexical + local/cloud embedders) |
-| [066](../../board/backlog/066-NarrationEngine-Visual-Token-Generation.md) | Visual token generation (NPC/enemy/companion/PC portraits) — this package's invention charter covers prose **and** images |
+| `projectSocial` / `projectScene` | Independent persisted projections |
+| `streamSocial` / `generateScene` | Invent + validate + persist (or silent/reject) |
+| `recordPlayerSocial` | Player lines into Social without LLM |
+| `decideSilentResolve` | Low-stakes quiet-turn gate |
+| `extractClaims` / `validateClaims` | Labeled-block claim extract + peer checks |
+| `generatePortrait` / `setManualPortrait` | Visual token rails |
+| Peer types (`NarrationPeers`, …) | Injected LLM/NPC/item/location lookups |
 
 No combat damage or item creation happens here except by proposing changes that other engines apply after validating them.
 

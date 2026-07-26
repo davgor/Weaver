@@ -1,7 +1,35 @@
 import { describe, expect, it } from 'vitest'
-import { itemEngine } from './index.js'
+import { EQUIPMENT_SLOTS, itemEngine } from './index.js'
 
-describe('@weaver/item-engine', () => {
+const EXPECTED_ENDPOINTS = [
+  'health',
+  'defineTemplate',
+  'getTemplate',
+  'seedItemTemplateCatalog',
+  'createInventory',
+  'addItem',
+  'listInventory',
+  'getEquipped',
+  'equip',
+  'unequip',
+  'credit',
+  'debit',
+  'getBalance',
+  'clampProposedPrice',
+  'generateLoot',
+  'getStartingLoadout'
+]
+
+function requireInstanceId(result: unknown): string {
+  if (!result || typeof result !== 'object' || !('id' in result)) {
+    throw new Error('addItem endpoint did not return an instance')
+  }
+  const { id } = result
+  if (typeof id !== 'string') throw new Error('addItem endpoint returned an invalid instance id')
+  return id
+}
+
+describe('@weaver/item-engine health and endpoint catalog', () => {
   it('reports healthy', () => {
     const health = itemEngine.health()
     expect(health.ok).toBe(true)
@@ -10,8 +38,9 @@ describe('@weaver/item-engine', () => {
 
   it('lists callable endpoints', () => {
     const endpoints = itemEngine.listEndpoints()
+    const names = endpoints.map((e) => e.name)
     expect(endpoints.length).toBeGreaterThan(0)
-    expect(endpoints.some((e) => e.name === 'health')).toBe(true)
+    expect(names).toEqual(expect.arrayContaining(EXPECTED_ENDPOINTS))
   })
 
   it('invokes the health endpoint', async () => {
@@ -26,5 +55,78 @@ describe('@weaver/item-engine', () => {
 
   it('rejects unknown endpoints', async () => {
     await expect(itemEngine.call('does-not-exist')).rejects.toThrow(/Unknown endpoint/)
+  })
+})
+
+describe('@weaver/item-engine typed singleton API', () => {
+  it('exposes typed item methods on the singleton', () => {
+    const characterId = 'character.singleton.typed'
+    const templateId = 'template.singleton.typed'
+
+    itemEngine.defineTemplate({
+      id: templateId,
+      name: 'Typed Test Spear',
+      equipmentSlots: ['mainHand']
+    })
+    itemEngine.createInventory(characterId)
+    const instance = itemEngine.addItem(characterId, templateId, { durability: 6 })
+    itemEngine.equip(characterId, instance.id, 'mainHand')
+
+    expect(EQUIPMENT_SLOTS).toContain('mainHand')
+    expect(itemEngine.getTemplate(templateId).name).toBe('Typed Test Spear')
+    expect(itemEngine.getEquipped(characterId).mainHand?.instance.durability).toBe(6)
+  })
+
+  it('exposes typed economy, loot, and starting gear methods on the singleton', () => {
+    itemEngine.seedItemTemplateCatalog()
+    itemEngine.credit('character.singleton.economy', 10)
+
+    expect(itemEngine.getBalance('character.singleton.economy')).toBe(10)
+    expect(itemEngine.clampProposedPrice(50_000)).toBe(10_000)
+    expect(itemEngine.generateLoot({ difficulty: 'easy', seed: 'singleton.loot' }).length).toBeGreaterThan(0)
+    expect(itemEngine.getStartingLoadout('Mage').actionIds).toContain('ice_bolt')
+  })
+})
+
+describe('@weaver/item-engine admin endpoints', () => {
+  it('invokes inventory endpoints for admin callers', async () => {
+    const characterId = 'character.singleton.endpoint'
+    const templateId = 'template.singleton.endpoint'
+
+    await itemEngine.call('defineTemplate', {
+      id: templateId,
+      name: 'Endpoint Test Shield',
+      equipmentSlots: ['shield']
+    })
+    await itemEngine.call('createInventory', { characterId })
+    const instance = await itemEngine.call('addItem', {
+      characterId,
+      templateId,
+      instanceState: { customName: 'The Door' }
+    })
+    await itemEngine.call('equip', { characterId, instanceId: requireInstanceId(instance), slot: 'shield' })
+    const equipped = await itemEngine.call('getEquipped', { characterId })
+
+    expect(equipped).toMatchObject({
+      shield: {
+        template: { name: 'Endpoint Test Shield' },
+        instance: { customName: 'The Door' }
+      }
+    })
+  })
+
+  it('invokes economy, loot, and starting gear endpoints for admin callers', async () => {
+    await itemEngine.call('seedItemTemplateCatalog')
+    await itemEngine.call('credit', { characterId: 'character.endpoint.economy', amount: 12 })
+
+    await expect(itemEngine.call('getBalance', { characterId: 'character.endpoint.economy' })).resolves.toBe(12)
+    await expect(itemEngine.call('clampProposedPrice', { proposed: 50_000 })).resolves.toBe(10_000)
+    await expect(itemEngine.call('generateLoot', { difficulty: 'easy', seed: 'endpoint.loot' })).resolves.toEqual(
+      expect.arrayContaining([expect.objectContaining({ templateId: expect.any(String), quantity: expect.any(Number) })])
+    )
+    await expect(itemEngine.call('getStartingLoadout', { archetype: 'Fighter' })).resolves.toMatchObject({
+      archetype: 'Fighter',
+      actionIds: expect.arrayContaining(['hamstring_strike'])
+    })
   })
 })
