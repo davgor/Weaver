@@ -51,7 +51,13 @@ export async function runNpmCiWithRetry({
     if (attempt === attempts) {
       break
     }
-    await rmNodeModules()
+    try {
+      await rmNodeModules()
+    } catch (err) {
+      // Windows runners sometimes hold native `.node` files briefly; keep retrying.
+      const message = err instanceof Error ? err.message : String(err)
+      log(`node_modules cleanup warning: ${message}`)
+    }
     await sleep(delayMs)
   }
   throw new Error(`npm ci failed after ${attempts} attempts (last exit code ${lastCode})`)
