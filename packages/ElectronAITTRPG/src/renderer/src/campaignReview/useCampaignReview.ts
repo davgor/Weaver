@@ -23,7 +23,11 @@ export function useCampaignReview(active: boolean) {
   const updateField = useCallback(
     async (section: CampaignReviewSection, field: string, value: string, entityId?: string) => {
       await runReviewMutation(setState, () =>
-        window.aiTtrpg.campaignCreate.updateReviewField({ section, field, value, entityId })
+        window.aiTtrpg.campaignCreate.updateReviewField(
+          entityId === undefined
+            ? { section, field, value }
+            : { section, field, value, entityId }
+        )
       )
     },
     []

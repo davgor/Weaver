@@ -87,7 +87,7 @@ async function startGeneration(
   state.confirmed = false
   state.edits = { regions: {}, npcs: {}, factions: {} }
   state.status = 'generating'
-  state.errorMessage = undefined
+  delete state.errorMessage
   try {
     state.result = await runGeneration(port, state.campaignId, draft, 'start')
     state.status = 'ready'
@@ -302,15 +302,18 @@ function snapshotMeta(state: ServiceState): Pick<
   | 'errorMessage'
 > {
   const draft = state.draft
-  return {
+  const meta = {
     campaignId: state.campaignId ?? '',
     campaignName: draft?.name?.trim() || 'Untitled Campaign',
     deathMode: draft?.deathMode ?? 'standard',
     generativeTokensEnabled: draft?.generativeTokensEnabled ?? false,
     confirmed: state.confirmed,
-    status: state.status,
-    errorMessage: state.errorMessage
+    status: state.status
   }
+  if (state.errorMessage === undefined) {
+    return meta
+  }
+  return { ...meta, errorMessage: state.errorMessage }
 }
 
 function snapshotText(

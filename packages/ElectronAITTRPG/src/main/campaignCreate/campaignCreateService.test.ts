@@ -129,22 +129,28 @@ describe('campaignCreateService field edits', () => {
       field: 'bestiaryFlavor',
       value: 'Edited bestiary'
     })
+    const regionId = initial.regions[0]?.regionId
+    const npcId = initial.npcs[0]?.npcId
+    const factionId = initial.factions[0]?.factionId
+    expect(regionId).toBeDefined()
+    expect(npcId).toBeDefined()
+    expect(factionId).toBeDefined()
     await service.updateReviewField({
       section: 'regions',
       field: 'displayName',
-      entityId: initial.regions[0]?.regionId,
+      entityId: regionId as string,
       value: 'Named Region'
     })
     await service.updateReviewField({
       section: 'npcs',
       field: 'summary',
-      entityId: initial.npcs[0]?.npcId,
+      entityId: npcId as string,
       value: 'Named NPC summary'
     })
     const updated = await service.updateReviewField({
       section: 'factions',
       field: 'purpose',
-      entityId: initial.factions[0]?.factionId,
+      entityId: factionId as string,
       value: 'Keep the roads'
     })
     expect(updated.pantheon).toBe('Edited pantheon')
@@ -283,7 +289,13 @@ function npc(npcId: string, campaignId: string, regionId: string, displayName: s
       assignedNpcId: npcId
     },
     identity: {
-      race: { raceId: 'human', name: 'Human' },
+      race: {
+        campaignId,
+        characterId: npcId,
+        raceId: 'human',
+        name: 'Human',
+        lore: 'Common folk of the roads.'
+      },
       alignment: 'neutral',
       temperament: 'curious',
       nonSpeaking: false

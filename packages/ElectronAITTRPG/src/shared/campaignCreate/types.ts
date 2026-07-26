@@ -124,7 +124,7 @@ export function isDeathMode(value: unknown): value is DeathMode {
   return typeof value === 'string' && DEATH_MODES.includes(value as DeathMode)
 }
 
-function option<T extends string>(id: T, label: string, description: string): DeathModeOption {
+function option(id: DeathMode, label: string, description: string): DeathModeOption {
   return { id, label, description }
 }
 
