@@ -13,6 +13,14 @@ import type {
   StartupBootSnapshot,
   UnequipItemRequest
 } from '../shared/gameApi.js'
+import type {
+  LoadNpcDossierRequest,
+  NpcDossierSnapshot,
+  NpcRelationshipSnapshot
+} from '../shared/npcDossier/types.js'
+import type {
+  SettingsApi
+} from '../shared/settings/types.js'
 
 const api: GameApi = {
   windowControls: {
@@ -33,6 +41,21 @@ const api: GameApi = {
       ipcRenderer.invoke('characterSheet:equip', request),
     unequip: (request: UnequipItemRequest): Promise<CharacterSheetSnapshot> =>
       ipcRenderer.invoke('characterSheet:unequip', request)
+  },
+  npcDossier: {
+    load: (request: LoadNpcDossierRequest): Promise<NpcDossierSnapshot> =>
+      ipcRenderer.invoke('npcDossier:load', request),
+    opinions: (request: { npcId: string }): Promise<NpcRelationshipSnapshot> =>
+      ipcRenderer.invoke('npcDossier:opinions', request)
+  },
+  settings: {
+    get: (): ReturnType<SettingsApi['get']> => ipcRenderer.invoke('settings:get'),
+    update: (request: Parameters<SettingsApi['update']>[0]): ReturnType<SettingsApi['update']> =>
+      ipcRenderer.invoke('settings:update', request),
+    checkConnection: (
+      request?: Parameters<SettingsApi['checkConnection']>[0]
+    ): ReturnType<SettingsApi['checkConnection']> =>
+      ipcRenderer.invoke('settings:checkConnection', request)
   },
   app: {
     getVersion: (): Promise<string> => ipcRenderer.invoke('app:getVersion')

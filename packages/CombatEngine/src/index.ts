@@ -1,3 +1,7 @@
+export {
+  resolveAttack,
+  resolveAttackAgainstCombatants
+} from './attackResolution.js'
 export { startAdHocEncounter } from './dynamicStart.js'
 export {
   endTurn,
@@ -26,6 +30,7 @@ export {
 } from './store.js'
 export type * from './types.js'
 
+import { resolveAttack } from './attackResolution.js'
 import { startAdHocEncounter } from './dynamicStart.js'
 import {
   endTurn,
@@ -48,6 +53,7 @@ import type {
   EncounterLookupInput,
   EvaluateSurrenderInput,
   ExecuteCombatantInput,
+  ResolveAttackInput,
   ResolveNonLethalInput,
   StartAdHocEncounterInput,
   StartEncounterInput,
@@ -72,6 +78,7 @@ export type CombatEngineApi = {
   submitCombatAction: typeof submitCombatAction
   submitMovement: typeof submitMovement
   endTurn: typeof endTurn
+  resolveAttack: typeof resolveAttack
   attemptFlee: typeof attemptFlee
   evaluateSurrender: typeof evaluateSurrender
   applySurrender: typeof applySurrender
@@ -112,6 +119,9 @@ function lifecycleEndpoints(): EngineEndpoint[] {
     ),
     endpoint('encounter.action', 'Submit one typed free-text Action for the current turn', (payload) =>
       submitCombatAction(readPayload<SubmitCombatActionInput>(payload, 'encounter.action'))
+    ),
+    endpoint('encounter.attack', 'Resolve a weapon attack against a target combatant', (payload) =>
+      resolveAttack(readPayload<ResolveAttackInput>(payload, 'encounter.attack'))
     ),
     endpoint('encounter.movement', 'Submit one Movement for the current turn', (payload) =>
       submitMovement(readPayload<SubmitMovementInput>(payload, 'encounter.movement'))
@@ -161,6 +171,7 @@ export const combatEngine: CombatEngineApi = {
   submitCombatAction,
   submitMovement,
   endTurn,
+  resolveAttack,
   attemptFlee,
   evaluateSurrender,
   applySurrender,

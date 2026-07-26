@@ -2,18 +2,14 @@ import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
-import { dmEngine } from './index.js'
+import {
+  CAMPAIGN_GENERATION_STAGES,
+  dmEngine,
+  runCampaignGeneration,
+  startGuidedIdentity
+} from './index.js'
 
-describe('@weaver/dm-engine', () => {
-  const tempRoots: string[] = []
-
-  afterEach(() => {
-    for (const root of tempRoots) {
-      rmSync(root, { force: true, recursive: true })
-    }
-    tempRoots.length = 0
-  })
-
+describe('@weaver/dm-engine core API', () => {
   it('reports healthy', () => {
     const health = dmEngine.health()
     expect(health.ok).toBe(true)
@@ -47,6 +43,18 @@ describe('@weaver/dm-engine', () => {
     expect(typeof dmEngine.openCampaign).toBe('function')
   })
 
+})
+
+describe('@weaver/dm-engine campaign endpoints', () => {
+  const tempRoots: string[] = []
+
+  afterEach(() => {
+    for (const root of tempRoots) {
+      rmSync(root, { force: true, recursive: true })
+    }
+    tempRoots.length = 0
+  })
+
   it('creates and opens campaigns through admin endpoints without raw SQL endpoints', async () => {
     const filePath = campaignPath(tempRoots, 'admin.sqlite')
     const createResult = await dmEngine.call('campaign.create', { campaignId: 'admin', filePath })
@@ -59,6 +67,29 @@ describe('@weaver/dm-engine', () => {
     expect(createResult).toMatchObject({ campaignId: 'admin', filePath, appliedMigrations: [1] })
     expect(openResult).toMatchObject({ campaignId: 'admin', filePath, appliedMigrations: [] })
     expect(endpointText).not.toMatch(/sql/i)
+  })
+})
+
+describe('@weaver/dm-engine guided creation exports', () => {
+  it('exports guided character-creation orchestration helpers', () => {
+    expect(typeof startGuidedIdentity).toBe('function')
+  })
+})
+
+describe('@weaver/dm-engine campaign generation exports', () => {
+  it('exports campaign generation pipeline APIs', () => {
+    expect(typeof runCampaignGeneration).toBe('function')
+    expect(CAMPAIGN_GENERATION_STAGES).toEqual([
+      'canon',
+      'pantheon',
+      'world',
+      'factions',
+      'regions',
+      'npcs',
+      'bestiary',
+      'story',
+      'persist'
+    ])
   })
 })
 

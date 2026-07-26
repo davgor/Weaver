@@ -10,4 +10,4 @@ Add a Vitest coverage gate (lines/functions/branches/statements ≥ 80%) and a G
 - [x] Unit tests lock the coverage script, Vitest thresholds, and CI workflow step
 - [x] Current repo passes the 80% gate (add tests where needed; exclude only non-testable glue if required and document why)
 - [x] `npm test`, `npm run lint`, `npm run build`, `npm run deadcode` pass
-- [ ] `npm run ci:act` pass (`pr-checks.yml` + `deadcode.yml`) — blocked until Docker Desktop is running
+- [x] Cloud gate: GitHub PR checks (`pr-checks` + `deadcode`) pass and PR marked ready (replaces local `ci:act` in cloud sessions)

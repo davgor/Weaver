@@ -1,0 +1,185 @@
+.npc-dossier-overlay {
+  z-index: 230;
+  align-items: stretch;
+  justify-content: center;
+  padding: 48px 24px 24px;
+  pointer-events: auto;
+}
+
+.npc-dossier-panel {
+  width: min(840px, 100%);
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.npc-dossier-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.1rem 1.25rem 0.75rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.npc-dossier-header h1 {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 600;
+}
+
+.modal-overlay button.npc-dossier-overlay-close.npc-dossier-overlay-close {
+  border: 1px solid var(--border-medium);
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: var(--radius-md);
+  padding: 0.4rem 0.75rem;
+  cursor: pointer;
+}
+
+.modal-overlay button.npc-dossier-overlay-close.npc-dossier-overlay-close:hover {
+  color: var(--text-accent);
+  border-color: var(--border-strong);
+  background: var(--surface-hover);
+}
+
+.npc-dossier-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 0.75rem 1.25rem 1.25rem;
+}
+
+.npc-dossier-section {
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 0.65rem 0 0.9rem;
+}
+
+.npc-dossier-section h2 {
+  margin: 0 0 0.55rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-accent);
+}
+
+.npc-dossier-section p {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+.npc-dossier-traits {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin: 0;
+}
+
+.npc-dossier-traits div,
+.npc-relationship-card {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  padding: 0.65rem;
+}
+
+.npc-dossier-traits dt {
+  margin: 0 0 0.25rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-accent);
+}
+
+.npc-dossier-traits dd {
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.npc-dossier-facts,
+.npc-relationship-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.npc-dossier-facts li {
+  padding: 0.45rem 0;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.npc-relationship-center {
+  width: fit-content;
+  margin: 0 0 0.7rem;
+  border: 1px solid var(--accent-gold);
+  border-radius: var(--radius-pill);
+  background: var(--surface-active);
+  color: var(--text-primary);
+  padding: 0.4rem 0.8rem;
+}
+
+.npc-relationship-list li {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  align-items: stretch;
+  margin: 0.45rem 0;
+}
+
+.npc-relationship-line {
+  border-right: 1px solid var(--border-medium);
+  transform: translateY(-0.45rem);
+}
+
+.npc-relationship-subject {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.45rem;
+}
+
+.modal-overlay button.npc-relationship-subject-link.npc-relationship-subject-link,
+.app-root button.person-link-text-button.person-link-text-button,
+.modal-overlay button.person-link-text-button.person-link-text-button {
+  border: 0;
+  background: transparent;
+  color: var(--text-accent);
+  padding: 0;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.npc-relationship-subject small {
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.npc-relationship-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.npc-relationship-metric {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  color: var(--text-secondary);
+  padding: 0.2rem 0.45rem;
+}
+
+.npc-dossier-muted,
+.npc-dossier-empty {
+  color: var(--text-dim);
+}
+
+.npc-dossier-error {
+  margin: 1rem;
+  color: var(--color-error);
+  background: var(--color-error-bg);
+  border-radius: var(--radius-md);
+  padding: 0.65rem 0.75rem;
+}
