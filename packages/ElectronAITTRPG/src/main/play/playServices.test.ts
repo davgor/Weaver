@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { AskTheDmInput, ResolveTurnInput, ResolveTurnResult } from '@weaver/dm-engine'
-import type { EncounterState } from '@weaver/combat-engine'
+import type { CombatConditionId, EncounterCombatant, EncounterState } from '@weaver/combat-engine'
 import { createAskDmService } from './askDmService.js'
 import { buildCombatChrome } from './combatChrome.js'
 import { createTurnService } from './turnService.js'
@@ -18,7 +18,8 @@ describe('turnService', () => {
           social: [{ id: 'social-1', kind: 'npc', speakerId: 'mira', text: 'This way.', at: 2 }]
         }
       }),
-      deps: {}
+      deps: {},
+      getEncounter: () => activeEncounter()
     })
 
     await expect(
@@ -26,7 +27,19 @@ describe('turnService', () => {
     ).resolves.toMatchObject({
       scene: [{ id: 'scene-1', text: 'The door opens.' }],
       social: [{ id: 'social-1', text: 'This way.' }],
-      roll: { visible: true, label: 'narration check' }
+      roll: { visible: true, label: 'narration check', roll: 12 }
+    })
+
+    await expect(
+      service.submitAction({
+        campaignId: 'camp-1',
+        characterId: 'pc-1',
+        text: 'attack goblin',
+        encounterId: 'enc-1'
+      })
+    ).resolves.toMatchObject({
+      combat: { active: true, encounterId: 'enc-1' },
+      roll: { visible: true, label: 'combat check', roll: 16 }
     })
   })
 })
@@ -56,6 +69,23 @@ describe('askDmService', () => {
       entries: [{ speaker: 'dm', text: 'OOC answer' }]
     })
   })
+
+  it('surfaces Ask-the-DM validation errors without inventing an answer', async () => {
+    const service = createAskDmService({
+      askTheDm: async () => ({ ok: false, errors: ['Ask-the-DM question must not be empty.'] }),
+      narration: { fillAndValidate: async () => ({ ok: true, filled: {}, errors: [] }) },
+      completer: { completeText: async () => ({ text: 'ok', backend: 'test' }) },
+      facts: () => ({})
+    })
+
+    await expect(
+      service.ask({ campaignId: 'camp-1', characterId: 'pc-1', question: '?' })
+    ).resolves.toEqual({
+      answer: '',
+      entries: [],
+      errors: ['Ask-the-DM question must not be empty.']
+    })
+  })
 })
 
 describe('combatChrome', () => {
@@ -78,6 +108,17 @@ describe('combatChrome', () => {
     })
     expect(buildCombatChrome({ ...activeEncounter(), status: 'resolved' })).toEqual({ active: false })
     expect(buildCombatChrome(undefined)).toEqual({ active: false })
+  })
+
+  it('falls back to combatant id when displayName is missing and rejects unknown ids', () => {
+    const encounter = activeEncounter()
+    encounter.combatants[0] = combatant({ id: 'pc-1', kind: 'character', current: 7, max: 10 })
+    const chrome = buildCombatChrome(encounter)
+    expect(chrome.active ? chrome.turnOrder[0]?.displayName : undefined).toBe('pc-1')
+
+    expect(() =>
+      buildCombatChrome({ ...activeEncounter(), turnOrder: ['missing'] })
+    ).toThrow(/unknown combatant missing/)
   })
 })
 
@@ -108,15 +149,15 @@ function activeEncounter(): EncounterState {
 function combatant(input: {
   id: string
   kind: 'character' | 'enemy'
-  displayName: string
+  displayName?: string
   current: number
   max: number
-  conditions?: string[]
-}) {
+  conditions?: CombatConditionId[]
+}): EncounterCombatant {
   return {
     id: input.id,
     kind: input.kind,
-    displayName: input.displayName,
+    ...(input.displayName === undefined ? {} : { displayName: input.displayName }),
     abilityScores: { Body: 10, Agility: 10, Mind: 10, Presence: 10 },
     hp: { current: input.current, max: input.max },
     armorClass: 12,

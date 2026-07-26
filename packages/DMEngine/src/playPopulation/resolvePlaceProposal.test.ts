@@ -4,7 +4,7 @@ import type { LivePopulationDeps, PlaceProposal } from './types.js'
 
 type Counters = { regions: number; settlements: number; npcs: number; lootSeeds: number }
 
-describe('resolvePlaceProposal', () => {
+describe('resolvePlaceProposal minting', () => {
   beforeEach(() => clearPlaceProposalRegistry())
 
   it('mints a place through peer APIs once for an idempotency key', () => {
@@ -30,6 +30,45 @@ describe('resolvePlaceProposal', () => {
       npcIds: ['roadside-inn.npc.1'],
       lootPlaceId: 'civ-live'
     })
+  })
+})
+
+describe('resolvePlaceProposal fallbacks', () => {
+  beforeEach(() => clearPlaceProposalRegistry())
+
+  it('falls back to listed peers when fill returns empty and skips loot without a seed', () => {
+    const counters: Counters = { regions: 0, settlements: 0, npcs: 0, lootSeeds: 0 }
+    const deps = fakeDeps(counters)
+    deps.regional.fillRegions = () => {
+      counters.regions += 1
+      return []
+    }
+    deps.civilization.fillCivilizations = () => {
+      counters.settlements += 1
+      return []
+    }
+
+    const resolved = resolvePlaceProposal({
+      proposalKey: 'fallback-place',
+      worldId: 'world-live',
+      campaignId: 'campaign-live',
+      dataRoot: '/tmp/weaver-live'
+    }, deps)
+
+    expect(resolved.npcIds).toEqual([])
+    expect(resolved.lootPlaceId).toBeUndefined()
+    expect(counters.lootSeeds).toBe(0)
+  })
+
+  it('rejects blank proposal keys', () => {
+    expect(() =>
+      resolvePlaceProposal({
+        proposalKey: '   ',
+        worldId: 'world-live',
+        campaignId: 'campaign-live',
+        dataRoot: '/tmp/weaver-live'
+      }, fakeDeps({ regions: 0, settlements: 0, npcs: 0, lootSeeds: 0 }))
+    ).toThrow(/proposalKey required/)
   })
 })
 

@@ -2,14 +2,11 @@ import { describe, expect, it } from 'vitest'
 import type { CausalEvent, CharacterSessionCursor, SessionRecapInput } from '@weaver/dm-engine'
 import { createCampaignHubService, type CampaignHubDeps } from './campaignHubService.js'
 
-describe('campaignHubService', () => {
+describe('campaignHubService load', () => {
   it('loads world preview, completed player characters, companions, and per-character recap', async () => {
     const recordedCursors: CharacterSessionCursor[] = []
     const service = createCampaignHubService(hubDeps({
       listCompletedCharacters: () => [
-        { campaignId: 'camp-1', characterId: 'pc-1', characterName: 'Ilyra', phase: 'complete' }
-      ],
-      listCharacters: () => [
         { campaignId: 'camp-1', characterId: 'pc-1', characterName: 'Ilyra', phase: 'complete' }
       ],
       listCompanions: () => [{ characterId: 'wolf-1', name: 'Briar', archetype: 'Ranger' }],
@@ -38,6 +35,28 @@ describe('campaignHubService', () => {
     expect(recordedCursors).toEqual([{ campaignId: 'camp-1', characterId: 'pc-1', lastSessionAt: 10 }])
   })
 
+  it('falls back to an empty world preview and zero cursor when review/cursor are missing', async () => {
+    const service = createCampaignHubService(hubDeps({
+      getReview: async () => null,
+      listCompletedCharacters: () => [
+        { campaignId: 'camp-1', characterId: 'pc-1', characterName: 'Ilyra', phase: 'complete' }
+      ],
+      buildSessionRecap: (input) => ({
+        paragraphs: [`from:${input.lastSessionAt}`],
+        eventIds: []
+      })
+    }))
+
+    const hub = await service.load('camp-1')
+    expect(hub.worldPreview).toMatchObject({
+      campaignName: 'camp-1',
+      summary: 'No world preview is available yet.'
+    })
+    expect(hub.characters[0]?.recap.paragraphs).toEqual(['from:0'])
+  })
+})
+
+describe('campaignHubService addCharacter', () => {
   it('creates the next onboarding request for adding another character', async () => {
     const service = createCampaignHubService(hubDeps({
       listCharacters: () => [

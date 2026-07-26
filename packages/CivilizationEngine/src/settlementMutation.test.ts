@@ -20,19 +20,42 @@ describe('Settlement world mutations', () => {
     const service = createCivilizationService(options(dataRoot))
     const created = service.createCivilization('world-mutated-civ', candidate())
 
-    const mutated = service.applySettlementMutation(
+    const burned = service.applySettlementMutation(
       'world-mutated-civ',
       created.civilizationId,
-      { kind: 'destroyed', population: { absolute: 0 } }
+      { kind: 'burned', population: { delta: -10 } }
+    )
+    expect(burned.mutationStatus).toBe('burned')
+    expect(burned.population).toBe(32)
+
+    const collapsed = service.applySettlementMutation(
+      'world-mutated-civ',
+      created.civilizationId,
+      { kind: 'populationCollapse', population: { absolute: 5 } }
+    )
+    expect(collapsed.mutationStatus).toBe('burned')
+    expect(collapsed.population).toBe(5)
+
+    const destroyed = service.applySettlementMutation(
+      'world-mutated-civ',
+      created.civilizationId,
+      { kind: 'destroyed' }
     )
     const reopened = createCivilizationService(options(dataRoot))
 
-    expect(mutated.mutationStatus).toBe('destroyed')
-    expect(mutated.population).toBe(0)
+    expect(destroyed.mutationStatus).toBe('destroyed')
+    expect(destroyed.population).toBe(0)
     expect(reopened.getCivilization('world-mutated-civ', created.civilizationId)).toMatchObject({
       mutationStatus: 'destroyed',
       population: 0
     })
+
+    const stillDestroyed = service.applySettlementMutation(
+      'world-mutated-civ',
+      created.civilizationId,
+      { kind: 'burned' }
+    )
+    expect(stillDestroyed.mutationStatus).toBe('destroyed')
   })
 })
 

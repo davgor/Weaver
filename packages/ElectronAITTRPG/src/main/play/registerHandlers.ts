@@ -8,11 +8,11 @@ import { createAskDmService, type AskDmService } from './askDmService.js'
 import { createTurnService, type TurnService } from './turnService.js'
 
 type PlayHandlerDeps = {
-  turnService: TurnService<ResolveTurnDeps>
+  turnService: TurnService
   askDmService: AskDmService
 }
 
-export function createLivePlayHandlerDeps(): PlayHandlerDeps {
+function createLivePlayHandlerDeps(): PlayHandlerDeps {
   const turnDeps = createLiveResolveTurnDeps()
   return {
     turnService: createTurnService({

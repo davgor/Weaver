@@ -26,14 +26,29 @@ describe('emitWorldMutation', () => {
       }
     }
 
-    const result = emitWorldMutation({
-      target: 'settlement',
-      worldId: 'world-1',
-      civilizationId: 'civ-1',
-      mutation: { kind: 'burned' }
-    }, deps)
-
-    expect(result).toMatchObject({ target: 'settlement', civilizationId: 'civ-1' })
-    expect(calls).toEqual(['world-1:civ-1:burned'])
+    expect(
+      emitWorldMutation({
+        target: 'settlement',
+        worldId: 'world-1',
+        civilizationId: 'civ-1',
+        mutation: { kind: 'burned' }
+      }, deps)
+    ).toMatchObject({ target: 'settlement', civilizationId: 'civ-1' })
+    expect(
+      emitWorldMutation({
+        target: 'region',
+        worldId: 'world-1',
+        regionId: 'region-1',
+        mutation: { kind: 'ruined' }
+      }, deps)
+    ).toMatchObject({ target: 'region', regionId: 'region-1' })
+    expect(
+      emitWorldMutation({
+        target: 'npc',
+        npcId: 'npc-1',
+        mutation: { kind: 'killed' }
+      }, deps)
+    ).toMatchObject({ target: 'npc', npcId: 'npc-1' })
+    expect(calls).toEqual(['world-1:civ-1:burned', 'world-1:region-1:ruined', 'npc-1:killed'])
   })
 })
