@@ -1,5 +1,4 @@
-import type { LlmBackend } from './backend.js'
-import { resolvePreferredBackend, type BackendProbe } from './backend.js'
+import { resolvePreferredBackend, type BackendProbe, type LocalLlmBackend } from './backend.js'
 import { DEFAULT_MODEL, type ModelSpec } from './modelCatalog.js'
 import type {
   CreateRuntime,
@@ -72,7 +71,7 @@ export async function ensureRuntime(
   options: InstallControllerOptions,
   createRuntime: CreateRuntime,
   cached: LlmRuntime | null
-): Promise<{ runtime: LlmRuntime; backend: LlmBackend; modelPath: string }> {
+): Promise<{ runtime: LlmRuntime; backend: LocalLlmBackend; modelPath: string }> {
   const status = await readInstallStatus(options)
   if (status.phase !== 'ready' || !status.modelPath || !status.backend) {
     throw new Error('LLM model is not installed')

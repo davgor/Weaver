@@ -1,20 +1,28 @@
 import { describe, expect, it } from 'vitest'
 import {
   type ActionDefinition,
+  type KnownActionStoreSnapshot,
   actionEngine,
   actionsAreMechanicallyEqual,
   createActionRegistry,
   createEffectRegistry,
+  createKnownActionStore,
+  createSeedCatalog,
   deleteAction,
   defineAction,
   defineEffect,
+  grantKnownAction,
   getAction,
   getEffect,
   isValidActionDefinition,
   isValidRange,
+  knowsAction,
   listActionsByEffect,
   listActions,
+  listKnownActions,
   putAction,
+  revokeKnownAction,
+  SEED_CATALOG_VERSION,
   slowMovementEffect
 } from './index.js'
 
@@ -138,5 +146,140 @@ describe('@weaver/action-engine action registry', () => {
 
     expect(getAction(registry, 'ice_bolt')).toBeDefined()
     expect(getAction(updated, 'ice_bolt')).toBeUndefined()
+  })
+})
+
+describe('@weaver/action-engine seed catalog', () => {
+  it('seeds slow movement plus Ice Bolt and Hamstring Strike with a shared effect id', () => {
+    const catalog = createSeedCatalog()
+    const iceBolt = getAction(catalog.actions, 'ice_bolt')
+    const hamstringStrike = getAction(catalog.actions, 'hamstring_strike')
+
+    expect(catalog.version).toBe(SEED_CATALOG_VERSION)
+    expect(getEffect(catalog.effects, 'slow_movement')).toEqual(slowMovementEffect)
+    expect(iceBolt).toMatchObject({
+      actionId: 'ice_bolt',
+      name: 'Ice Bolt',
+      flavorTags: ['spell'],
+      range: { kind: 'feet', amount: 30 }
+    })
+    expect(hamstringStrike).toMatchObject({
+      actionId: 'hamstring_strike',
+      name: 'Hamstring Strike',
+      flavorTags: ['classAction'],
+      range: { kind: 'meleeWeapon' }
+    })
+    expect(iceBolt?.effects[0]?.effectId).toBe('slow_movement')
+    expect(hamstringStrike?.effects[0]?.effectId).toBe(iceBolt?.effects[0]?.effectId)
+  })
+
+  it('creates deterministic fresh seed registries across calls', () => {
+    const firstSeed = createSeedCatalog()
+    const secondSeed = createSeedCatalog()
+
+    expect(secondSeed).toEqual(firstSeed)
+    expect(secondSeed).not.toBe(firstSeed)
+    expect(secondSeed.actions).not.toBe(firstSeed.actions)
+    expect(listActions(secondSeed.actions).map((action) => action.actionId)).toEqual([
+      'hamstring_strike',
+      'ice_bolt'
+    ])
+  })
+})
+
+describe('@weaver/action-engine known actions', () => {
+  it('grants, revokes, lists, and queries catalog action ids per character', () => {
+    const store = createKnownActionStore(createSeedCatalog())
+
+    store.grantKnownAction('character-1', 'ice_bolt')
+    store.grantKnownAction('character-1', 'hamstring_strike')
+    store.grantKnownAction('character-1', 'ice_bolt')
+
+    expect(store.knowsAction('character-1', 'ice_bolt')).toBe(true)
+    expect(store.listKnownActions('character-1')).toEqual(['hamstring_strike', 'ice_bolt'])
+
+    store.revokeKnownAction('character-1', 'ice_bolt')
+
+    expect(store.knowsAction('character-1', 'ice_bolt')).toBe(false)
+    expect(store.listKnownActions('character-1')).toEqual(['hamstring_strike'])
+  })
+
+  it('fails closed when granting an action id outside the catalog', () => {
+    const store = createKnownActionStore(createSeedCatalog())
+
+    expect(() => store.grantKnownAction('character-1', 'invented_spell')).toThrow(
+      /Unknown catalog action/
+    )
+    expect(store.listKnownActions('character-1')).toEqual([])
+  })
+
+  it('stores ids only without copying action definitions onto characters', () => {
+    const store = createKnownActionStore(createSeedCatalog())
+
+    store.grantKnownAction('character-1', 'ice_bolt')
+
+    const snapshot: KnownActionStoreSnapshot = store.snapshot()
+    expect(snapshot['character-1']).toEqual(['ice_bolt'])
+    expect(JSON.stringify(snapshot)).not.toContain('feetPenalty')
+    expect(JSON.stringify(snapshot)).not.toContain('range')
+  })
+
+  it('exports default in-memory helpers for callers that do not need a custom store', () => {
+    const characterId = 'test-default-character'
+
+    revokeKnownAction(characterId, 'ice_bolt')
+    grantKnownAction(characterId, 'ice_bolt')
+
+    expect(knowsAction(characterId, 'ice_bolt')).toBe(true)
+    expect(listKnownActions(characterId)).toContain('ice_bolt')
+
+    revokeKnownAction(characterId, 'ice_bolt')
+  })
+})
+
+describe('@weaver/action-engine catalog and known-action endpoints', () => {
+  it('lists seed catalog and known-action endpoints', () => {
+    const endpointNames = actionEngine.listEndpoints().map((endpoint) => endpoint.name)
+
+    expect(endpointNames).toEqual([
+      'getCatalog',
+      'grantKnownAction',
+      'health',
+      'knowsAction',
+      'listCatalogActions',
+      'listKnownActions',
+      'revokeKnownAction'
+    ])
+  })
+
+  it('invokes catalog endpoints against the deterministic seed', async () => {
+    const catalog = await actionEngine.call('getCatalog')
+    const actions = await actionEngine.call('listCatalogActions')
+
+    expect(catalog).toMatchObject({ version: SEED_CATALOG_VERSION })
+    expect(actions).toMatchObject([
+      { actionId: 'hamstring_strike' },
+      { actionId: 'ice_bolt' }
+    ])
+  })
+
+  it('invokes known-action grant, list, query, and revoke endpoints', async () => {
+    const characterId = 'endpoint-character'
+
+    await actionEngine.call('revokeKnownAction', { characterId, actionId: 'ice_bolt' })
+    await actionEngine.call('grantKnownAction', { characterId, actionId: 'ice_bolt' })
+
+    await expect(actionEngine.call('listKnownActions', { characterId })).resolves.toEqual([
+      'ice_bolt'
+    ])
+    await expect(
+      actionEngine.call('knowsAction', { characterId, actionId: 'ice_bolt' })
+    ).resolves.toBe(true)
+
+    await actionEngine.call('revokeKnownAction', { characterId, actionId: 'ice_bolt' })
+
+    await expect(
+      actionEngine.call('knowsAction', { characterId, actionId: 'ice_bolt' })
+    ).resolves.toBe(false)
   })
 })

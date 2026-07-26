@@ -5,7 +5,8 @@ export type InstallPhase = 'not_installed' | 'installing' | 'ready' | 'error'
 
 export type LlmStatus = {
   phase: InstallPhase
-  backend: LlmBackend | null
+  /** Local install/runtime backend only — cloud providers use TextResponse.backend. */
+  backend: LocalLlmBackend | null
   model: ModelSpec
   modelPath: string | null
   error: string | null

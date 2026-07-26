@@ -53,17 +53,25 @@ export type ActionDefinition = {
 
 export type EffectRegistry = Readonly<Record<string, EffectDefinition>>
 export type ActionRegistry = Readonly<Record<string, ActionDefinition>>
+export type SeedCatalog = {
+  version: typeof SEED_CATALOG_VERSION
+  effects: EffectRegistry
+  actions: ActionRegistry
+}
+export type KnownActionStoreSnapshot = Readonly<Record<string, readonly string[]>>
+export type KnownActionStore = {
+  grantKnownAction: (characterId: string, actionId: string) => void
+  revokeKnownAction: (characterId: string, actionId: string) => void
+  listKnownActions: (characterId: string) => string[]
+  knowsAction: (characterId: string, actionId: string) => boolean
+  snapshot: () => KnownActionStoreSnapshot
+}
 
 const PACKAGE_NAME = '@weaver/action-engine'
 const VERSION = '0.1.0'
+export const SEED_CATALOG_VERSION = 'action-seed-v1'
 
-export const slowMovementEffect: SlowMovementEffect = {
-  effectId: 'slow_movement',
-  params: {
-    feetPenalty: 10,
-    durationRounds: 1
-  }
-}
+export const slowMovementEffect: SlowMovementEffect = createSlowMovementEffect()
 
 export function createEffectRegistry(...effects: readonly EffectDefinition[]): EffectRegistry {
   return effects.reduce(defineEffect, {})
@@ -129,6 +137,64 @@ export function listActionsByEffect(
   )
 }
 
+export function createSeedCatalog(): SeedCatalog {
+  return {
+    version: SEED_CATALOG_VERSION,
+    effects: createEffectRegistry(createSlowMovementEffect()),
+    actions: createActionRegistry(createIceBoltAction(), createHamstringStrikeAction())
+  }
+}
+
+export function createKnownActionStore(catalog: SeedCatalog = createSeedCatalog()): KnownActionStore {
+  const knownActionIds = new Map<string, Set<string>>()
+
+  return {
+    grantKnownAction(characterId, actionId) {
+      assertKnownActionInput(characterId, actionId)
+      assertCatalogAction(catalog, actionId)
+      getKnownActionSet(knownActionIds, characterId).add(actionId)
+    },
+    revokeKnownAction(characterId, actionId) {
+      assertKnownActionInput(characterId, actionId)
+      knownActionIds.get(characterId)?.delete(actionId)
+    },
+    listKnownActions(characterId) {
+      assertCharacterId(characterId)
+      return sortedActionIds(knownActionIds.get(characterId))
+    },
+    knowsAction(characterId, actionId) {
+      assertKnownActionInput(characterId, actionId)
+      return knownActionIds.get(characterId)?.has(actionId) ?? false
+    },
+    snapshot() {
+      return Object.fromEntries(
+        [...knownActionIds.entries()].map(([characterId, actionIds]) => [
+          characterId,
+          sortedActionIds(actionIds)
+        ])
+      )
+    }
+  }
+}
+
+const defaultKnownActionStore = createKnownActionStore()
+
+export function grantKnownAction(characterId: string, actionId: string): void {
+  defaultKnownActionStore.grantKnownAction(characterId, actionId)
+}
+
+export function revokeKnownAction(characterId: string, actionId: string): void {
+  defaultKnownActionStore.revokeKnownAction(characterId, actionId)
+}
+
+export function listKnownActions(characterId: string): string[] {
+  return defaultKnownActionStore.listKnownActions(characterId)
+}
+
+export function knowsAction(characterId: string, actionId: string): boolean {
+  return defaultKnownActionStore.knowsAction(characterId, actionId)
+}
+
 export function isValidRange(value: unknown): value is ActionRange {
   if (!isRecord(value)) {
     return false
@@ -164,6 +230,74 @@ export function actionsAreMechanicallyEqual(
     JSON.stringify(mechanicsOf(left)) === JSON.stringify(mechanicsOf(right)) &&
     isValidActionDefinition(left) === isValidActionDefinition(right)
   )
+}
+
+function createSlowMovementEffect(): SlowMovementEffect {
+  return {
+    effectId: 'slow_movement',
+    params: {
+      feetPenalty: 10,
+      durationRounds: 1
+    }
+  }
+}
+
+function createIceBoltAction(): ActionDefinition {
+  return defineAction({
+    actionId: 'ice_bolt',
+    name: 'Ice Bolt',
+    flavorTags: ['spell'],
+    range: { kind: 'feet', amount: 30 },
+    effects: [createSlowMovementEffect()],
+    cost: { actionTurns: 1 }
+  })
+}
+
+function createHamstringStrikeAction(): ActionDefinition {
+  return defineAction({
+    actionId: 'hamstring_strike',
+    name: 'Hamstring Strike',
+    flavorTags: ['classAction'],
+    range: { kind: 'meleeWeapon' },
+    effects: [createSlowMovementEffect()],
+    cost: { actionTurns: 1 }
+  })
+}
+
+function assertCatalogAction(catalog: SeedCatalog, actionId: string): void {
+  if (!getAction(catalog.actions, actionId)) {
+    throw new Error(`Unknown catalog action: ${actionId}`)
+  }
+}
+
+function assertKnownActionInput(characterId: string, actionId: string): void {
+  assertCharacterId(characterId)
+  if (!isNonEmptyString(actionId)) {
+    throw new Error('Expected a non-empty actionId')
+  }
+}
+
+function assertCharacterId(characterId: string): void {
+  if (!isNonEmptyString(characterId)) {
+    throw new Error('Expected a non-empty characterId')
+  }
+}
+
+function getKnownActionSet(
+  knownActionIds: Map<string, Set<string>>,
+  characterId: string
+): Set<string> {
+  const existing = knownActionIds.get(characterId)
+  if (existing) {
+    return existing
+  }
+  const created = new Set<string>()
+  knownActionIds.set(characterId, created)
+  return created
+}
+
+function sortedActionIds(actionIds: ReadonlySet<string> | undefined): string[] {
+  return [...(actionIds ?? [])].sort((left, right) => left.localeCompare(right))
 }
 
 function isValidEffectDefinition(value: unknown): value is EffectDefinition {
@@ -254,13 +388,83 @@ function mechanicsOf(action: ActionDefinition): Pick<ActionDefinition, 'cost' | 
 }
 
 function buildEndpoints(): EngineEndpoint[] {
-  return [
+  const endpoints: EngineEndpoint[] = [
+    {
+      name: 'getCatalog',
+      description: 'Return a deterministic fresh seed catalog',
+      invoke: () => createSeedCatalog()
+    },
+    {
+      name: 'grantKnownAction',
+      description: 'Grant a known catalog action id to a character',
+      invoke: (payload) => invokeGrantKnownAction(payload)
+    },
     {
       name: 'health',
       description: 'Return package health metadata',
       invoke: () => ({ ok: true as const, package: PACKAGE_NAME, version: VERSION })
+    },
+    {
+      name: 'knowsAction',
+      description: 'Return whether a character knows a catalog action id',
+      invoke: (payload) => invokeKnowsAction(payload)
+    },
+    {
+      name: 'listCatalogActions',
+      description: 'List deterministic seed catalog actions',
+      invoke: () => listActions(createSeedCatalog().actions)
+    },
+    {
+      name: 'listKnownActions',
+      description: 'List known catalog action ids for a character',
+      invoke: (payload) => invokeListKnownActions(payload)
+    },
+    {
+      name: 'revokeKnownAction',
+      description: 'Revoke a known catalog action id from a character',
+      invoke: (payload) => invokeRevokeKnownAction(payload)
     }
   ]
+  return endpoints.sort((left, right) => left.name.localeCompare(right.name))
+}
+
+function invokeGrantKnownAction(payload: unknown): string[] {
+  const { characterId, actionId } = readKnownActionPayload(payload)
+  grantKnownAction(characterId, actionId)
+  return listKnownActions(characterId)
+}
+
+function invokeRevokeKnownAction(payload: unknown): string[] {
+  const { characterId, actionId } = readKnownActionPayload(payload)
+  revokeKnownAction(characterId, actionId)
+  return listKnownActions(characterId)
+}
+
+function invokeListKnownActions(payload: unknown): string[] {
+  const { characterId } = readCharacterPayload(payload)
+  return listKnownActions(characterId)
+}
+
+function invokeKnowsAction(payload: unknown): boolean {
+  const { characterId, actionId } = readKnownActionPayload(payload)
+  return knowsAction(characterId, actionId)
+}
+
+function readKnownActionPayload(payload: unknown): { characterId: string; actionId: string } {
+  if (!isRecord(payload)) {
+    throw new Error('Expected payload with characterId and actionId')
+  }
+  if (!isNonEmptyString(payload.characterId) || !isNonEmptyString(payload.actionId)) {
+    throw new Error('Expected payload with characterId and actionId')
+  }
+  return { characterId: payload.characterId, actionId: payload.actionId }
+}
+
+function readCharacterPayload(payload: unknown): { characterId: string } {
+  if (!isRecord(payload) || !isNonEmptyString(payload.characterId)) {
+    throw new Error('Expected payload with characterId')
+  }
+  return { characterId: payload.characterId }
 }
 
 export const actionEngine: ActionEngineApi = {
