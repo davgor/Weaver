@@ -30,6 +30,17 @@ import {
   type ResolvedProviderConfig
 } from './providerConfig.js'
 import { retryWithBackoff, type RetryClassifier, type RetryOptions, type Sleep } from './retry.js'
+import { estimateCostUsd } from './estimateCost.js'
+import { wrapWithUsageMetering } from './meteredRuntime.js'
+import { createUsageMeter, sharedUsageMeter } from './usageMeter.js'
+import type {
+  TokenUsage,
+  UsageEvent,
+  UsageEventInput,
+  UsageMeter,
+  UsagePurposeAggregate,
+  UsageTimeRange
+} from './usageTypes.js'
 import type {
   ChatMessage,
   ChatRequest,
@@ -80,7 +91,13 @@ export type {
   RetryOptions,
   Sleep,
   TextRequest,
-  TextResponse
+  TextResponse,
+  TokenUsage,
+  UsageEvent,
+  UsageEventInput,
+  UsageMeter,
+  UsagePurposeAggregate,
+  UsageTimeRange
 }
 
 export {
@@ -89,15 +106,19 @@ export {
   createDefaultLlmEngine,
   createProviderRuntime,
   createNodeLlamaRuntime,
+  createUsageMeter,
   defaultLlmDataDir,
   DEFAULT_MODEL,
+  estimateCostUsd,
   fetchDownloader,
   nodeFileStore,
   probeVulkanWithNodeLlama,
   QWEN_2_5_7B_INSTRUCT_Q4_K_M,
   resolveProviderConfig,
   retryWithBackoff,
-  resolvePreferredBackend
+  resolvePreferredBackend,
+  sharedUsageMeter,
+  wrapWithUsageMetering
 }
 
 /** Default singleton for Electron admin endpoint exercise (data under `.weaver-llm`). */

@@ -32,6 +32,8 @@ export type TextRequest = {
   prompt: string
   context?: string
   maxTokens?: number
+  /** Caller tag for usage metering (e.g. campaign-create, turn-narration). */
+  purpose?: string
 }
 
 export type TextResponse = {

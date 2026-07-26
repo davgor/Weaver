@@ -1,6 +1,7 @@
 import { describe, expect, expectTypeOf, it, vi } from 'vitest'
 import { createLlmEngine } from './createLlmEngine.js'
 import { DEFAULT_MODEL } from './modelCatalog.js'
+import { createUsageMeter } from './usageMeter.js'
 import type { CreateRuntime, FileStore, TextRequest, TextResponse } from './types.js'
 
 function memoryFiles(existing = new Set<string>()): FileStore {
@@ -24,6 +25,7 @@ describe('createLlmEngine — completeText contract', () => {
       prompt: string
       context?: string
       maxTokens?: number
+      purpose?: string
     }>()
     expectTypeOf<TextResponse>().toEqualTypeOf<{
       text: string
@@ -214,6 +216,47 @@ describe('createLlmEngine — admin completeText smoke', () => {
       prompt: 'Say hello',
       context: 'Admin smoke test',
       maxTokens: 8
+    })
+  })
+})
+
+describe('createLlmEngine — usage metering', () => {
+  it('records local completions at zero cost and exposes purpose aggregates', async () => {
+    const meter = createUsageMeter()
+    const existing = new Set<string>()
+    const engine = createLlmEngine({
+      dataDir: '/data',
+      files: memoryFiles(existing),
+      downloader: {
+        download: async (_url, dest) => {
+          existing.add(dest)
+        }
+      },
+      probe: { supportsVulkan: () => false },
+      createRuntime: async ({ backend }) => ({
+        completeText: async () => ({ text: 'metered local', backend }),
+        dispose: async () => undefined
+      }),
+      meter
+    })
+
+    await engine.install()
+    await engine.completeText({ prompt: 'hello world', purpose: 'turn-narration' })
+    expect(engine.queryUsageByPurpose()).toEqual([
+      {
+        purpose: 'turn-narration',
+        eventCount: 1,
+        promptTokens: expect.any(Number),
+        completionTokens: expect.any(Number),
+        totalTokens: expect.any(Number),
+        estimatedCostUsd: 0
+      }
+    ])
+    expect(engine.listUsageEvents()[0]).toMatchObject({
+      provider: 'local',
+      model: DEFAULT_MODEL.id,
+      purpose: 'turn-narration',
+      estimatedCostUsd: 0
     })
   })
 })

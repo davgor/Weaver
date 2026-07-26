@@ -1,10 +1,19 @@
+import { DEFAULT_MODEL } from './modelCatalog.js'
+import { wrapWithUsageMetering, type MeasuredTextResponse } from './meteredRuntime.js'
 import type {
   CloudProviderId,
   Player2ProviderConfig,
   ResolvedProviderConfig
 } from './providerConfig.js'
+import {
+  parseClaudeUsage,
+  parseGeminiUsage,
+  parseOpenAiUsage
+} from './parseProviderUsage.js'
 import { retryWithBackoff, type RetryOptions } from './retry.js'
 import type { LlmRuntime, ProviderAdapter, TextRequest, TextResponse } from './types.js'
+import { sharedUsageMeter } from './usageMeter.js'
+import type { UsageMeter } from './usageTypes.js'
 
 export type ProviderFetch = (url: string, init: RequestInit) => Promise<Response>
 
@@ -12,6 +21,7 @@ export type CreateProviderRuntimeOptions = {
   fetch?: ProviderFetch
   localRuntime?: LlmRuntime
   retry?: RetryOptions
+  meter?: UsageMeter
 }
 
 type RequestBody = Record<string, unknown>
@@ -23,13 +33,20 @@ export function createProviderRuntime(
   config: ResolvedProviderConfig,
   options: CreateProviderRuntimeOptions = {}
 ): LlmRuntime {
-  if (config.provider === 'local') {
-    return localProviderRuntime(options)
-  }
-  const fetchImpl = options.fetch ?? defaultFetch
-  const adapter = cloudAdapter(config, fetchImpl)
-  const retry = mergedRetry(config.provider, options.retry)
-  return retryingAdapter(adapter, retry)
+  const inner = config.provider === 'local' ? localProviderRuntime(options) : cloudProviderRuntime(config, options)
+  return wrapWithUsageMetering(inner, {
+    meter: options.meter ?? sharedUsageMeter,
+    provider: config.provider,
+    model: modelForConfig(config)
+  })
+}
+
+function cloudProviderRuntime(
+  config: Exclude<ResolvedProviderConfig, { provider: 'local' }>,
+  options: CreateProviderRuntimeOptions
+): LlmRuntime {
+  const adapter = cloudAdapter(config, options.fetch ?? defaultFetch)
+  return retryingAdapter(adapter, mergedRetry(config.provider, options.retry))
 }
 
 function localProviderRuntime(options: CreateProviderRuntimeOptions): LlmRuntime {
@@ -37,6 +54,10 @@ function localProviderRuntime(options: CreateProviderRuntimeOptions): LlmRuntime
     throw new Error('The local provider requires an injected localRuntime')
   }
   return retryingAdapter(options.localRuntime, mergedRetry('local', options.retry))
+}
+
+function modelForConfig(config: ResolvedProviderConfig): string {
+  return config.provider === 'local' ? DEFAULT_MODEL.id : config.model
 }
 
 function cloudAdapter(
@@ -84,7 +105,7 @@ async function completeClaude(
     max_tokens: request.maxTokens ?? CLAUDE_DEFAULT_MAX_TOKENS,
     messages: [{ role: 'user', content: request.prompt }]
   })
-  return { text: readClaudeText(json), backend: config.provider }
+  return withUsage({ text: readClaudeText(json), backend: config.provider }, parseClaudeUsage(json))
 }
 
 async function completeGemini(
@@ -94,7 +115,7 @@ async function completeGemini(
 ): Promise<TextResponse> {
   const url = `${config.baseUrl}/models/${encodeURIComponent(config.model)}:generateContent?key=${encodeURIComponent(config.apiKey)}`
   const json = await postJson(fetchImpl, url, jsonHeaders(), geminiBody(request))
-  return { text: readGeminiText(json), backend: 'gemini' }
+  return withUsage({ text: readGeminiText(json), backend: 'gemini' }, parseGeminiUsage(json))
 }
 
 async function completeOpenAiCompatible(
@@ -108,7 +129,17 @@ async function completeOpenAiCompatible(
     openAiCompatibleHeaders(config),
     openAiCompatibleBody(config.model, request)
   )
-  return { text: readOpenAiText(json), backend: config.provider }
+  return withUsage(
+    { text: readOpenAiText(json), backend: config.provider },
+    parseOpenAiUsage(json)
+  )
+}
+
+function withUsage(
+  response: TextResponse,
+  usage: ReturnType<typeof parseOpenAiUsage>
+): MeasuredTextResponse {
+  return usage === undefined ? response : { ...response, usage }
 }
 
 async function postJson(

@@ -22,6 +22,7 @@
   },
   "dependencies": {
     "@types/better-sqlite3": "^7.6.13",
+    "@weaver/character-engine": "*",
     "@weaver/combat-engine": "*",
     "@weaver/enemy-engine": "*",
     "@weaver/item-engine": "*",

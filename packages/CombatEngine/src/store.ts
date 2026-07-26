@@ -51,8 +51,14 @@ function safeFileName(encounterId: string): string {
 
 function parseEncounter(text: string): EncounterState {
   const parsed = JSON.parse(text) as Partial<EncounterState>
-  if (typeof parsed.encounterId !== 'string' || parsed.status !== 'active') {
-    throw new Error('Encounter store file is not an active encounter state')
+  if (typeof parsed.encounterId !== 'string') {
+    throw new Error('Encounter store file is missing encounterId')
+  }
+  if (parsed.status !== 'active' && parsed.status !== 'resolved') {
+    throw new Error('Encounter store file is not a valid encounter state')
+  }
+  if (parsed.startMode !== 'pre-authored' && parsed.startMode !== 'ad-hoc') {
+    throw new Error('Encounter store file is missing startMode')
   }
   return parsed as EncounterState
 }

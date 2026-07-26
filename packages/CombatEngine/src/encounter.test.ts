@@ -50,6 +50,7 @@ describe('CombatEngine encounter lifecycle — persistence', () => {
       expect(persisted).toMatchObject({
         encounterId: 'enc-file',
         status: 'active',
+        startMode: 'pre-authored',
         currentTurnIndex: 0,
         round: 1,
         turnOrder: ['npc-fast', 'hero', 'enemy-slow']

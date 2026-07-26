@@ -3,6 +3,7 @@ import { join } from 'node:path'
 import { resolveBrowserWindowIconPath } from './appIcon.js'
 import { buildStartupBoot } from './engineCatalog.js'
 import { initAutoUpdate, registerAutoUpdateHandlers } from './autoUpdate.js'
+import { registerCharacterSheetHandlers } from './characterSheet/registerHandlers.js'
 import { setupGlobalErrorLogging } from './logger.js'
 import { APP_DISPLAY_NAME } from '../shared/appBranding.js'
 
@@ -62,6 +63,7 @@ function registerGameHandlers(): void {
   ipcMain.handle('startup:getBoot', () => buildStartupBoot())
   ipcMain.handle('campaigns:list', () => [])
   ipcMain.handle('app:getVersion', () => app.getVersion())
+  registerCharacterSheetHandlers()
 }
 
 app.whenReady().then(() => {

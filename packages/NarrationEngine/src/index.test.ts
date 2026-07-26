@@ -51,10 +51,17 @@ describe('@weaver/narration-engine', () => {
     })
   })
 
-  it('lists portrait and manual icon endpoints', () => {
+  it('lists prose projection and validation endpoints', () => {
     const endpointNames = narrationEngine.listEndpoints().map((endpoint) => endpoint.name)
     expect(endpointNames).toEqual(
-      expect.arrayContaining(['generatePortrait', 'setManualPortrait', 'describeRole'])
+      expect.arrayContaining([
+        'projectSocial',
+        'projectScene',
+        'streamSocial',
+        'generateScene',
+        'decideSilentResolve',
+        'validateProseClaims'
+      ])
     )
   })
 })

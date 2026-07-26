@@ -4,7 +4,15 @@ import type {
   ManualUpdateCheckResult
 } from '../shared/autoUpdate/types.js'
 import { AUTO_UPDATE_EVENT_CHANNEL } from '../shared/autoUpdate/types.js'
-import type { CampaignSummary, GameApi, StartupBootSnapshot } from '../shared/gameApi.js'
+import type {
+  CampaignSummary,
+  CharacterSheetSnapshot,
+  EquipItemRequest,
+  GameApi,
+  LoadCharacterSheetRequest,
+  StartupBootSnapshot,
+  UnequipItemRequest
+} from '../shared/gameApi.js'
 
 const api: GameApi = {
   windowControls: {
@@ -17,6 +25,14 @@ const api: GameApi = {
   },
   campaigns: {
     list: (): Promise<CampaignSummary[]> => ipcRenderer.invoke('campaigns:list')
+  },
+  characterSheet: {
+    load: (request: LoadCharacterSheetRequest): Promise<CharacterSheetSnapshot> =>
+      ipcRenderer.invoke('characterSheet:load', request),
+    equip: (request: EquipItemRequest): Promise<CharacterSheetSnapshot> =>
+      ipcRenderer.invoke('characterSheet:equip', request),
+    unequip: (request: UnequipItemRequest): Promise<CharacterSheetSnapshot> =>
+      ipcRenderer.invoke('characterSheet:unequip', request)
   },
   app: {
     getVersion: (): Promise<string> => ipcRenderer.invoke('app:getVersion')

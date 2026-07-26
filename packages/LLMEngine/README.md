@@ -79,7 +79,31 @@ Player2 does not require an API key. Cloud providers require their provider key.
 
 ## Status
 
-Implemented for install status, backend probe, install with progress, local `completeText` raw text passthrough, and provider adapters for Claude/OpenAI/Gemini/Grok/Player2 behind the same contract. Default singleton `llmEngine` remains the local engine used by Electron admin endpoint exercise. Epic [068](../../board/backlog/068-LLMEngine-Usage-Metering.md) adds usage metering behind that same contract.
+Implemented for install status, backend probe, install with progress, local `completeText` raw text passthrough, provider adapters for Claude/OpenAI/Gemini/Grok/Player2 behind the same contract, and usage metering (tokens + estimated cost by purpose/tag) wrapped around every adapter completion. Default singleton `llmEngine` remains the local engine used by Electron admin endpoint exercise.
+
+## Usage metering
+
+Every `completeText` call through `createProviderRuntime` / `createTextCompletionClient` (and local `createLlmEngine`) records a usage event: provider, model, purpose/tag, token counts, and estimated USD cost. Local and Player2 providers still record tokens with `$0` cost so purpose-level usage stays comparable.
+
+```ts
+import {
+  createTextCompletionClient,
+  createUsageMeter
+} from '@weaver/llm-engine'
+
+const meter = createUsageMeter()
+const client = createTextCompletionClient({
+  settings: { provider: 'openai', openai: { apiKey: '…' } },
+  meter,
+  fetch
+})
+
+await client.completeText({ prompt: '…', purpose: 'turn-narration' })
+meter.aggregateByPurpose()
+meter.listEvents({ from, to })
+```
+
+Inject `meter` for isolated stores (tests / multi-tenant). Omit it to use `sharedUsageMeter`. Query helpers are also on `LlmEngineApi` as `queryUsageByPurpose` / `listUsageEvents`.
 
 ## Public API
 
@@ -107,12 +131,13 @@ await llmEngine.dispose()
 | `llmEngine` | Default singleton |
 | `createLlmEngine` / `createDefaultLlmEngine` | Factories |
 | `createTextCompletionClient`, `createProviderRuntime`, `resolveProviderConfig` | Provider adapter path |
+| `createUsageMeter`, `sharedUsageMeter`, `wrapWithUsageMetering`, `estimateCostUsd` | Usage metering |
 | `createNodeLlamaRuntime`, `probeVulkanWithNodeLlama` | Runtime wiring |
 | `fetchDownloader`, `nodeFileStore`, `defaultLlmDataDir` | Node I/O helpers |
 | `DEFAULT_MODEL`, `QWEN_2_5_7B_INSTRUCT_Q4_K_M` | Catalog |
-| Types | `ProviderId`, `ProviderSettings`, `ResolvedProviderConfig`, `LlmEngineApi`, `LlmStatus`, `TextRequest` / `TextResponse`, etc. |
+| Types | `ProviderId`, `ProviderSettings`, `ResolvedProviderConfig`, `LlmEngineApi`, `LlmStatus`, `TextRequest` / `TextResponse`, `UsageEvent`, `UsageMeter`, etc. |
 
-Admin-facing endpoints also include `health`, `getStatus`, `resolveBackend`, `install`, `completeText` via `listEndpoints` / `call`.
+Admin-facing endpoints also include `health`, `getStatus`, `resolveBackend`, `install`, `completeText`, `queryUsageByPurpose`, `listUsageEvents` via `listEndpoints` / `call`.
 
 `complete` / `ChatRequest` remain only as a deprecated compatibility wrapper that maps system messages to `context` and the latest user message to `prompt`.
 

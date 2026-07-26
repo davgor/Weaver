@@ -8,10 +8,14 @@ describe('@weaver/civilization-engine', () => {
     expect(health.package).toBe('@weaver/civilization-engine')
   })
 
-  it('lists callable endpoints', () => {
-    const endpoints = civilizationEngine.listEndpoints()
-    expect(endpoints.length).toBeGreaterThan(0)
-    expect(endpoints.some((e) => e.name === 'health')).toBe(true)
+  it('lists callable endpoints including fill and population', () => {
+    const names = civilizationEngine.listEndpoints().map((e) => e.name)
+    expect(names).toContain('health')
+    expect(names).toContain('proposeCivilizations')
+    expect(names).toContain('fillCivilizations')
+    expect(names).toContain('getPopulation')
+    expect(names).toContain('claimNpcPlaceholder')
+    expect(names).toContain('getCivilizationSummary')
   })
 
   it('invokes the health endpoint', async () => {

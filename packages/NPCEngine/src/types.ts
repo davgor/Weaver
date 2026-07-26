@@ -142,10 +142,45 @@ export type GroundingContext = {
   npcId: string
   privateMemories: NpcMemory[]
   worldFacts: WorldFact[]
+  opinions: NpcOpinion[]
 }
 
 export type QueryNpcGroundingContextInput = {
   npcId: string
+}
+
+export type OpinionSubjectKind = 'npc' | 'pc'
+
+export type OpinionStance = 'friendly' | 'neutral' | 'wary' | 'hostile'
+
+export type NpcOpinion = {
+  holderNpcId: string
+  subjectId: string
+  subjectKind: OpinionSubjectKind
+  trust: number
+  fear: number
+  affection: number
+  stance?: OpinionStance
+  provenance?: MemoryProvenance
+}
+
+export type UpsertNpcOpinionInput = {
+  holderNpcId: string
+  subjectId: string
+  subjectKind: OpinionSubjectKind
+  trust: number
+  fear: number
+  affection: number
+  stance?: OpinionStance
+  provenance?: MemoryProvenance
+}
+
+export type ListNpcOpinionsHeldByInput = {
+  holderNpcId: string
+}
+
+export type ListNpcOpinionsAboutInput = {
+  subjectId: string
 }
 
 export type FactionRelationKind = 'allied' | 'neutral' | 'hostile'

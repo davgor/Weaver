@@ -1,3 +1,5 @@
+import type { CharacterSheetApi } from './characterSheet/types.js'
+
 export type CampaignSummary = {
   id: string
   name: string
@@ -25,7 +27,17 @@ export type GameApi = {
   campaigns: {
     list: () => Promise<CampaignSummary[]>
   }
+  characterSheet: CharacterSheetApi
   app: {
     getVersion: () => Promise<string>
   }
 }
+
+export type {
+  CharacterSheetApi,
+  CharacterSheetSnapshot,
+  CharacterSheetTab,
+  EquipItemRequest,
+  LoadCharacterSheetRequest,
+  UnequipItemRequest
+} from './characterSheet/types.js'

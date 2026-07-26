@@ -4,24 +4,9 @@
 
 Epic ids are grouped by package/theme (e.g. `021`-`031` = CharacterEngine), **not** by dependency order. Picking tickets in numeric order alone will hand you one before something it depends on exists. Work wave by wave instead: everything in a wave has no unmet dependency on anything else still pending, so tickets within a wave can run in any order (including in parallel).
 
-6 waves, 37 pending epics.
+5 waves, 25 pending epics.
 
 ## Wave 1
-
-- `016-CivilizationEngine-Settlement-Placement`
-- `024-CharacterEngine-Damage-Conditions-Dying`
-- `026-CharacterEngine-Archetypes-And-Starting-Loadouts`
-- `041-NPCEngine-Relationship-Web`
-- `050-CombatEngine-Flee-Surrender-Nonlethal`
-- `051-CombatEngine-Dynamic-Start-And-Triggers`
-- `055-DMEngine-Commerce-And-Travel-Intents`
-- `056-DMEngine-Quest-Proposal-And-Tracking`
-- `063-NarrationEngine-Scene-Social-Split-And-Streaming`
-- `068-LLMEngine-Usage-Metering`
-- `073-ElectronAITTRPG-Character-Sheet-Ui`
-- `084-ActionEngine-Use-Resolution-And-Lockout`
-
-## Wave 2
 
 - `025-CharacterEngine-Xp-And-Level-Up`
 - `027-CharacterEngine-Death-Modes-And-Obituary`
@@ -33,7 +18,7 @@ Epic ids are grouped by package/theme (e.g. `021`-`031` = CharacterEngine), **no
 - `065-NarrationEngine-Rag-Retrieval`
 - `077-ElectronAdmin-Llm-Usage-Dashboard`
 
-## Wave 3
+## Wave 2
 
 - `049-CombatEngine-Hit-Damage-Crit-Conditions`
 - `052-DMEngine-Campaign-Generation-Pipeline`
@@ -41,7 +26,7 @@ Epic ids are grouped by package/theme (e.g. `021`-`031` = CharacterEngine), **no
 - `074-ElectronAITTRPG-Npc-Dossier-And-Relationship-Ui`
 - `075-ElectronAITTRPG-Settings-Ui`
 
-## Wave 4
+## Wave 3
 
 - `053-DMEngine-Turn-Routing`
 - `057-DMEngine-Ask-The-Dm`
@@ -51,12 +36,12 @@ Epic ids are grouped by package/theme (e.g. `021`-`031` = CharacterEngine), **no
 - `069-ElectronAITTRPG-Campaign-Creation-And-Review-Ui`
 - `070-ElectronAITTRPG-Onboarding-Wizard-Ui`
 
-## Wave 5
+## Wave 4
 
 - `054-DMEngine-World-Mutations-And-Live-Population`
 - `071-ElectronAITTRPG-Campaign-Hub-Ui`
 - `072-ElectronAITTRPG-Play-View-Ui`
 
-## Wave 6
+## Wave 5
 
 - `076-ElectronAITTRPG-Play-Shell-Resilience`

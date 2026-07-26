@@ -248,7 +248,9 @@ describe('@weaver/action-engine catalog and known-action endpoints', () => {
       'knowsAction',
       'listCatalogActions',
       'listKnownActions',
-      'revokeKnownAction'
+      'revokeKnownAction',
+      'useAction',
+      'validateUse'
     ])
   })
 

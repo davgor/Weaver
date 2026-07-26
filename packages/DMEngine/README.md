@@ -59,15 +59,24 @@ catalog; they return campaign summaries and close the underlying handle.
 
 ## Status
 
-Campaign persistence scaffold. Exposes `health`, `describeRole` (`invents:
-false`, lists pull-from packages), `createCampaign`, `openCampaign`, and matching
-admin endpoints. Full design lives in epics
+Campaign persistence scaffold plus commerce/travel intent handlers (055) and
+quest proposal/tracking orchestration (056). Exposes `health`, `describeRole`
+(`invents: false`, lists pull-from packages), `createCampaign`, `openCampaign`,
+matching admin endpoints, and the intent/quest orchestration helpers below.
+Full design lives in epics
 [052](../../board/backlog/052-DMEngine-Campaign-Generation-Pipeline.md)–[062](../../board/backlog/062-DMEngine-Context-Efficiency-And-Rag-Integration.md).
 
 ## Public API (today)
 
 ```ts
-import { dmEngine } from '@weaver/dm-engine'
+import {
+  dmEngine,
+  classifyPlayerIntent,
+  resolvePlayerIntent,
+  proposeQuest,
+  completeQuest,
+  failQuest
+} from '@weaver/dm-engine'
 import type { DmEngineDeps } from '@weaver/dm-engine'
 
 dmEngine.health()
@@ -77,6 +86,8 @@ const campaign = dmEngine.createCampaign({
   filePath: '/path/to/example-campaign.sqlite'
 })
 campaign.close()
+
+classifyPlayerIntent('I buy the iron sword') // 'buy'
 ```
 
 | Export | Notes |
@@ -84,7 +95,10 @@ campaign.close()
 | `dmEngine` | Singleton `DmEngineApi` |
 | `createCampaign` / `openCampaign` | Campaign file lifecycle helpers used by the singleton |
 | `CURRENT_CAMPAIGN_SCHEMA_VERSION` | Latest supported campaign schema version |
-| `Campaign*` / `CatalogSeed*` / `DmEngineApi` / `DmEngineDeps` / `EngineEndpoint` | Types (`DmEngineDeps` sketches injected peer APIs) |
+| `classifyPlayerIntent` / `resolvePlayerIntent` | Heuristic intent branch targets for future 053 router |
+| `resolveBuyIntent` / `resolveSellIntent` / `resolveTravelIntent` | Commerce/travel handlers via ItemEngine + CharacterEngine |
+| `proposeQuest` / `updateQuestProgress` / `completeQuest` / `failQuest` | Quest orchestration against CharacterEngine quest log |
+| `Campaign*` / `CatalogSeed*` / `DmEngineApi` / `DmEngineDeps` / `EngineEndpoint` | Types (`DmEngineDeps` includes injected peer APIs) |
 
 ## Planned direction (from epics 052–062)
 
@@ -93,8 +107,8 @@ campaign.close()
 | [052](../../board/backlog/052-DMEngine-Campaign-Generation-Pipeline.md) | Cascading campaign-gen pipeline; orchestrates NarrationEngine for content, persists via peer engines |
 | [053](../../board/backlog/053-DMEngine-Turn-Routing.md) | Turn routing: merged intent+route, heuristic fast path, dedicated commerce/travel/combat branches |
 | [054](../../board/backlog/054-DMEngine-World-Mutations-And-Live-Population.md) | Typed world mutations; on-demand live place/NPC population |
-| [055](../../board/backlog/055-DMEngine-Commerce-And-Travel-Intents.md) | Reliable buy/sell/travel intents |
-| [056](../../board/backlog/056-DMEngine-Quest-Proposal-And-Tracking.md) | Quest proposal & tracking against CharacterEngine's quest log |
+| [055](../../board/done/055-DMEngine-Commerce-And-Travel-Intents.md) | Reliable buy/sell/travel intents |
+| [056](../../board/done/056-DMEngine-Quest-Proposal-And-Tracking.md) | Quest proposal & tracking against CharacterEngine's quest log |
 | [057](../../board/backlog/057-DMEngine-Ask-The-Dm.md) | Ask-the-DM (OOC) — never touches `turn:resolve` |
 | [058](../../board/backlog/058-DMEngine-Shared-Time-And-Hub-Recap.md) | Shared multi-PC time/causality; campaign-hub session recap |
 | [059](../../board/backlog/059-DMEngine-Campaign-Portability.md) | Campaign export/import/backup |

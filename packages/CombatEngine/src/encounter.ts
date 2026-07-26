@@ -1,6 +1,7 @@
 import { getAbilityModifier } from '@weaver/character-engine'
 import { cloneEncounter, createJsonEncounterStore } from './store.js'
 import type {
+  CombatConditionId,
   CombatMovementInput,
   CurrentTurnState,
   EncounterCombatant,
@@ -24,9 +25,17 @@ export function startEncounter(
   input: StartEncounterInput,
   deps: StartEncounterDeps = {}
 ): EncounterState {
+  return persistStartedEncounter(input, 'pre-authored', deps.roller ?? rollD20)
+}
+
+export function persistStartedEncounter(
+  input: StartEncounterInput,
+  startMode: EncounterState['startMode'],
+  roller: () => number
+): EncounterState {
   assertText(input.encounterId, 'encounterId')
   const store = resolveStore(input)
-  const rows = rollInitiative(input.combatants, deps.roller ?? rollD20)
+  const rows = rollInitiative(input.combatants, roller)
   const turnOrder = stableTurnOrder(rows)
   const firstCombatantId = turnOrder[0]
   if (firstCombatantId === undefined) {
@@ -35,6 +44,7 @@ export function startEncounter(
   return store.saveEncounter({
     encounterId: input.encounterId,
     status: 'active',
+    startMode,
     combatants: rows.map(stripInputOrder),
     turnOrder,
     currentTurnIndex: 0,
@@ -60,7 +70,10 @@ export function submitCombatAction(input: SubmitCombatActionInput): EncounterSta
   return saveTurnUpdate(input, {
     ...encounter,
     currentTurn: { ...encounter.currentTurn, actionUsed: true },
-    turnLog: [...encounter.turnLog, { kind: 'action', round: encounter.round, combatantId: input.combatantId, action }]
+    turnLog: [
+      ...encounter.turnLog,
+      { kind: 'action', round: encounter.round, combatantId: input.combatantId, action }
+    ]
   })
 }
 
@@ -74,7 +87,10 @@ export function submitMovement(input: SubmitMovementInput): EncounterState {
   return saveTurnUpdate(input, {
     ...encounter,
     currentTurn: { ...encounter.currentTurn, movementUsed: true },
-    turnLog: [...encounter.turnLog, { kind: 'movement', round: encounter.round, combatantId: input.combatantId, movement }]
+    turnLog: [
+      ...encounter.turnLog,
+      { kind: 'movement', round: encounter.round, combatantId: input.combatantId, movement }
+    ]
   })
 }
 
@@ -94,25 +110,7 @@ export function endTurn(input: EndTurnInput): EncounterState {
   })
 }
 
-function rollInitiative(
-  combatants: readonly EncounterCombatantInput[],
-  roller: () => number
-): InitiativeRow[] {
-  return combatants.map((combatant, inputOrder) => {
-    assertCombatant(combatant)
-    const modifier = getAbilityModifier(combatant.abilityScores.Agility)
-    const roll = assertD20Roll(roller())
-    return { ...combatant, initiative: { roll, modifier, total: roll + modifier }, inputOrder }
-  })
-}
-
-function stableTurnOrder(rows: readonly InitiativeRow[]): string[] {
-  return [...rows]
-    .sort((left, right) => right.initiative.total - left.initiative.total || left.inputOrder - right.inputOrder)
-    .map((combatant) => combatant.id)
-}
-
-function resolveStore(input: EncounterLookupInput): EncounterStore {
+export function resolveStore(input: EncounterLookupInput): EncounterStore {
   if (input.store !== undefined) {
     return input.store
   }
@@ -122,17 +120,84 @@ function resolveStore(input: EncounterLookupInput): EncounterStore {
   throw new Error('Encounter operations require a durable dataRoot or an explicit store')
 }
 
-function requireActiveEncounter(input: EncounterLookupInput): EncounterState {
+export function requireActiveEncounter(input: EncounterLookupInput): EncounterState {
   assertText(input.encounterId, 'encounterId')
   const encounter = resolveStore(input).getEncounter(input.encounterId)
   if (encounter === undefined) {
     throw new Error(`Encounter not found: ${input.encounterId}`)
   }
+  if (encounter.status !== 'active') {
+    throw new Error(`Encounter is not active: ${input.encounterId}`)
+  }
   return encounter
 }
 
-function saveTurnUpdate(input: EncounterLookupInput, encounter: EncounterState): EncounterState {
+export function saveEncounterUpdate(
+  input: EncounterLookupInput,
+  encounter: EncounterState
+): EncounterState {
   return resolveStore(input).saveEncounter(encounter)
+}
+
+export function findCombatant(
+  encounter: EncounterState,
+  combatantId: string
+): EncounterCombatant {
+  const combatant = encounter.combatants.find((entry) => entry.id === combatantId)
+  if (combatant === undefined) {
+    throw new Error(`Combatant not found: ${combatantId}`)
+  }
+  return combatant
+}
+
+export function withCondition(
+  combatant: EncounterCombatant,
+  condition: CombatConditionId
+): EncounterCombatant {
+  if (combatant.conditions.includes(condition)) {
+    return combatant
+  }
+  return { ...combatant, conditions: [...combatant.conditions, condition] }
+}
+
+export function replaceCombatant(
+  encounter: EncounterState,
+  next: EncounterCombatant
+): EncounterState {
+  return {
+    ...encounter,
+    combatants: encounter.combatants.map((entry) => (entry.id === next.id ? next : entry))
+  }
+}
+
+function rollInitiative(
+  combatants: readonly EncounterCombatantInput[],
+  roller: () => number
+): InitiativeRow[] {
+  return combatants.map((combatant, inputOrder) => {
+    assertCombatant(combatant)
+    const modifier = getAbilityModifier(combatant.abilityScores.Agility)
+    const roll = assertD20Roll(roller())
+    return {
+      ...combatant,
+      conditions: [...(combatant.conditions ?? [])],
+      initiative: { roll, modifier, total: roll + modifier },
+      inputOrder
+    }
+  })
+}
+
+function stableTurnOrder(rows: readonly InitiativeRow[]): string[] {
+  return [...rows]
+    .sort(
+      (left, right) =>
+        right.initiative.total - left.initiative.total || left.inputOrder - right.inputOrder
+    )
+    .map((combatant) => combatant.id)
+}
+
+function saveTurnUpdate(input: EncounterLookupInput, encounter: EncounterState): EncounterState {
+  return saveEncounterUpdate(input, encounter)
 }
 
 function assertCurrentCombatant(encounter: EncounterState, combatantId: string): void {
@@ -186,6 +251,7 @@ function stripInputOrder(row: InitiativeRow): EncounterCombatant {
     kind: row.kind,
     abilityScores: { ...row.abilityScores },
     initiative: { ...row.initiative },
+    conditions: [...row.conditions],
     ...(row.displayName === undefined ? {} : { displayName: row.displayName }),
     ...(row.hp === undefined ? {} : { hp: { ...row.hp } }),
     ...(row.armorClass === undefined ? {} : { armorClass: row.armorClass })
