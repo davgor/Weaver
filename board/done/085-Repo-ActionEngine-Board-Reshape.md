@@ -11,4 +11,4 @@ Follow-up on the seeded MVP gap: spells and class actions are the same mechanica
 - [x] Root README package table lists ActionEngine (planned) with the unified spell/class-action boundary
 - [x] Peer epics that assumed a CombatEngine spell surface (`025`, `028`, `036`, Combat README notes) point at ActionEngine for action definitions/effects
 - [x] `npm run board:order` regenerated; `npm test` / `lint` / `build` / `deadcode` pass for touched scripts/docs
-- [ ] `npm run ci:act` — blocked until Docker is available in this environment (same as `080`)
+- [x] `npm run ci:act` — verified (`pr-checks.yml` + `deadcode.yml` both `🏁 Job succeeded`)

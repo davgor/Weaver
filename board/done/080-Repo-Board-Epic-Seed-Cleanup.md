@@ -12,4 +12,4 @@ Pre-implementation board hygiene from the seeded-epic review: fix false/soft dep
 - [x] New backlog epics exist for campaign SQLite/migrations (`081`); original CombatEngine spell/lockout slice was superseded by ActionEngine reshape (`085` → epics `082`–`084`)
 - [x] `018` package-README criteria verified against existing `packages/*/README.md` files (content criteria checked; `act` left outstanding — Docker unavailable)
 - [x] `npm run board:order` regenerated; `021` appears in Wave 1; `npm test` (129) / `lint` / `build` / `deadcode` pass for script/board changes
-- [ ] `npm run ci:act` (`pr-checks.yml` + `deadcode.yml`) — **blocked**: Docker is not installed/reachable in this environment (`docker` missing). Start Docker and re-run before treating as fully CI-verified.
+- [x] `npm run ci:act` (`pr-checks.yml` + `deadcode.yml`) — verified (both `🏁 Job succeeded`)

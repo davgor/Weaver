@@ -21,4 +21,4 @@ Ticket `078` (parameterized engine endpoints) turned up a live example of the pa
 - [x] `.cursor/rules/delivery-standards.mdc` and `.cursor/rules/act-ci-after-local-tasks.mdc` carry the condensed versions of the same two changes
 - [x] `.claude/skills/complete-ticket/SKILL.md` and `.cursor/skills/complete-ticket/SKILL.md` are byte-identical and lead with `npm run ci:act`, keeping the manual `act.exe` command only as a documented fallback for isolating one workflow
 - [x] `npm test` (117/117), `npm run lint`, `npm run typecheck`, `npm run build`, `npm run deadcode` all pass
-- [ ] `npm run ci:act` itself passes (`pr-checks.yml` + `deadcode.yml` both `🏁 Job succeeded`) — **not yet run for real**: Docker was not running in this environment. This ticket stays out of `done/` until it has.
+- [x] `npm run ci:act` itself passes (`pr-checks.yml` + `deadcode.yml` both `🏁 Job succeeded`)

@@ -6,4 +6,4 @@ Deploy `package:win` fails because both Electron app packages declare `"electron
 
 - [x] `@weaver/electron-aittrpg` and `@weaver/electron-admin` declare an exact (non-range) `electron` version in `devDependencies`
 - [x] A unit test asserts both Electron packages keep `electron` pinned exactly (no `^` / `~` / `*` / `x`)
-- [ ] `npm test`, `npm run lint`, `npm run build`, `npm run deadcode`, and `npm run ci:act` pass
+- [x] `npm test`, `npm run lint`, `npm run build`, `npm run deadcode`, and `npm run ci:act` pass
