@@ -3,15 +3,17 @@ import type { ResolveTurnInput, ResolveTurnResult } from '@weaver/dm-engine'
 import type {
   D20RollFeedback,
   SubmitPlayActionRequest,
-  SubmitPlayActionResult
+  SubmitPlayActionResult,
+  SubmitPlayActionSuccess
 } from '../../shared/play/types.js'
 import { buildCombatChrome } from './combatChrome.js'
+import { toPlayTurnFailure } from './turnFailure.js'
 
 export type TurnService = {
   submitAction: (request: SubmitPlayActionRequest) => Promise<SubmitPlayActionResult>
 }
 
-export type TurnServiceDeps<TDeps> = {
+type TurnServiceDeps<TDeps> = {
   deps: TDeps
   resolveTurn: (input: ResolveTurnInput, deps: TDeps) => Promise<ResolveTurnResult>
   getEncounter?: (encounterId: string) => EncounterState | undefined
@@ -27,9 +29,21 @@ async function submitAction<TDeps>(
   deps: TurnServiceDeps<TDeps>,
   request: SubmitPlayActionRequest
 ): Promise<SubmitPlayActionResult> {
+  try {
+    return await submitSuccessfulAction(deps, request)
+  } catch (error) {
+    return toPlayTurnFailure(error)
+  }
+}
+
+async function submitSuccessfulAction<TDeps>(
+  deps: TurnServiceDeps<TDeps>,
+  request: SubmitPlayActionRequest
+): Promise<SubmitPlayActionSuccess> {
   const result = await deps.resolveTurn(toResolveTurnInput(request), deps.deps)
   const encounter = request.encounterId === undefined ? undefined : deps.getEncounter?.(request.encounterId)
   return {
+    ok: true,
     scene: result.projections.scene,
     social: result.projections.social,
     combat: buildCombatChrome(encounter),
