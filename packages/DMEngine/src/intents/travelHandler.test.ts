@@ -23,33 +23,57 @@ describe('travelHandler', () => {
   })
 
   it('rejects ungenerated destinations without live population', () => {
-    const travel: CharacterTravelApi = { advanceTravelDays }
+    expectRejectedTravel({
+      campaignId: 'campaign-travel-fail',
+      destinationId: 'place.missing',
+      proposedDays: 3
+    })
+  })
+
+  it('mints an ungenerated destination through an optional live population hook before travel', () => {
+    const minted: string[] = []
     const destinations: TravelDestinationLookup = {
-      isGenerated: () => false
+      isGenerated: (destinationId) => minted.includes(destinationId),
+      ensureGenerated: (destinationId) => {
+        minted.push(destinationId)
+      }
     }
 
-    expect(() =>
-      resolveTravelIntent(travel, destinations, {
-        campaignId: 'campaign-travel-fail',
-        destinationId: 'place.missing',
-        proposedDays: 3
-      })
-    ).toThrow(DmIntentError)
+    const result = resolveTravelIntent(
+      { advanceTravelDays },
+      destinations,
+      {
+        campaignId: 'campaign-travel-mint',
+        destinationId: 'place.new-bridge',
+        proposedDays: 2
+      }
+    )
 
-    try {
-      resolveTravelIntent(travel, destinations, {
-        campaignId: 'campaign-travel-fail',
-        destinationId: 'place.missing',
-        proposedDays: 3
-      })
-    } catch (error) {
-      expect(error).toBeInstanceOf(DmIntentError)
-      expect((error as DmIntentError).code).toBe('DM_TRAVEL_REJECTED')
-      expect((error as Error).message).toMatch(/place\.missing/)
-    }
+    expect(minted).toEqual(['place.new-bridge'])
+    expect(result.destinationId).toBe('place.new-bridge')
+    expect(result.advance.advancedDays).toBe(2)
   })
 })
 
 function alwaysGenerated(): TravelDestinationLookup {
   return { isGenerated: () => true }
+}
+
+function expectRejectedTravel(request: {
+  campaignId: string
+  destinationId: string
+  proposedDays: number
+}): void {
+  const travel: CharacterTravelApi = { advanceTravelDays }
+  const destinations: TravelDestinationLookup = { isGenerated: () => false }
+
+  expect(() => resolveTravelIntent(travel, destinations, request)).toThrow(DmIntentError)
+
+  try {
+    resolveTravelIntent(travel, destinations, request)
+  } catch (error) {
+    expect(error).toBeInstanceOf(DmIntentError)
+    expect((error as DmIntentError).code).toBe('DM_TRAVEL_REJECTED')
+    expect((error as Error).message).toMatch(new RegExp(request.destinationId.replace('.', '\\.')))
+  }
 }

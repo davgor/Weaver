@@ -24,6 +24,7 @@ export function constructNpc(input: ConstructNpcInput): NpcRecord {
     speciesKind: input.speciesKind ?? 'person',
     combatStats: { kind: 'civilian', maxHp: CIVILIAN_HP, currentHp: CIVILIAN_HP },
     factionIds: [],
+    worldStatus: 'active',
     ...optionalFlavor(input, identity.nonSpeaking),
     ...optionalSpeakingStyle(input, identity.nonSpeaking)
   })

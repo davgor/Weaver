@@ -4,6 +4,7 @@ import './sidebar.css'
 interface SidebarProps {
   campaigns: CampaignSummary[]
   onNewCampaign: () => void
+  onOpenCampaign: (campaignId: string) => void
 }
 
 export function Sidebar(props: SidebarProps): JSX.Element {
@@ -16,7 +17,11 @@ export function Sidebar(props: SidebarProps): JSX.Element {
         <ul className="sidebar-campaign-list">
           {props.campaigns.map((campaign) => (
             <li key={campaign.id}>
-              <button type="button" className="sidebar-campaign-button">
+              <button
+                type="button"
+                className="sidebar-campaign-button"
+                onClick={() => props.onOpenCampaign(campaign.id)}
+              >
                 <span className="sidebar-campaign-name">{campaign.name}</span>
                 <span className="sidebar-campaign-last-played">
                   {campaign.lastPlayedAt ?? 'Never played'}

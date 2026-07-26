@@ -3,6 +3,7 @@ import { createRegionalService } from './regionService.js'
 import type { EngineEndpoint } from './typesApi.js'
 import type {
   Aabb,
+  RegionMutation,
   RegionCandidate,
   RegionRecord,
   RegionalService,
@@ -28,6 +29,12 @@ export type RegionalEngineApi = {
   getRegionsInBounds: (options: RegionalServiceOptions, worldId: string, bounds: Aabb) => RegionRecord[]
   getRegionCells: (options: RegionalServiceOptions, worldId: string, regionId: string) => { x: number; y: number }[]
   getRegionSummary: (options: RegionalServiceOptions, worldId: string, regionId: string) => RegionSummary | null
+  applyRegionMutation: (
+    options: RegionalServiceOptions,
+    worldId: string,
+    regionId: string,
+    mutation: RegionMutation
+  ) => RegionRecord
   clearRegions: (options: RegionalServiceOptions, worldId: string) => void
   deleteRegion: (options: RegionalServiceOptions, worldId: string, regionId: string) => void
   hasRegions: (options: RegionalServiceOptions, worldId: string) => boolean
@@ -85,6 +92,9 @@ export const regionalEngine: RegionalEngineApi = {
   },
   getRegionSummary(options, worldId, regionId) {
     return service(options).getRegionSummary(worldId, regionId)
+  },
+  applyRegionMutation(options, worldId, regionId, mutation) {
+    return service(options).applyRegionMutation(worldId, regionId, mutation)
   },
   clearRegions(options, worldId) {
     service(options).clearRegions(worldId)

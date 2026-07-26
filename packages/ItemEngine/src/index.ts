@@ -30,6 +30,11 @@ export {
   generateLoot
 } from './lootService.js'
 export {
+  clearPlaceInventories,
+  listPlaceInventory,
+  seedPlaceLoot
+} from './placeInventory.js'
+export {
   EXPECTED_ACTION_ENGINE_ACTION_IDS,
   STARTING_GEAR_ARCHETYPES,
   STARTING_GEAR_CATALOG_VERSION,
@@ -72,6 +77,7 @@ export type {
   LootDrop,
   LootTable
 } from './lootService.js'
+export type { PlaceInventorySnapshot } from './placeInventory.js'
 export type {
   StarterActionId,
   StartingGearArchetype,

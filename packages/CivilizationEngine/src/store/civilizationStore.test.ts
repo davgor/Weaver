@@ -31,6 +31,7 @@ function sampleRecord(overrides: Partial<CivilizationRecord> = {}): Civilization
     centroid: { x: 2, y: 3 },
     seedSalt: 42,
     population: 80,
+    mutationStatus: 'intact',
     npcSlotCount: 4,
     npcSlotsAssigned: 1,
     statsVersion: 1,

@@ -2,9 +2,16 @@ import Database from 'better-sqlite3'
 import { mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import type { NpcPlaceholderSlot, NpcPlaceholderStatus, NpcRoleHint } from '../npcPlaceholders.js'
-import type { Aabb, CivilizationRecord, Point, SettlementKind } from '../types.js'
+import type {
+  Aabb,
+  CivilizationRecord,
+  Point,
+  SettlementKind,
+  SettlementMutationStatus
+} from '../types.js'
 
 type SqliteDb = Database.Database
+type SqlValue = string | number | null
 
 type CivRow = {
   civilizationId: string
@@ -21,6 +28,7 @@ type CivRow = {
   centroidY: number | null
   seedSalt: number
   population: number
+  mutationStatus: SettlementMutationStatus
   npcSlotCount: number
   npcSlotsAssigned: number
   statsVersion: number
@@ -78,55 +86,66 @@ function ensureSchema(db: SqliteDb): void {
   ensureNamingColumns(db)
 }
 
+const CIVILIZATIONS_DDL = `
+  CREATE TABLE IF NOT EXISTS civilizations (
+    civilizationId TEXT PRIMARY KEY,
+    worldId TEXT NOT NULL,
+    regionId TEXT NOT NULL,
+    kind TEXT NOT NULL,
+    originX INTEGER NOT NULL,
+    originY INTEGER NOT NULL,
+    minX INTEGER NOT NULL,
+    minY INTEGER NOT NULL,
+    maxX INTEGER NOT NULL,
+    maxY INTEGER NOT NULL,
+    centroidX REAL,
+    centroidY REAL,
+    seedSalt INTEGER NOT NULL,
+    population INTEGER NOT NULL,
+    mutationStatus TEXT NOT NULL DEFAULT 'intact',
+    npcSlotCount INTEGER NOT NULL,
+    npcSlotsAssigned INTEGER NOT NULL,
+    statsVersion INTEGER NOT NULL,
+    extraStats TEXT NOT NULL,
+    displayName TEXT,
+    history TEXT,
+    namingRealizedAt TEXT,
+    createdAt TEXT NOT NULL,
+    updatedAt TEXT NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_civ_region ON civilizations(worldId, regionId);
+`
+
+const CELL_CLAIMS_DDL = `
+  CREATE TABLE IF NOT EXISTS cell_claims (
+    worldId TEXT NOT NULL,
+    x INTEGER NOT NULL,
+    y INTEGER NOT NULL,
+    civilizationId TEXT NOT NULL,
+    PRIMARY KEY(worldId, x, y)
+  );
+  CREATE INDEX IF NOT EXISTS idx_claims_civ ON cell_claims(worldId, civilizationId);
+`
+
+const NPC_PLACEHOLDERS_DDL = `
+  CREATE TABLE IF NOT EXISTS npc_placeholders (
+    slotId TEXT PRIMARY KEY,
+    civilizationId TEXT NOT NULL,
+    worldId TEXT NOT NULL,
+    regionId TEXT NOT NULL,
+    roleHint TEXT NOT NULL,
+    status TEXT NOT NULL,
+    assignedNpcId TEXT,
+    priority INTEGER,
+    districtTag TEXT
+  );
+  CREATE INDEX IF NOT EXISTS idx_slots_world ON npc_placeholders(worldId, civilizationId);
+`
+
 function createCivilizationTables(db: SqliteDb): void {
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS civilizations (
-      civilizationId TEXT PRIMARY KEY,
-      worldId TEXT NOT NULL,
-      regionId TEXT NOT NULL,
-      kind TEXT NOT NULL,
-      originX INTEGER NOT NULL,
-      originY INTEGER NOT NULL,
-      minX INTEGER NOT NULL,
-      minY INTEGER NOT NULL,
-      maxX INTEGER NOT NULL,
-      maxY INTEGER NOT NULL,
-      centroidX REAL,
-      centroidY REAL,
-      seedSalt INTEGER NOT NULL,
-      population INTEGER NOT NULL,
-      npcSlotCount INTEGER NOT NULL,
-      npcSlotsAssigned INTEGER NOT NULL,
-      statsVersion INTEGER NOT NULL,
-      extraStats TEXT NOT NULL,
-      displayName TEXT,
-      history TEXT,
-      namingRealizedAt TEXT,
-      createdAt TEXT NOT NULL,
-      updatedAt TEXT NOT NULL
-    );
-    CREATE INDEX IF NOT EXISTS idx_civ_region ON civilizations(worldId, regionId);
-    CREATE TABLE IF NOT EXISTS cell_claims (
-      worldId TEXT NOT NULL,
-      x INTEGER NOT NULL,
-      y INTEGER NOT NULL,
-      civilizationId TEXT NOT NULL,
-      PRIMARY KEY(worldId, x, y)
-    );
-    CREATE INDEX IF NOT EXISTS idx_claims_civ ON cell_claims(worldId, civilizationId);
-    CREATE TABLE IF NOT EXISTS npc_placeholders (
-      slotId TEXT PRIMARY KEY,
-      civilizationId TEXT NOT NULL,
-      worldId TEXT NOT NULL,
-      regionId TEXT NOT NULL,
-      roleHint TEXT NOT NULL,
-      status TEXT NOT NULL,
-      assignedNpcId TEXT,
-      priority INTEGER,
-      districtTag TEXT
-    );
-    CREATE INDEX IF NOT EXISTS idx_slots_world ON npc_placeholders(worldId, civilizationId);
-  `)
+  db.exec(CIVILIZATIONS_DDL)
+  db.exec(CELL_CLAIMS_DDL)
+  db.exec(NPC_PLACEHOLDERS_DDL)
 }
 
 function ensureNamingColumns(db: SqliteDb): void {
@@ -141,6 +160,9 @@ function ensureNamingColumns(db: SqliteDb): void {
   }
   if (!columns.includes('namingRealizedAt')) {
     db.exec('ALTER TABLE civilizations ADD COLUMN namingRealizedAt TEXT')
+  }
+  if (!columns.includes('mutationStatus')) {
+    db.exec(`ALTER TABLE civilizations ADD COLUMN mutationStatus TEXT NOT NULL DEFAULT 'intact'`)
   }
 }
 
@@ -175,6 +197,7 @@ function rowToRecord(row: CivRow): CivilizationRecord {
     bounds: { minX: row.minX, minY: row.minY, maxX: row.maxX, maxY: row.maxY },
     seedSalt: row.seedSalt,
     population: row.population,
+    mutationStatus: row.mutationStatus,
     npcSlotCount: row.npcSlotCount,
     npcSlotsAssigned: row.npcSlotsAssigned,
     statsVersion: row.statsVersion,
@@ -206,25 +229,35 @@ function rowToSlot(row: SlotRow): NpcPlaceholderSlot {
   return slot
 }
 
+const UPSERT_CIVILIZATION_SQL = `INSERT INTO civilizations (
+  civilizationId, worldId, regionId, kind, originX, originY,
+  minX, minY, maxX, maxY, centroidX, centroidY, seedSalt,
+  population, mutationStatus, npcSlotCount, npcSlotsAssigned, statsVersion,
+  extraStats, displayName, history, namingRealizedAt, createdAt, updatedAt
+) VALUES (
+  @civilizationId, @worldId, @regionId, @kind, @originX, @originY,
+  @minX, @minY, @maxX, @maxY, @centroidX, @centroidY, @seedSalt,
+  @population, @mutationStatus, @npcSlotCount, @npcSlotsAssigned, @statsVersion,
+  @extraStats, @displayName, @history, @namingRealizedAt, @createdAt, @updatedAt
+)
+ON CONFLICT(civilizationId) DO UPDATE SET
+  regionId=excluded.regionId, kind=excluded.kind, originX=excluded.originX,
+  originY=excluded.originY, minX=excluded.minX, minY=excluded.minY,
+  maxX=excluded.maxX, maxY=excluded.maxY, centroidX=excluded.centroidX,
+  centroidY=excluded.centroidY, seedSalt=excluded.seedSalt,
+  population=excluded.population, mutationStatus=excluded.mutationStatus,
+  npcSlotCount=excluded.npcSlotCount,
+  npcSlotsAssigned=excluded.npcSlotsAssigned, statsVersion=excluded.statsVersion,
+  extraStats=excluded.extraStats, displayName=excluded.displayName,
+  history=excluded.history, namingRealizedAt=excluded.namingRealizedAt,
+  updatedAt=excluded.updatedAt`
+
 function insertCivilization(db: SqliteDb, record: CivilizationRecord): void {
-  db.prepare(
-    `INSERT INTO civilizations VALUES (
-      @civilizationId, @worldId, @regionId, @kind, @originX, @originY,
-      @minX, @minY, @maxX, @maxY, @centroidX, @centroidY, @seedSalt,
-      @population, @npcSlotCount, @npcSlotsAssigned, @statsVersion,
-      @extraStats, @displayName, @history, @namingRealizedAt, @createdAt, @updatedAt
-    )
-    ON CONFLICT(civilizationId) DO UPDATE SET
-      regionId=excluded.regionId, kind=excluded.kind, originX=excluded.originX,
-      originY=excluded.originY, minX=excluded.minX, minY=excluded.minY,
-      maxX=excluded.maxX, maxY=excluded.maxY, centroidX=excluded.centroidX,
-      centroidY=excluded.centroidY, seedSalt=excluded.seedSalt,
-      population=excluded.population, npcSlotCount=excluded.npcSlotCount,
-      npcSlotsAssigned=excluded.npcSlotsAssigned, statsVersion=excluded.statsVersion,
-      extraStats=excluded.extraStats, displayName=excluded.displayName,
-      history=excluded.history, namingRealizedAt=excluded.namingRealizedAt,
-      updatedAt=excluded.updatedAt`
-  ).run({
+  db.prepare(UPSERT_CIVILIZATION_SQL).run(civilizationParams(record))
+}
+
+function civilizationParams(record: CivilizationRecord): Record<string, SqlValue> {
+  return {
     civilizationId: record.civilizationId,
     worldId: record.worldId,
     regionId: record.regionId,
@@ -239,6 +272,7 @@ function insertCivilization(db: SqliteDb, record: CivilizationRecord): void {
     centroidY: record.centroid?.y ?? null,
     seedSalt: record.seedSalt,
     population: record.population,
+    mutationStatus: record.mutationStatus ?? 'intact',
     npcSlotCount: record.npcSlotCount,
     npcSlotsAssigned: record.npcSlotsAssigned,
     statsVersion: record.statsVersion,
@@ -248,7 +282,7 @@ function insertCivilization(db: SqliteDb, record: CivilizationRecord): void {
     namingRealizedAt: record.namingRealizedAt ?? null,
     createdAt: record.createdAt,
     updatedAt: record.updatedAt
-  })
+  }
 }
 
 function replaceClaims(db: SqliteDb, worldId: string, civilizationId: string, cells: Point[]): void {

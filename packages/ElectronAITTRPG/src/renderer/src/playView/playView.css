@@ -1,0 +1,118 @@
+.play-view {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.play-view-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(18rem, 0.8fr);
+  gap: 0.75rem;
+  min-height: 0;
+}
+
+.play-column,
+.ask-dm-panel,
+.combat-chrome {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--surface-column);
+  padding: 0.9rem;
+}
+
+.scene-column {
+  background: var(--surface-scene);
+}
+
+.social-column {
+  background: var(--surface-column-alt);
+}
+
+.social-line {
+  border-left: 2px solid transparent;
+  padding-left: 0.5rem;
+  transition: box-shadow 180ms ease-out, border-color 180ms ease-out;
+}
+
+.social-line-glow,
+.social-streaming {
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 18px rgba(201, 166, 107, 0.24);
+}
+
+.play-input,
+.ask-dm-panel form {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.play-input input,
+.ask-dm-panel input {
+  flex: 1;
+}
+
+.ask-dm-panel {
+  background: rgba(10, 18, 26, 0.9);
+  border-color: rgba(114, 156, 191, 0.35);
+}
+
+.combat-chrome ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.combat-chrome li {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  padding: 0.35rem 0.65rem;
+  color: var(--text-secondary);
+}
+
+.combat-chrome .combat-active {
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+  background: var(--surface-active);
+}
+
+.d20-overlay {
+  position: absolute;
+  right: 1.25rem;
+  top: 1.25rem;
+  display: grid;
+  place-items: center;
+  width: 6rem;
+  height: 6rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 50%;
+  background: var(--surface-panel);
+  box-shadow: 0 0 28px rgba(201, 166, 107, 0.35);
+  animation: d20-pop 420ms ease-out;
+}
+
+.d20-overlay span,
+.d20-overlay small {
+  color: var(--text-accent);
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.d20-overlay strong {
+  font-size: 1.8rem;
+}
+
+@keyframes d20-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.78) rotate(-18deg);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+  }
+}

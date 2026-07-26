@@ -17,6 +17,14 @@ export const SETTLEMENT_KINDS = [
 
 export type SettlementKind = (typeof SETTLEMENT_KINDS)[number]
 
+export const SETTLEMENT_MUTATION_STATUSES = ['intact', 'burned', 'destroyed'] as const
+export type SettlementMutationStatus = (typeof SETTLEMENT_MUTATION_STATUSES)[number]
+
+export type SettlementMutation =
+  | { kind: 'burned'; population?: PopulationChange }
+  | { kind: 'destroyed'; population?: PopulationChange }
+  | { kind: 'populationCollapse'; population: PopulationChange }
+
 export const LAND_USES = ['building', 'road', 'farmland', 'wall', 'district'] as const
 export type LandUse = (typeof LAND_USES)[number]
 
@@ -45,6 +53,7 @@ export type CivilizationRecord = {
   centroid?: Point
   seedSalt: number
   population: number
+  mutationStatus?: SettlementMutationStatus
   npcSlotCount: number
   npcSlotsAssigned: number
   statsVersion: number
@@ -107,6 +116,7 @@ export type CivilizationSummary = {
   npcSlotsAssigned: number
   bounds: Aabb
   statsVersion: number
+  mutationStatus?: SettlementMutationStatus
 }
 
 export type RegionCivilizationSummary = {

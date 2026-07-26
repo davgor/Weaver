@@ -9,6 +9,7 @@ type JourneyOverlaysProps = {
   onboardingRequest: BeginOnboardingRequest | null
   setJourney: (stage: JourneyStage) => void
   setOnboardingRequest: (request: BeginOnboardingRequest | null) => void
+  onOnboardingComplete: (request: BeginOnboardingRequest) => void
 }
 
 export function JourneyOverlays(props: JourneyOverlaysProps): JSX.Element {
@@ -28,8 +29,10 @@ export function JourneyOverlays(props: JourneyOverlaysProps): JSX.Element {
         <OnboardingWizard
           request={props.onboardingRequest}
           onComplete={() => {
-            props.setJourney('play')
-            props.setOnboardingRequest(null)
+            if (props.onboardingRequest !== null) {
+              props.onOnboardingComplete(props.onboardingRequest)
+              props.setOnboardingRequest(null)
+            }
           }}
         />
       ) : null}

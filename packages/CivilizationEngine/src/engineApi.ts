@@ -7,7 +7,8 @@ import type {
   CivilizationServiceOptions,
   FillCivilizationsScope,
   PopulationChange,
-  ProposeCivilizationsOpts
+  ProposeCivilizationsOpts,
+  SettlementMutation
 } from './types.js'
 import { PACKAGE_NAME, VERSION } from './typesApi.js'
 
@@ -55,6 +56,12 @@ export type CivilizationEngineApi = {
     civilizationId: string,
     change: PopulationChange
   ) => ReturnType<CivilizationService['adjustPopulation']>
+  applySettlementMutation: (
+    options: CivilizationServiceOptions,
+    worldId: string,
+    civilizationId: string,
+    mutation: SettlementMutation
+  ) => ReturnType<CivilizationService['applySettlementMutation']>
   reconcilePopulation: (
     options: CivilizationServiceOptions,
     worldId: string,
@@ -184,6 +191,9 @@ export const civilizationEngine: CivilizationEngineApi = {
   },
   adjustPopulation(options, worldId, civilizationId, change) {
     return service(options).adjustPopulation(worldId, civilizationId, change)
+  },
+  applySettlementMutation(options, worldId, civilizationId, mutation) {
+    return service(options).applySettlementMutation(worldId, civilizationId, mutation)
   },
   reconcilePopulation(options, worldId, regionId) {
     return service(options).reconcilePopulation(worldId, regionId)

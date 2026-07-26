@@ -12,6 +12,9 @@ export function resolveTravelIntent(
   request: TravelIntentRequest
 ): TravelSuccess {
   if (!destinations.isGenerated(request.destinationId)) {
+    destinations.ensureGenerated?.(request.destinationId)
+  }
+  if (!destinations.isGenerated(request.destinationId)) {
     throw new DmIntentError(
       'DM_TRAVEL_REJECTED',
       `Travel rejected: destination ${request.destinationId} is ungenerated and live population is unavailable`

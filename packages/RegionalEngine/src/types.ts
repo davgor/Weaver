@@ -4,6 +4,10 @@ export type { Aabb, Cell, ExpansionRecord, LandType, WorldMeta }
 
 export const REGION_STATS_VERSION = 1
 
+export const REGION_MUTATION_STATUSES = ['intact', 'ruined', 'scoured'] as const
+export type RegionMutationStatus = (typeof REGION_MUTATION_STATUSES)[number]
+export type RegionMutation = { kind: Exclude<RegionMutationStatus, 'intact'> }
+
 export type RegionScope = {
   expansionId?: string
   bounds?: Aabb
@@ -42,6 +46,7 @@ export type RegionRecord = RegionStats & {
   regionId: string
   worldId: string
   sourceExpansionId?: string
+  mutationStatus?: RegionMutationStatus
   displayName?: string
   history?: string
   namingRealizedAt?: string
@@ -49,7 +54,8 @@ export type RegionRecord = RegionStats & {
   updatedAt: string
 }
 
-export type RegionCandidate = Omit<RegionRecord, 'createdAt' | 'updatedAt'> & {
+export type RegionCandidate = Omit<RegionRecord, 'createdAt' | 'updatedAt' | 'mutationStatus'> & {
+  mutationStatus?: RegionMutationStatus
   cells: RegionCellRef[]
 }
 
@@ -58,6 +64,7 @@ export type RegionSummary = Pick<
   | 'regionId'
   | 'worldId'
   | 'sourceExpansionId'
+  | 'mutationStatus'
   | 'dominantLandType'
   | 'landTypeHistogram'
   | 'averageElevation'
@@ -99,6 +106,7 @@ export type RegionalService = {
   getRegionsInBounds: (worldId: string, bounds: Aabb) => RegionRecord[]
   getRegionCells: (worldId: string, regionId: string) => RegionCellRef[]
   getRegionSummary: (worldId: string, regionId: string) => RegionSummary | null
+  applyRegionMutation: (worldId: string, regionId: string, mutation: RegionMutation) => RegionRecord
   clearRegions: (worldId: string) => void
   deleteRegion: (worldId: string, regionId: string) => void
   hasRegions: (worldId: string) => boolean
@@ -130,6 +138,7 @@ export function regionSummary(record: RegionRecord): RegionSummary {
     extraStats: { ...record.extraStats }
   }
   if (record.sourceExpansionId !== undefined) summary.sourceExpansionId = record.sourceExpansionId
+  if (record.mutationStatus !== undefined) summary.mutationStatus = record.mutationStatus
   if (record.displayName !== undefined) summary.displayName = record.displayName
   if (record.history !== undefined) summary.history = record.history
   return summary

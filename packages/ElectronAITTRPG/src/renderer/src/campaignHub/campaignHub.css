@@ -1,0 +1,69 @@
+.campaign-hub {
+  display: grid;
+  grid-template-columns: minmax(18rem, 0.9fr) minmax(24rem, 1.4fr);
+  gap: 1rem;
+}
+
+.campaign-hub-world,
+.campaign-hub-character {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--surface-column);
+  box-shadow: var(--shadow-panel);
+  padding: 1rem;
+}
+
+.campaign-hub-eyebrow {
+  margin: 0 0 0.5rem;
+  color: var(--text-accent);
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.campaign-hub-world-lists {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.campaign-hub-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.campaign-hub-section-header h2 {
+  margin: 0;
+}
+
+.campaign-hub-cast-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 0.75rem;
+}
+
+.campaign-hub-character h3 {
+  margin: 0 0 0.35rem;
+}
+
+.campaign-hub-character-meta {
+  margin: 0 0 0.75rem;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+}
+
+.campaign-hub-recap {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface-inset);
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.campaign-hub-recap h2 {
+  margin-top: 0;
+}

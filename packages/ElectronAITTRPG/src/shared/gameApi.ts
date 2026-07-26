@@ -3,12 +3,9 @@ import type { NpcDossierApi } from './npcDossier/types.js'
 import type { SettingsApi } from './settings/types.js'
 import type { CampaignCreateApi } from './campaignCreate/types.js'
 import type { OnboardingApi } from './onboarding/types.js'
-
-export type CampaignSummary = {
-  id: string
-  name: string
-  lastPlayedAt: string | null
-}
+import type { CampaignsApi } from './campaigns/types.js'
+import type { CampaignHubApi } from './campaignHub/types.js'
+import type { PlayApi } from './play/types.js'
 
 export type StartupBootSnapshot = {
   phase: 'booting' | 'ready' | 'failed'
@@ -28,10 +25,10 @@ export type GameApi = {
   startup: {
     getBoot: () => Promise<StartupBootSnapshot>
   }
-  campaigns: {
-    list: () => Promise<CampaignSummary[]>
-  }
+  campaigns: CampaignsApi
   campaignCreate: CampaignCreateApi
+  campaignHub: CampaignHubApi
+  play: PlayApi
   onboarding: OnboardingApi
   characterSheet: CharacterSheetApi
   npcDossier: NpcDossierApi
@@ -40,6 +37,34 @@ export type GameApi = {
     getVersion: () => Promise<string>
   }
 }
+
+export type {
+  CampaignsApi,
+  CampaignSummary,
+  CampaignLanding,
+  OpenCampaignRequest,
+  OpenCampaignResult
+} from './campaigns/types.js'
+
+export type {
+  CampaignHubApi,
+  CampaignHubCharacter,
+  CampaignHubCompanion,
+  CampaignHubSnapshot,
+  CampaignWorldPreview
+} from './campaignHub/types.js'
+
+export type {
+  AskDmRequest,
+  AskDmResult,
+  CombatChromeCombatant,
+  CombatChromeSnapshot,
+  D20RollFeedback,
+  PlayApi,
+  PlayContext,
+  SubmitPlayActionRequest,
+  SubmitPlayActionResult
+} from './play/types.js'
 
 export type {
   CharacterSheetApi,

@@ -10,6 +10,11 @@ import type { EnchantmentOverlay } from './enchantmentTypes.js'
 import { createItemService, type ItemService } from './itemService.js'
 import { generateLoot, type GenerateLootRequest, type LootDrop } from './lootService.js'
 import {
+  listPlaceInventory,
+  seedPlaceLoot,
+  type PlaceInventorySnapshot
+} from './placeInventory.js'
+import {
   getStartingLoadout,
   type StartingGearArchetype,
   type StartingLoadout
@@ -52,6 +57,8 @@ export type ItemEngineApi = {
   snapshotCampaignBalances: (characterIds: readonly string[]) => Record<string, number>
   restoreCampaignBalances: (balances: Record<string, number>) => void
   generateLoot: (request: GenerateLootRequest) => LootDrop[]
+  seedPlaceLoot: (placeId: string, drops: readonly LootDrop[]) => PlaceInventorySnapshot
+  listPlaceInventory: (placeId: string) => PlaceInventorySnapshot
   getStartingLoadout: (archetype: StartingGearArchetype) => StartingLoadout
 }
 
@@ -134,6 +141,12 @@ export const itemEngine: ItemEngineApi = {
   },
   generateLoot(request) {
     return generateLoot(request)
+  },
+  seedPlaceLoot(placeId, drops) {
+    return seedPlaceLoot(placeId, drops)
+  },
+  listPlaceInventory(placeId) {
+    return listPlaceInventory(placeId)
   },
   getStartingLoadout(archetype) {
     return getStartingLoadout(archetype)

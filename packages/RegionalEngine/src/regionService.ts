@@ -2,6 +2,7 @@ import { createRegionStore, type RegionStore } from './store/regionStore.js'
 import { findRegionCandidates, membershipKey, resolveScopeBounds } from './segmentation.js'
 import type {
   Aabb,
+  RegionMutation,
   RegionCandidate,
   RegionRecord,
   RegionalService,
@@ -45,6 +46,7 @@ function recordFromCandidate(worldId: string, candidate: RegionCandidate, existi
     centroid: { ...candidate.centroid },
     statsVersion: candidate.statsVersion,
     extraStats: { ...candidate.extraStats },
+    mutationStatus: existing?.mutationStatus ?? candidate.mutationStatus ?? 'intact',
     createdAt: existing?.createdAt ?? timestamp,
     updatedAt: timestamp
   }
@@ -120,6 +122,16 @@ class DefaultRegionalService implements RegionalService {
   getRegionSummary(worldId: string, regionId: string): RegionSummary | null {
     const region = this.getRegion(worldId, regionId)
     return region ? regionSummary(region) : null
+  }
+
+  applyRegionMutation(worldId: string, regionId: string, mutation: RegionMutation): RegionRecord {
+    validateWorldId(worldId)
+    const existing = this.store.getRegion(worldId, regionId)
+    if (existing === null) {
+      throw new Error(`Region not found: ${regionId}`)
+    }
+    const updated = { ...existing, mutationStatus: mutation.kind, updatedAt: nowIso() }
+    return this.store.saveRegion(updated, this.store.getRegionCells(worldId, regionId))
   }
 
   clearRegions(worldId: string): void {

@@ -99,6 +99,7 @@ function seedFixtureNpc(npcId: string): NpcRecord {
     speciesKind: 'person',
     combatStats: { kind: 'civilian', maxHp: 10, currentHp: 10 },
     factionIds: [],
+    worldStatus: 'active',
     displayName: npcId
   })
 }
