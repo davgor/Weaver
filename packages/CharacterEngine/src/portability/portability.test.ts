@@ -3,6 +3,11 @@ import { clearCompanionStore, restoreCompanionsForCampaign } from '../companions
 import { clearDeathModeStores } from '../deathModes.js'
 import { setCampaignDay } from '../timeRest.js'
 import { exportCampaignSlice, importCampaignSlice } from './index.js'
+import {
+  CHARACTER_SLICE_VERSION,
+  CharacterPortabilitySchemaError,
+  type CharacterCampaignSlice
+} from './types.js'
 
 const CAMPAIGN_ID = 'campaign-character'
 
@@ -39,3 +44,35 @@ describe('CharacterEngine campaign portability', () => {
     expect(restored.characterIds).toEqual(['companion-1'])
   })
 })
+
+describe('CharacterEngine campaign portability schema validation', () => {
+  it('rejects unsupported slice versions', () => {
+    const { ctx, slice } = seedAndExport()
+    const badSlice = { ...slice, sliceVersion: 99 as typeof CHARACTER_SLICE_VERSION }
+    expect(() => importCampaignSlice(ctx, badSlice)).toThrow(CharacterPortabilitySchemaError)
+    expect(() => importCampaignSlice(ctx, badSlice)).toThrow(/Unsupported character slice version/)
+  })
+
+  it('rejects campaignId mismatch', () => {
+    const { ctx, slice } = seedAndExport()
+    const badSlice = { ...slice, campaignId: 'other-campaign' }
+    expect(() => importCampaignSlice(ctx, badSlice)).toThrow(CharacterPortabilitySchemaError)
+    expect(() => importCampaignSlice(ctx, badSlice)).toThrow(/campaignId mismatch/)
+  })
+})
+
+function seedAndExport(): { ctx: { campaignId: string }; slice: CharacterCampaignSlice } {
+  setCampaignDay(CAMPAIGN_ID, 3)
+  restoreCompanionsForCampaign([
+    {
+      characterId: 'companion-schema',
+      ownerCharacterId: 'pc-owner',
+      campaignId: CAMPAIGN_ID,
+      name: 'Schema',
+      isCompanion: true,
+      archetype: 'Fighter'
+    }
+  ])
+  const ctx = { campaignId: CAMPAIGN_ID }
+  return { ctx, slice: exportCampaignSlice(ctx) }
+}

@@ -4,7 +4,12 @@ import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import { createWorldService } from '../store/worldService.js'
 import { exportCampaignSlice, importCampaignSlice } from './index.js'
-import { WORLD_SLICE_VERSION } from './types.js'
+import {
+  WORLD_SLICE_VERSION,
+  WorldPortabilitySchemaError,
+  type WorldCampaignSlice,
+  type WorldPortabilityContext
+} from './types.js'
 
 const roots: string[] = []
 
@@ -46,6 +51,54 @@ describe('WorldEngine campaign portability', () => {
     expect(existsSync(join(dataRoot, worldId, 'world.sqlite'))).toBe(true)
   })
 })
+
+describe('WorldEngine campaign portability schema validation', () => {
+  it('rejects unsupported slice versions', () => {
+    const { ctx, slice } = seedAndExport()
+    const badSlice = { ...slice, sliceVersion: 99 as typeof WORLD_SLICE_VERSION }
+    expect(() => importCampaignSlice(ctx, badSlice)).toThrow(WorldPortabilitySchemaError)
+    expect(() => importCampaignSlice(ctx, badSlice)).toThrow(/Unsupported world slice version/)
+  })
+
+  it('rejects campaignId mismatch', () => {
+    const { ctx, slice } = seedAndExport()
+    const badSlice = { ...slice, campaignId: 'other-campaign' }
+    expect(() => importCampaignSlice(ctx, badSlice)).toThrow(WorldPortabilitySchemaError)
+    expect(() => importCampaignSlice(ctx, badSlice)).toThrow(/campaignId mismatch/)
+  })
+
+  it('rejects worldId mismatch', () => {
+    const { ctx, slice } = seedAndExport()
+    const badSlice = { ...slice, worldId: 'other-world' }
+    expect(() => importCampaignSlice(ctx, badSlice)).toThrow(WorldPortabilitySchemaError)
+    expect(() => importCampaignSlice(ctx, badSlice)).toThrow(/worldId mismatch/)
+  })
+})
+
+describe('WorldEngine campaign portability export errors', () => {
+  it('throws when the campaign world is missing', () => {
+    const dataRoot = tempRoot()
+    const ctx: WorldPortabilityContext = {
+      dataRoot,
+      campaignId: 'campaign-missing',
+      worldId: 'campaign-missing'
+    }
+    expect(() => exportCampaignSlice(ctx)).toThrow(/World not found for campaign export/)
+  })
+})
+
+function seedAndExport(): { ctx: WorldPortabilityContext; slice: WorldCampaignSlice } {
+  const dataRoot = tempRoot()
+  const campaignId = 'campaign-world-schema'
+  const worldId = campaignId
+  createWorldService(dataRoot).createWorld({
+    worldId,
+    seed: 77,
+    bounds: { minX: 0, minY: 0, maxX: 7, maxY: 7 }
+  })
+  const ctx = { dataRoot, campaignId, worldId }
+  return { ctx, slice: exportCampaignSlice(ctx) }
+}
 
 function tempRoot(): string {
   const root = mkdtempSync(join(tmpdir(), 'world-portability-'))

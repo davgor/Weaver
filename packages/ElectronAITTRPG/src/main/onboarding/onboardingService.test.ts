@@ -32,7 +32,7 @@ const ROLL_DETAILS = {
   Presence: [6, 5, 4, 1] as const
 }
 
-describe('onboardingService', () => {
+describe('onboardingService navigation', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
     clearOnboardingStore()
@@ -53,6 +53,72 @@ describe('onboardingService', () => {
     )
   })
 })
+
+describe('onboardingService ability and companion paths', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+    clearOnboardingStore()
+  })
+
+  it('supports point-buy and roll ability methods plus companion create', () => {
+    const service = createTestService()
+    beginOnboarding(service, beginRequest())
+    saveMechanicalSetupStep(service, {
+      ...mechanicalSetupRequest(),
+      method: 'point_buy',
+      scores: STANDARD_SCORES
+    })
+    expect(service.getState(ctx()).phase).toBe('race')
+    beginOnboarding(service, beginRequest())
+    const rolled = service.rollAbilityScores()
+    saveMechanicalSetupStep(service, {
+      ...mechanicalSetupRequest(),
+      method: 'roll',
+      scores: rolled.scores,
+      rolledDraft: rolled
+    })
+    saveRaceStep(service, { ...ctx(), raceId: 'elf' })
+    saveBackgroundStep(service, { ...ctx(), backgroundId: 'outlander' })
+    saveEquipmentStep(service, ctx())
+    const withCompanion = saveCompanionsStep(service, {
+      ...ctx(),
+      action: 'create',
+      name: 'Briar',
+      archetype: 'Ranger'
+    })
+    expect(withCompanion.selections.companionName).toBe('Briar')
+    expect(withCompanion.phase).toBe('guided_identity')
+  })
+})
+
+describe('onboardingService completion', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+    clearOnboardingStore()
+  })
+
+  it('completes guided identity and opening scene into play', async () => {
+    const service = createTestService()
+    beginOnboarding(service, beginRequest())
+    advanceToGuidedIdentity(service)
+    await service.startGuidedIdentity(ctx())
+    await service.submitGuidedIdentity({ ...ctx(), message: 'I am a tracker.' })
+    const scene = await service.generateOpeningScene(ctx())
+    expect(scene.prose).toBe('scene')
+    const complete = await service.confirmOpeningScene(ctx())
+    expect(complete.phase).toBe('complete')
+  })
+
+  it('rejects out-of-order steps', () => {
+    const service = createTestService()
+    beginOnboarding(service, beginRequest())
+    expect(() => saveRaceStep(service, { ...ctx(), raceId: 'elf' })).toThrow(/required/)
+  })
+})
+
+function ctx() {
+  return { campaignId: CAMPAIGN_ID, characterId: CHARACTER_ID }
+}
 
 function createTestService() {
   return createOnboardingService({
@@ -205,12 +271,12 @@ function fakeDmPorts(): OnboardingDmPorts {
     }),
     submitGuidedIdentityMessage: async () => ({
       ok: true as const,
-      phase: 'why' as const,
+      phase: 'opening_scene' as const,
       prose: 'dm reply',
       state: {
         campaignId: CAMPAIGN_ID,
         characterId: CHARACTER_ID,
-        guidedCreationPhase: 'why',
+        guidedCreationPhase: 'opening_scene',
         transcript: [],
         characterFacts: {},
         enterWorldUnlocked: false

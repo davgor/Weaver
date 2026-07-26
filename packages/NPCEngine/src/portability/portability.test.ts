@@ -1,6 +1,11 @@
 import { describe, expect, it, beforeEach } from 'vitest'
 import { clearNpcStore, saveNpc } from '../store.js'
 import { exportCampaignSlice, importCampaignSlice } from './index.js'
+import {
+  NPC_SLICE_VERSION,
+  NpcPortabilitySchemaError,
+  type NpcCampaignSlice
+} from './types.js'
 
 const CAMPAIGN_ID = 'campaign-npc'
 
@@ -23,6 +28,42 @@ describe('NPCEngine campaign portability', () => {
     expect(restored.npcIds.sort()).toEqual(['npc-a', 'npc-b'])
   })
 })
+
+describe('NPCEngine campaign portability schema validation', () => {
+  it('rejects unsupported slice versions', () => {
+    const { ctx, slice } = seedAndExport()
+    const badSlice = { ...slice, sliceVersion: 99 as typeof NPC_SLICE_VERSION }
+    expect(() => importCampaignSlice(ctx, badSlice)).toThrow(NpcPortabilitySchemaError)
+    expect(() => importCampaignSlice(ctx, badSlice)).toThrow(/Unsupported NPC slice version/)
+  })
+
+  it('rejects campaignId mismatch on the slice', () => {
+    const { ctx, slice } = seedAndExport()
+    const badSlice = { ...slice, campaignId: 'other-campaign' }
+    expect(() => importCampaignSlice(ctx, badSlice)).toThrow(NpcPortabilitySchemaError)
+    expect(() => importCampaignSlice(ctx, badSlice)).toThrow(/campaignId mismatch/)
+  })
+
+  it('rejects npc records belonging to a different campaign', () => {
+    const { ctx, slice } = seedAndExport()
+    const npc = slice.npcs[0]
+    if (npc === undefined) {
+      throw new Error('expected seeded npc')
+    }
+    const badSlice: NpcCampaignSlice = {
+      ...slice,
+      npcs: [{ ...npc, campaignId: 'other-campaign' }]
+    }
+    expect(() => importCampaignSlice(ctx, badSlice)).toThrow(NpcPortabilitySchemaError)
+    expect(() => importCampaignSlice(ctx, badSlice)).toThrow(/belongs to campaign/)
+  })
+})
+
+function seedAndExport(): { ctx: { campaignId: string }; slice: NpcCampaignSlice } {
+  saveNpc(minimalNpc('npc-schema'))
+  const ctx = { campaignId: CAMPAIGN_ID }
+  return { ctx, slice: exportCampaignSlice(ctx) }
+}
 
 function minimalNpc(npcId: string) {
   return {

@@ -108,36 +108,33 @@ export function createDefaultCampaignImportDeps(
   const base = createDefaultCampaignPortabilityDeps(overrides)
   return {
     ...base,
-    world: {
-      exportCampaignSlice: overrides.world?.exportCampaignSlice ?? base.world.exportCampaignSlice,
-      importCampaignSlice: overrides.world?.importCampaignSlice ?? importWorldCampaignSlice
-    },
-    regional: {
-      exportCampaignSlice: overrides.regional?.exportCampaignSlice ?? base.regional.exportCampaignSlice,
-      importCampaignSlice: overrides.regional?.importCampaignSlice ?? importRegionalCampaignSlice
-    },
-    civilization: {
-      exportCampaignSlice:
-        overrides.civilization?.exportCampaignSlice ?? base.civilization.exportCampaignSlice,
-      importCampaignSlice:
-        overrides.civilization?.importCampaignSlice ?? importCivilizationCampaignSlice
-    },
-    npc: {
-      exportCampaignSlice: overrides.npc?.exportCampaignSlice ?? base.npc.exportCampaignSlice,
-      importCampaignSlice: overrides.npc?.importCampaignSlice ?? importNpcCampaignSlice
-    },
-    enemy: {
-      exportCampaignSlice: overrides.enemy?.exportCampaignSlice ?? base.enemy.exportCampaignSlice,
-      importCampaignSlice: overrides.enemy?.importCampaignSlice ?? importEnemyCampaignSlice
-    },
-    character: {
-      exportCampaignSlice: overrides.character?.exportCampaignSlice ?? base.character.exportCampaignSlice,
-      importCampaignSlice: overrides.character?.importCampaignSlice ?? importCharacterCampaignSlice
-    },
-    item: {
-      exportCampaignSlice: overrides.item?.exportCampaignSlice ?? base.item.exportCampaignSlice,
-      importCampaignSlice: overrides.item?.importCampaignSlice ?? importItemCampaignSlice
-    }
+    world: withImport(base.world, overrides.world, importWorldCampaignSlice),
+    regional: withImport(base.regional, overrides.regional, importRegionalCampaignSlice),
+    civilization: withImport(
+      base.civilization,
+      overrides.civilization,
+      importCivilizationCampaignSlice
+    ),
+    npc: withImport(base.npc, overrides.npc, importNpcCampaignSlice),
+    enemy: withImport(base.enemy, overrides.enemy, importEnemyCampaignSlice),
+    character: withImport(base.character, overrides.character, importCharacterCampaignSlice),
+    item: withImport(base.item, overrides.item, importItemCampaignSlice)
+  }
+}
+
+function withImport<TExport, TImport>(
+  base: { exportCampaignSlice: TExport },
+  override:
+    | {
+        exportCampaignSlice?: TExport
+        importCampaignSlice?: TImport
+      }
+    | undefined,
+  defaultImport: TImport
+): { exportCampaignSlice: TExport; importCampaignSlice: TImport } {
+  return {
+    exportCampaignSlice: override?.exportCampaignSlice ?? base.exportCampaignSlice,
+    importCampaignSlice: override?.importCampaignSlice ?? defaultImport
   }
 }
 

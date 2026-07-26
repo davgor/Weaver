@@ -10,8 +10,8 @@ Port the out-of-character chat channel players use to ask the DM questions witho
 
 ## Acceptance criteria
 
-- [ ] Ask-the-DM is a distinct entry point from the turn router (`053-DMEngine-Turn-Routing`) — it must never call the turn-resolve path
-- [ ] DMEngine assembles the grounding context (campaign/character state) and calls NarrationEngine for the answer text; NarrationEngine validates the answer against that same state so OOC answers can't contradict in-fiction facts
-- [ ] OOC messages are persisted to their own history, separate from Social/Scene turn history
-- [ ] A regression test proves an Ask-the-DM call cannot mutate turn state, currency, HP, or any other durable fact
-- [ ] This package's consumption of `063`'s generation API is covered by a `*.contract.test.ts` here against NarrationEngine's real published API
+- [x] Ask-the-DM is a distinct entry point from the turn router (`053-DMEngine-Turn-Routing`) — it must never call the turn-resolve path
+- [x] DMEngine assembles the grounding context (campaign/character state) and calls NarrationEngine for the answer text; NarrationEngine validates the answer against that same state so OOC answers can't contradict in-fiction facts
+- [x] OOC messages are persisted to their own history, separate from Social/Scene turn history
+- [x] A regression test proves an Ask-the-DM call cannot mutate turn state, currency, HP, or any other durable fact
+- [x] This package's consumption of `063`'s generation API is covered by a `*.contract.test.ts` here against NarrationEngine's real published API

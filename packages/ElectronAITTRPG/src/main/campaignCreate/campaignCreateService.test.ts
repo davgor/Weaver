@@ -89,6 +89,95 @@ describe('campaignCreateService gates', () => {
       })
     ).rejects.toThrow(/generative tokens/i)
   })
+
+  it('returns null review before generation and rejects edits when not ready', async () => {
+    const service = createTestService()
+    expect(await service.getReview()).toBeNull()
+    await expect(
+      service.updateReviewField({ section: 'world', field: 'canon', value: 'x' })
+    ).rejects.toThrow(/not ready/i)
+  })
+
+  it('records generation failures as error status', async () => {
+    const service = createCampaignCreateService({
+      generate: async () => {
+        throw new Error('pipeline boom')
+      },
+      resolvePaths: (campaignId) => ({
+        dataRoot: `/tmp/${campaignId}/data`,
+        campaignFilePath: `/tmp/${campaignId}/campaign.sqlite`
+      }),
+      createCampaignId: () => 'campaign-fail'
+    })
+    const snapshot = await service.startGeneration(validDraft())
+    expect(snapshot.status).toBe('error')
+    expect(snapshot.errorMessage).toMatch(/pipeline boom/)
+  })
+})
+
+describe('campaignCreateService field edits', () => {
+  it('edits pantheon, bestiary, region, npc, and faction fields', async () => {
+    const service = createTestService()
+    const initial = await service.startGeneration(validDraft())
+    await service.updateReviewField({
+      section: 'pantheon',
+      field: 'pantheon',
+      value: 'Edited pantheon'
+    })
+    await service.updateReviewField({
+      section: 'bestiary',
+      field: 'bestiaryFlavor',
+      value: 'Edited bestiary'
+    })
+    await service.updateReviewField({
+      section: 'regions',
+      field: 'displayName',
+      entityId: initial.regions[0]?.regionId,
+      value: 'Named Region'
+    })
+    await service.updateReviewField({
+      section: 'npcs',
+      field: 'summary',
+      entityId: initial.npcs[0]?.npcId,
+      value: 'Named NPC summary'
+    })
+    const updated = await service.updateReviewField({
+      section: 'factions',
+      field: 'purpose',
+      entityId: initial.factions[0]?.factionId,
+      value: 'Keep the roads'
+    })
+    expect(updated.pantheon).toBe('Edited pantheon')
+    expect(updated.bestiaryFlavor).toBe('Edited bestiary')
+    expect(updated.regions[0]?.displayName).toBe('Named Region')
+    expect(updated.npcs[0]?.summary).toBe('Named NPC summary')
+    expect(updated.factions[0]?.purpose).toBe('Keep the roads')
+  })
+})
+
+describe('campaignCreateService regenerate', () => {
+  it('regenerates world, regions, npcs, factions, and bestiary sections', async () => {
+    const service = createTestService()
+    await service.startGeneration(validDraft())
+    await service.regenerateSection({ section: 'world' })
+    await service.regenerateSection({ section: 'regions' })
+    await service.regenerateSection({ section: 'npcs' })
+    await service.regenerateSection({ section: 'factions' })
+    const bestiary = await service.regenerateSection({ section: 'bestiary' })
+    expect(bestiary.status).toBe('ready')
+    expect(bestiary.confirmed).toBe(false)
+  })
+
+  it('rejects unknown region npc generation and missing entity ids', async () => {
+    const service = createTestService()
+    await service.startGeneration(validDraft())
+    await expect(service.generateRegionNpc({ regionId: 'missing' })).rejects.toThrow(
+      /Unknown region/
+    )
+    await expect(
+      service.updateReviewField({ section: 'regions', field: 'summary', value: 'no id' })
+    ).rejects.toThrow(/entityId/)
+  })
 })
 
 function createTestService(): CampaignCreateService {

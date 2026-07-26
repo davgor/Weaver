@@ -10,10 +10,10 @@ Port the play-loop turn router: the merged intent+route LLM call, the heuristic 
 
 ## Acceptance criteria
 
-- [ ] A turn resolves through: lock turn → interpret intent (+ route, DMEngine's own LLM call) → engine resolve (peer engines) → NarrationEngine narrates the resolved outcome → persist → Social/Scene projections
-- [ ] Heuristic routing supplies a deterministic plan (skipping the LLM intent call) for provably simple turns; merged `interpretIntentAndRoute` handles everything else in one call instead of two
-- [ ] Commerce and travel intents route through a dedicated engine branch that cannot be pre-empted by a narration-only interpretation — a "buy the sword" turn always reaches ItemEngine's currency API
-- [ ] When combat is active, turns route to the combat path exclusively; there is no ad hoc reaction damage outside a combat turn
-- [ ] Ask-the-DM (OOC) never enters this router — it is excluded at the entry point, not filtered late (see `057-DMEngine-Ask-The-Dm`)
-- [ ] Mechanical outcomes are never invented by the LLM at this layer — the router calls peer engines for anything that changes durable state, and calls NarrationEngine (not LLMEngine directly) for anything that narrates it
-- [ ] This package's consumption of CombatEngine (`048`), ItemEngine (`033`), and NarrationEngine (`063`) is each covered by `*.contract.test.ts` here against their real published APIs
+- [x] A turn resolves through: lock turn → interpret intent (+ route, DMEngine's own LLM call) → engine resolve (peer engines) → NarrationEngine narrates the resolved outcome → persist → Social/Scene projections
+- [x] Heuristic routing supplies a deterministic plan (skipping the LLM intent call) for provably simple turns; merged `interpretIntentAndRoute` handles everything else in one call instead of two
+- [x] Commerce and travel intents route through a dedicated engine branch that cannot be pre-empted by a narration-only interpretation — a "buy the sword" turn always reaches ItemEngine's currency API
+- [x] When combat is active, turns route to the combat path exclusively; there is no ad hoc reaction damage outside a combat turn
+- [x] Ask-the-DM (OOC) never enters this router — it is excluded at the entry point, not filtered late (see `057-DMEngine-Ask-The-Dm`)
+- [x] Mechanical outcomes are never invented by the LLM at this layer — the router calls peer engines for anything that changes durable state, and calls NarrationEngine (not LLMEngine directly) for anything that narrates it
+- [x] This package's consumption of CombatEngine (`048`), ItemEngine (`033`), and NarrationEngine (`063`) is each covered by `*.contract.test.ts` here against their real published APIs
