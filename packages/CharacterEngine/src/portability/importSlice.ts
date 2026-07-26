@@ -3,6 +3,10 @@ import {
   restoreCompanionsForCampaign
 } from '../companions.js'
 import { setCampaignDeathMode } from '../deathModes.js'
+import {
+  clearCharacterLocationsForCampaign,
+  restoreCharacterLocations
+} from '../location.js'
 import { setCampaignDay } from '../timeRest.js'
 import {
   CHARACTER_SLICE_VERSION,
@@ -17,13 +21,29 @@ export function importCampaignSlice(
 ): void {
   assertSliceVersion(slice)
   assertCampaignMatch(ctx.campaignId, slice.campaignId)
+  assertLocationCampaignIds(ctx.campaignId, slice.locations)
 
   clearCompanionsForCampaign(ctx.campaignId)
+  clearCharacterLocationsForCampaign(ctx.campaignId)
   setCampaignDay(ctx.campaignId, slice.day)
   if (slice.deathMode !== undefined) {
     setCampaignDeathMode(ctx.campaignId, slice.deathMode)
   }
   restoreCompanionsForCampaign(slice.companions)
+  restoreCharacterLocations(slice.locations)
+}
+
+function assertLocationCampaignIds(
+  campaignId: string,
+  locations: CharacterCampaignSlice['locations']
+): void {
+  for (const location of locations) {
+    if (location.campaignId !== campaignId) {
+      throw new CharacterPortabilitySchemaError(
+        `Location ${location.characterId} belongs to campaign ${location.campaignId}, expected ${campaignId}`
+      )
+    }
+  }
 }
 
 function assertSliceVersion(slice: CharacterCampaignSlice): void {

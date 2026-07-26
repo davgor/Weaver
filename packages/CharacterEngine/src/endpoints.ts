@@ -80,7 +80,16 @@ import {
   type RaceRosterEntry,
   type RaceSelectionInput
 } from './raceBackground.js'
-import { advanceTravelDays, getCampaignDay, longRest } from './timeRest.js'
+import { longRest, previewLongRest } from './restRecovery.js'
+import {
+  clearCharacterLocation,
+  getCharacterLocation,
+  isLocationKind,
+  listCharacterLocations,
+  setCharacterLocation,
+  type SetCharacterLocationInput
+} from './location.js'
+import { advanceTravelDays, getCampaignDay } from './timeRest.js'
 import {
   detectEmergentDirection,
   recordTaggedPlayPattern
@@ -148,6 +157,7 @@ export function buildEndpoints(): EngineEndpoint[] {
     ...recordEndpoints(),
     ...raceBackgroundEndpoints(),
     ...timeRestEndpoints(),
+    ...locationEndpoints(),
     ...xpEndpoints(),
     ...levelUpEndpoints(),
     ...emergentDirectionEndpoints(),
@@ -426,13 +436,44 @@ function timeRestEndpoints(): EngineEndpoint[] {
     },
     {
       name: 'longRest',
-      description: 'Advance campaign day by one long rest',
+      description:
+        'Advance campaign day by one and fully recover listed characters (omit characterIds for day-only)',
       invoke: parseLongRest
+    },
+    {
+      name: 'previewLongRest',
+      description: 'Preview long-rest day and recovery deltas without mutating stores',
+      invoke: parsePreviewLongRest
     },
     {
       name: 'advanceTravelDays',
       description: 'Advance campaign day by clamped travel days',
       invoke: parseTravel
+    }
+  ]
+}
+
+function locationEndpoints(): EngineEndpoint[] {
+  return [
+    {
+      name: 'setCharacterLocation',
+      description: 'Upsert per-character placement (opaque region/place ids)',
+      invoke: parseSetCharacterLocation
+    },
+    {
+      name: 'getCharacterLocation',
+      description: 'Read per-character placement or null when unset',
+      invoke: parseGetCharacterLocation
+    },
+    {
+      name: 'clearCharacterLocation',
+      description: 'Remove stored per-character placement',
+      invoke: parseClearCharacterLocation
+    },
+    {
+      name: 'listCharacterLocations',
+      description: 'List placements, optionally filtered by campaignId',
+      invoke: parseListCharacterLocations
     }
   ]
 }
@@ -834,12 +875,67 @@ function parseGetCampaignDay(payload: unknown) {
 }
 
 function parseLongRest(payload: unknown) {
-  return longRest(readCampaignIdPayload(payload, 'longRest'))
+  return longRest(readLongRestPayload(payload, 'longRest'))
+}
+
+function parsePreviewLongRest(payload: unknown) {
+  return previewLongRest(readLongRestPayload(payload, 'previewLongRest'))
+}
+
+function readLongRestPayload(payload: unknown, label: string) {
+  const record = readRecord(payload, label)
+  const characterIds = record['characterIds']
+  const campaignId = readString(record, 'campaignId')
+  if (characterIds === undefined) {
+    return { campaignId }
+  }
+  return { campaignId, characterIds: readStringArray(characterIds, 'characterIds') }
 }
 
 function parseTravel(payload: unknown) {
   const record = readRecord(payload, 'advanceTravelDays')
   return advanceTravelDays(readString(record, 'campaignId'), readNumber(record, 'proposedDays'))
+}
+
+function parseSetCharacterLocation(payload: unknown) {
+  return setCharacterLocation(readSetCharacterLocationPayload(payload))
+}
+
+function parseGetCharacterLocation(payload: unknown) {
+  return getCharacterLocation(readCharacterIdPayload(payload, 'getCharacterLocation'))
+}
+
+function parseClearCharacterLocation(payload: unknown) {
+  return clearCharacterLocation(readCharacterIdPayload(payload, 'clearCharacterLocation'))
+}
+
+function parseListCharacterLocations(payload: unknown) {
+  if (payload === undefined) {
+    return listCharacterLocations()
+  }
+  const record = readRecord(payload, 'listCharacterLocations')
+  const campaignId = readOptionalString(record, 'campaignId')
+  return campaignId === undefined
+    ? listCharacterLocations()
+    : listCharacterLocations(campaignId)
+}
+
+function readSetCharacterLocationPayload(payload: unknown): SetCharacterLocationInput {
+  const record = readRecord(payload, 'setCharacterLocation')
+  const locationKind = record['locationKind']
+  if (!isLocationKind(locationKind)) {
+    throw new Error('Expected locationKind to be overworld, settlement, or dungeon')
+  }
+  const placeId = readOptionalString(record, 'placeId')
+  const updatedDay = readOptionalNumber(record, 'updatedDay')
+  return {
+    characterId: readString(record, 'characterId'),
+    campaignId: readString(record, 'campaignId'),
+    regionId: readString(record, 'regionId'),
+    locationKind,
+    ...(placeId === undefined ? {} : { placeId }),
+    ...(updatedDay === undefined ? {} : { updatedDay })
+  }
 }
 
 function parseJournalPayload(payload: unknown): AddJournalEntryInput {
