@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { resolveProviderConfig, type ProviderId } from './providerConfig.js'
 
-describe('resolveProviderConfig', () => {
+describe('resolveProviderConfig provider ids and precedence', () => {
   it('publishes the supported provider id union', () => {
     const providers: ProviderId[] = ['claude', 'openai', 'gemini', 'grok', 'player2', 'local']
     expect(providers).toEqual(['claude', 'openai', 'gemini', 'grok', 'player2', 'local'])
@@ -30,7 +30,9 @@ describe('resolveProviderConfig', () => {
       baseUrl: 'https://api.openai.com/v1'
     })
   })
+})
 
+describe('resolveProviderConfig defaults and validation', () => {
   it('falls back to provider-specific environment variables', () => {
     const config = resolveProviderConfig(undefined, {
       AGENT_PROVIDER: 'grok',

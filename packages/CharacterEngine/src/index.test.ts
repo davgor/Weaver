@@ -28,7 +28,7 @@ function sequenceRoller(rolls: readonly number[]): D20Roller {
   }
 }
 
-describe('@weaver/character-engine scaffold', () => {
+describe('@weaver/character-engine scaffold metadata', () => {
   it('reports healthy', () => {
     const health = characterEngine.health()
     expect(health.ok).toBe(true)
@@ -58,7 +58,9 @@ describe('@weaver/character-engine scaffold', () => {
       ])
     )
   })
+})
 
+describe('@weaver/character-engine scaffold endpoint calls', () => {
   it('invokes the health endpoint', async () => {
     const result = await characterEngine.call('health')
     expect(result).toMatchObject({ ok: true, package: '@weaver/character-engine' })

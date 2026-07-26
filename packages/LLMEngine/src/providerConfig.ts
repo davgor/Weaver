@@ -94,18 +94,21 @@ export function resolveProviderConfig(
   env: ProviderEnv = process.env
 ): ResolvedProviderConfig {
   const provider = resolveProvider(settings, env)
-  switch (provider) {
-    case 'claude':
-    case 'openai':
-    case 'gemini':
-      return apiProviderConfig(provider, settings?.[provider], env)
-    case 'grok':
-      return grokProviderConfig(settings?.grok, env)
-    case 'player2':
-      return player2ProviderConfig(settings?.player2, env)
-    case 'local':
-      return { provider: 'local' }
-  }
+  return PROVIDER_CONFIG_RESOLVERS[provider](settings, env)
+}
+
+type ProviderConfigResolver = (
+  settings: ProviderSettings | undefined,
+  env: ProviderEnv
+) => ResolvedProviderConfig
+
+const PROVIDER_CONFIG_RESOLVERS: Record<ProviderId, ProviderConfigResolver> = {
+  claude: (settings, env) => apiProviderConfig('claude', settings?.claude, env),
+  openai: (settings, env) => apiProviderConfig('openai', settings?.openai, env),
+  gemini: (settings, env) => apiProviderConfig('gemini', settings?.gemini, env),
+  grok: (settings, env) => grokProviderConfig(settings?.grok, env),
+  player2: (settings, env) => player2ProviderConfig(settings?.player2, env),
+  local: () => ({ provider: 'local' })
 }
 
 function apiProviderConfig(

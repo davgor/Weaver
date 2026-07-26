@@ -53,7 +53,7 @@ function callAt(calls: FetchCall[], index: number): FetchCall {
   return call
 }
 
-describe('createProviderRuntime provider adapters', () => {
+describe('createProviderRuntime Claude adapter', () => {
   it('calls Claude with the Anthropic messages API shape', async () => {
     const config = resolveProviderConfig(
       { provider: 'claude', claude: { apiKey: 'claude-key', model: 'claude-test' } },
@@ -81,7 +81,9 @@ describe('createProviderRuntime provider adapters', () => {
       messages: [{ role: 'user', content: 'Hello' }]
     })
   })
+})
 
+describe('createProviderRuntime OpenAI adapter', () => {
   it('calls OpenAI with chat completions', async () => {
     const config = resolveProviderConfig(
       { provider: 'openai', openai: { apiKey: 'openai-key', model: 'gpt-test' } },
@@ -110,7 +112,9 @@ describe('createProviderRuntime provider adapters', () => {
       ]
     })
   })
+})
 
+describe('createProviderRuntime Gemini adapter', () => {
   it('calls Gemini generateContent', async () => {
     const config = resolveProviderConfig(
       { provider: 'gemini', gemini: { apiKey: 'gemini-key', model: 'gemini-test' } },
@@ -135,7 +139,9 @@ describe('createProviderRuntime provider adapters', () => {
       generationConfig: { maxOutputTokens: 12 }
     })
   })
+})
 
+describe('createProviderRuntime Grok adapter', () => {
   it('calls Grok with xAI OpenAI-compatible chat completions', async () => {
     const config = resolveProviderConfig(undefined, {
       AGENT_PROVIDER: 'grok',
@@ -159,7 +165,9 @@ describe('createProviderRuntime provider adapters', () => {
       messages: [{ role: 'user', content: 'Prompt' }]
     })
   })
+})
 
+describe('createProviderRuntime Player2 adapter', () => {
   it('calls Player2 on localhost without an API key and retries cold starts', async () => {
     const config = resolveProviderConfig({ provider: 'player2' }, {})
     const delays: number[] = []

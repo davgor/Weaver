@@ -10,7 +10,7 @@ import {
   writeLogBookEvent
 } from './index.js'
 
-describe('character record stores', () => {
+describe('character journal records', () => {
   it('stores journal entries per character and can filter by linked NPC', () => {
     addJournalEntry({
       characterId: 'pc-journal-a',
@@ -30,7 +30,9 @@ describe('character record stores', () => {
       'Met a suspicious guide.'
     )
   })
+})
 
+describe('character log book records', () => {
   it('writes one structured log event to multiple explicit characters', () => {
     const entries = writeLogBookEvent({
       characterIds: ['pc-log-a', 'pc-log-b'],
@@ -44,7 +46,9 @@ describe('character record stores', () => {
     expect(listLogBookEntries('pc-log-b')).toEqual([entries[1]])
     expect(listLogBookEntries('pc-log-c')).toEqual([])
   })
+})
 
+describe('character quest records', () => {
   it('tracks stable main and side quest ids with statuses', () => {
     upsertQuest({
       characterId: 'pc-quest',
@@ -83,7 +87,9 @@ describe('character record stores', () => {
       }
     ])
   })
+})
 
+describe('character known action records', () => {
   it('stores known action ids only and isolates them by character', () => {
     learnKnownAction('pc-actions-a', 'spell.spark')
     learnKnownAction('pc-actions-a', 'classAction.guard')

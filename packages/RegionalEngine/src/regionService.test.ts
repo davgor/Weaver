@@ -122,7 +122,7 @@ describe('RegionalService store', () => {
   })
 })
 
-describe('RegionalService segmentation', () => {
+describe('RegionalService segmentation discovery', () => {
   it('finds deterministic same-landType contiguous candidates without persisting them', () => {
     const service = createRegionalService({
       dataRoot: tempRoot(),
@@ -146,7 +146,9 @@ describe('RegionalService segmentation', () => {
     })
     expect(service.countRegions('w1')).toBe(0)
   })
+})
 
+describe('RegionalService segmentation fill', () => {
   it('fills regions idempotently and exposes LLM-ready query summaries', () => {
     const service = createRegionalService({
       dataRoot: tempRoot(),
@@ -173,7 +175,9 @@ describe('RegionalService segmentation', () => {
     service.clearRegions('w1')
     expect(service.hasRegions('w1')).toBe(false)
   })
+})
 
+describe('RegionalService segmentation expansion scope', () => {
   it('uses expansion metadata for scoped fill and only assigns unfilled cells in that scope', () => {
     const expansion = {
       expansionId: 'expansion_1',
