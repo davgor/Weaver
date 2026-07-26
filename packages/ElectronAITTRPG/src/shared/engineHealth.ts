@@ -11,6 +11,7 @@ const REQUIRED_ENGINE_IDS = [
   'ItemEngine',
   'NPCEngine',
   'EnemyEngine',
+  'QuestEngine',
   'DMEngine',
   'LLMEngine'
 ] as const

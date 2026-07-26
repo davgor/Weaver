@@ -57,12 +57,6 @@ export function setCampaignDay(campaignId: string, day: number): CampaignDay {
   return { campaignId, day }
 }
 
-export function longRest(campaignId: string): CampaignDay {
-  const day = nextDayAfterLongRest(getCampaignDay(campaignId))
-  campaignDays.set(campaignId, day)
-  return { campaignId, day }
-}
-
 export function advanceTravelDays(
   campaignId: string,
   proposedDays: number

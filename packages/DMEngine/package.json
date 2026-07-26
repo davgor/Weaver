@@ -30,6 +30,7 @@
     "@weaver/item-engine": "*",
     "@weaver/narration-engine": "*",
     "@weaver/npc-engine": "*",
+    "@weaver/quest-engine": "*",
     "@weaver/regional-engine": "*",
     "@weaver/world-engine": "*",
     "better-sqlite3": "^13.0.1"

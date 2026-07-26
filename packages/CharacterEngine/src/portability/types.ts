@@ -1,7 +1,9 @@
 import type { CompanionRecord } from '../companions.js'
 import type { DeathMode } from '../deathModes.js'
+import type { CharacterLocation } from '../location.js'
 
-export const CHARACTER_SLICE_VERSION = 1
+/** v2 adds per-character `locations` placement records (epic 096). */
+export const CHARACTER_SLICE_VERSION = 2
 
 export type CharacterPortabilityContext = {
   campaignId: string
@@ -14,6 +16,7 @@ export type CharacterCampaignSlice = {
   deathMode?: DeathMode
   characterIds: string[]
   companions: CompanionRecord[]
+  locations: CharacterLocation[]
 }
 
 export class CharacterPortabilitySchemaError extends Error {
