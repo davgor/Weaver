@@ -47,7 +47,7 @@ New exports should always write the latest `version` and slice versions. Older b
 | `civilization` | CivilizationEngine | Settlements, claims, NPC placeholder slots |
 | `npc` | NPCEngine | Campaign NPC records + current locations (sliceVersion 2+) |
 | `enemy` | EnemyEngine | Bestiary ids + generated foe snapshots |
-| `character` | CharacterEngine | Campaign day, death mode, companion ids |
+| `character` | CharacterEngine | Campaign day, death mode, companion ids, locations (sliceVersion 2+) |
 | `item` | ItemEngine | Per-character currency balances |
 
 DMEngine orchestrates export/import but does not embed cross-engine dumps; each slice is produced by the owning engine's `exportCampaignSlice` API.

@@ -16,6 +16,7 @@ describe('summarizeEngineHealth', () => {
       { id: 'ItemEngine' },
       { id: 'NPCEngine' },
       { id: 'EnemyEngine' },
+      { id: 'QuestEngine' },
       { id: 'DMEngine' },
       { id: 'LLMEngine' }
     ])
@@ -38,6 +39,7 @@ describe('summarizeEngineHealth', () => {
       'ItemEngine',
       'NPCEngine',
       'EnemyEngine',
+      'QuestEngine',
       'DMEngine',
       'LLMEngine'
     ])

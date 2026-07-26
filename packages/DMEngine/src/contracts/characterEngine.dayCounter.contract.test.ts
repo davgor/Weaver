@@ -16,7 +16,7 @@ describe('DMEngine -> CharacterEngine day-counter contract (031)', () => {
 
     expect(getSharedCampaignDay(campaignId, api)).toBe(0)
 
-    longRest(campaignId)
+    longRest({ campaignId })
     expect(getSharedCampaignDay(campaignId, api)).toBe(1)
 
     advanceTravelDays(campaignId, 2)

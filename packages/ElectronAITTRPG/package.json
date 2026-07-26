@@ -27,6 +27,7 @@
     "@weaver/llm-engine": "*",
     "@weaver/narration-engine": "*",
     "@weaver/npc-engine": "*",
+    "@weaver/quest-engine": "*",
     "@weaver/regional-engine": "*",
     "@weaver/world-engine": "*",
     "electron-log": "^5.4.4",
