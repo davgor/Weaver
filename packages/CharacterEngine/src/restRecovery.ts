@@ -3,15 +3,15 @@ import { getCharacterStats, restoreCharacterStats } from './hp.js'
 import { getCampaignDay, nextDayAfterLongRest, setCampaignDay } from './timeRest.js'
 
 /** Cleared by long rest (full recovery). Dying state is always cleared separately. */
-export const REST_CLEARABLE_CONDITIONS = [
+export const REST_CLEARABLE_CONDITIONS: readonly Condition[] = [
   'Prone',
   'Stunned',
   'Poisoned',
   'Unconscious'
-] as const satisfies readonly Condition[]
+]
 
 /** Persist across long rest until a peer frees the character. */
-export const REST_STICKY_CONDITIONS = ['Restrained'] as const satisfies readonly Condition[]
+export const REST_STICKY_CONDITIONS: readonly Condition[] = ['Restrained']
 
 export type RestClearableCondition = (typeof REST_CLEARABLE_CONDITIONS)[number]
 export type RestStickyCondition = (typeof REST_STICKY_CONDITIONS)[number]

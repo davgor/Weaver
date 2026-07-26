@@ -10,13 +10,13 @@ import {
   setCampaignDay
 } from './index.js'
 
-describe('longRest full recovery', () => {
-  beforeEach(() => {
-    clearCharacterStatsStore()
-    setCampaignDay('campaign-long-rest', 2)
-  })
+beforeEach(() => {
+  clearCharacterStatsStore()
+  setCampaignDay('campaign-long-rest', 2)
+})
 
-  it('advances campaign day by exactly 1 and recovers listed characters', () => {
+describe('longRest recovery apply', () => {
+  it('advances day by 1 and recovers listed characters', () => {
     persistCharacterMaxHp({
       characterId: 'pc-hurt',
       hitDie: 8,
@@ -64,7 +64,9 @@ describe('longRest full recovery', () => {
       conditions: []
     })
   })
+})
 
+describe('longRest compatibility edges', () => {
   it('skips characters without stats and still advances the day', () => {
     const result = longRest({
       campaignId: 'campaign-long-rest',

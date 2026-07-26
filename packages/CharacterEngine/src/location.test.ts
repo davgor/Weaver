@@ -12,7 +12,7 @@ import {
   validateCharacterLocation
 } from './index.js'
 
-describe('location kinds and shape validation', () => {
+describe('location kinds', () => {
   it('locks locationKind to overworld, settlement, and dungeon', () => {
     expect(LOCATION_KINDS).toEqual(['overworld', 'settlement', 'dungeon'])
   })
@@ -36,7 +36,9 @@ describe('location kinds and shape validation', () => {
       updatedDay: 2
     })
   })
+})
 
+describe('location shape rejection', () => {
   it('rejects empty ids, unknown kinds, and negative updatedDay', () => {
     expect(() =>
       validateCharacterLocation({

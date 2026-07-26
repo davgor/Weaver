@@ -23,7 +23,7 @@ beforeEach(() => {
   setCampaignDay(CAMPAIGN_ID, 0)
 })
 
-describe('CharacterEngine campaign portability', () => {
+describe('CharacterEngine campaign portability companions', () => {
   it('round-trips campaign day, companions, and empty locations', () => {
     setCampaignDay(CAMPAIGN_ID, 4)
     restoreCompanionsForCampaign([
@@ -53,7 +53,9 @@ describe('CharacterEngine campaign portability', () => {
     expect(restored.characterIds).toEqual(['companion-1'])
     expect(restored.locations).toEqual([])
   })
+})
 
+describe('CharacterEngine campaign portability locations', () => {
   it('round-trips non-empty character locations', () => {
     setCampaignDay(CAMPAIGN_ID, 9)
     setCharacterLocation({

@@ -21,12 +21,12 @@ import {
  * `characterEngine.call('longRest', …)`. Day-counter consumer coverage lives
  * in DMEngine's characterEngine.dayCounter.contract.test.ts.
  */
-describe('CharacterEngine rest recovery contract', () => {
-  beforeEach(() => {
-    clearCharacterStatsStore()
-    setCampaignDay('campaign-rest-contract', 5)
-  })
+beforeEach(() => {
+  clearCharacterStatsStore()
+  setCampaignDay('campaign-rest-contract', 5)
+})
 
+describe('CharacterEngine rest recovery helper contract', () => {
   it('recovers HP and rest-clearable conditions through published longRest', () => {
     persistCharacterMaxHp({
       characterId: 'pc-contract',
@@ -53,7 +53,9 @@ describe('CharacterEngine rest recovery contract', () => {
       conditions: ['Restrained']
     })
   })
+})
 
+describe('CharacterEngine rest recovery endpoint contract', () => {
   it('exposes longRest and previewLongRest on the endpoint surface', async () => {
     persistCharacterMaxHp({
       characterId: 'pc-endpoint',

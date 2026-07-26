@@ -28,13 +28,13 @@ describe('rest-clearable condition table', () => {
   })
 })
 
-describe('previewLongRest', () => {
+describe('previewLongRest purity', () => {
   beforeEach(() => {
     clearCharacterStatsStore()
     setCampaignDay('campaign-preview-rest', 3)
   })
 
-  it('reports next day and per-character recovery deltas without mutating stores', () => {
+  it('reports next day and recovery deltas without mutating stores', () => {
     persistCharacterMaxHp({
       characterId: 'pc-preview',
       hitDie: 8,
@@ -68,6 +68,13 @@ describe('previewLongRest', () => {
     })
     expect(getCampaignDay('campaign-preview-rest')).toBe(3)
     expect(getCharacterStats('pc-preview')).toEqual(before)
+  })
+})
+
+describe('previewLongRest dying shape', () => {
+  beforeEach(() => {
+    clearCharacterStatsStore()
+    setCampaignDay('campaign-preview-rest', 3)
   })
 
   it('includes dying/Unconscious clearance in the preview shape', () => {
