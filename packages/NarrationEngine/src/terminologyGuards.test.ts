@@ -36,4 +36,20 @@ describe('findForbiddenTerminology', () => {
     expect(findForbiddenTerminology('A mind flayer waits in the dark.')).toEqual(['mind flayer'])
     expect(findForbiddenTerminology('The courtyard is quiet.')).toEqual([])
   })
+
+  it('flags tabletop jargon that should not appear in user-facing prose', () => {
+    expect(findForbiddenTerminology('Roll a d20 for initiative order.')).toEqual(
+      expect.arrayContaining(['d20', 'initiative order'])
+    )
+    expect(findForbiddenTerminology('Make a saving throw for proficiency bonus.')).toEqual(
+      expect.arrayContaining(['saving throw', 'proficiency bonus'])
+    )
+  })
+})
+
+describe('preserveCase rewrites', () => {
+  it('capitalizes replacements when the matched term was capitalized', () => {
+    const result = applyTerminologyGuards('The Beholder waits.')
+    expect(result.text).toBe('The Eye tyrant waits.')
+  })
 })

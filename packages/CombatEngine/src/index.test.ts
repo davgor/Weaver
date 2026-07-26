@@ -27,4 +27,21 @@ describe('@weaver/combat-engine', () => {
   it('rejects unknown endpoints', async () => {
     await expect(combatEngine.call('does-not-exist')).rejects.toThrow(/Unknown endpoint/)
   })
+
+  it('rejects non-object payloads for typed encounter endpoints', async () => {
+    await expect(combatEngine.call('encounter.start', null)).rejects.toThrow(/payload must be an object/i)
+    await expect(combatEngine.call('encounter.get', 'bad')).rejects.toThrow(/payload must be an object/i)
+  })
+
+  it('lists lifecycle and resolution encounter endpoints', () => {
+    const names = combatEngine.listEndpoints().map((endpoint) => endpoint.name)
+    expect(names).toEqual(
+      expect.arrayContaining([
+        'encounter.start',
+        'encounter.startAdHoc',
+        'encounter.flee',
+        'encounter.execute'
+      ])
+    )
+  })
 })

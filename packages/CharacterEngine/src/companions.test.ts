@@ -4,6 +4,7 @@ import { clearCharacterStatsStore, getCharacterStats } from './hp.js'
 import {
   clearCompanionStore,
   createCompanion,
+  getCompanion,
   getCompanionOnboardingStatus,
   isCompanionCharacter,
   listCompanions,
@@ -40,6 +41,10 @@ describe('companion onboarding gate', () => {
     expect(getCompanionOnboardingStatus('pc-1')).toBe('pending')
   })
 
+  it('returns undefined onboarding status before owner equipment', () => {
+    expect(getCompanionOnboardingStatus('pc-new')).toBeUndefined()
+  })
+
   it('allows skipping companion creation after equipment', () => {
     selectStartingLoadout('pc-1', 'Fighter')
     const status = skipCompanionCreation('pc-1')
@@ -49,7 +54,7 @@ describe('companion onboarding gate', () => {
   })
 })
 
-describe('companion records', () => {
+describe('companion record creation', () => {
   beforeEach(() => {
     clearCompanionStore()
     clearStartingLoadoutStore()
@@ -96,5 +101,49 @@ describe('companion records', () => {
     expect(getCharacterArchetype(companion.characterId)).toBe('Ranger')
     expect(loadout?.actionIds.length).toBeGreaterThan(0)
     expect(listKnownActions(companion.characterId)).toEqual([...loadout!.actionIds].sort())
+  })
+})
+
+describe('companion lookup and validation', () => {
+  beforeEach(() => {
+    clearCompanionStore()
+    clearStartingLoadoutStore()
+    clearCharacterStatsStore()
+    selectStartingLoadout('pc-1', 'Fighter')
+  })
+
+  it('exposes companion lookup helpers and honors custom level', () => {
+    const companion = createCompanion({
+      ownerCharacterId: 'pc-1',
+      campaignId: 'camp-1',
+      name: 'Kael',
+      archetype: 'Fighter',
+      level: 3
+    })
+
+    expect(getCompanion(companion.characterId)).toEqual(companion)
+    expect(getCompanion('missing')).toBeUndefined()
+    expect(isCompanionCharacter('missing')).toBe(false)
+    expect(getCharacterStartingLoadout(companion.characterId)?.level).toBe(3)
+  })
+
+  it('rejects invalid companion input', () => {
+    expect(() =>
+      createCompanion({
+        ownerCharacterId: 'pc-1',
+        campaignId: ' ',
+        name: 'Lyra',
+        archetype: 'Ranger'
+      })
+    ).toThrow(/campaignId/i)
+    expect(() =>
+      createCompanion({
+        ownerCharacterId: 'pc-1',
+        campaignId: 'camp-1',
+        name: 'Lyra',
+        archetype: 'NotAnArchetype' as 'Ranger'
+      })
+    ).toThrow(/unknown archetype/i)
+    expect(() => listCompanions('  ')).toThrow(/ownerCharacterId/i)
   })
 })

@@ -138,3 +138,52 @@ describe('item service enchantments', () => {
     ])
   })
 })
+
+describe('item service validation and edge cases', () => {
+  it('rejects duplicate templates and blank ids', () => {
+    const service = createItemService()
+    service.defineTemplate({ id: 'template.a', name: 'A' })
+
+    expect(() => service.defineTemplate({ id: 'template.a', name: 'Duplicate' })).toThrow(
+      /already exists/i
+    )
+    expect(() => service.defineTemplate({ id: '  ', name: 'Blank' })).toThrow(/required/i)
+    expect(() => service.defineTemplate({ id: 'template.b', name: ' ' })).toThrow(/required/i)
+  })
+
+  it('rejects equipping into occupied slots and missing held items', () => {
+    const service = seededService()
+    service.createInventory('character.a')
+    const sword = service.addItem('character.a', 'template.longsword')
+    const secondSword = service.addItem('character.a', 'template.longsword')
+
+    service.equip('character.a', sword.id, 'mainHand')
+    expect(() => service.equip('character.a', secondSword.id, 'mainHand')).toThrow(/occupied/i)
+    expect(() => service.equip('character.a', 'item.missing', 'mainHand')).toThrow(/not found/i)
+    expect(() => service.equip('character.a', sword.id, 'mainHand')).toThrow(/already equipped/i)
+  })
+
+  it('unequips accessories in bulk and by instance id', () => {
+    const service = seededService()
+    service.createInventory('character.a')
+    const ringA = service.addItem('character.a', 'template.ring')
+    const ringB = service.addItem('character.a', 'template.ring')
+
+    service.equip('character.a', ringA.id, 'accessories')
+    service.equip('character.a', ringB.id, 'accessories')
+    service.unequip('character.a', 'accessories')
+
+    expect(service.listInventory('character.a').held).toHaveLength(2)
+    expect(() => service.unequip('character.a', 'accessories')).toThrow(/empty/i)
+  })
+
+  it('exposes item instances and rejects unequipping unknown equipment', () => {
+    const service = seededService()
+    service.createInventory('character.a')
+    const sword = service.addItem('character.a', 'template.longsword', { charges: 2 })
+
+    expect(service.getItemInstance(sword.id).charges).toBe(2)
+    expect(() => service.unequip('character.a', 'armor')).toThrow(/empty/i)
+    expect(() => service.unequip('character.a', 'item.missing')).toThrow(/not found/i)
+  })
+})

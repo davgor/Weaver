@@ -8,7 +8,34 @@ import {
   type SettlementPlaceStats
 } from './worldNaming.js'
 
-describe('realizePlaceNaming region', () => {
+describe('realizePlaceNaming first draft', () => {
+  it('accepts a valid first draft without retrying', async () => {
+    const stats: RegionPlaceStats = {
+      dominantLandType: 'grassland',
+      isOcean: false,
+      isLandlocked: true,
+      touchesOcean: false,
+      waterContent: 0.05
+    }
+    const completer = scriptedCompleter([
+      JSON.stringify({
+        displayName: 'Greenfold Vale',
+        history: 'Rolling grasslands sheltered between low hills.'
+      })
+    ])
+
+    const outcome = await realizePlaceNaming(
+      { kind: 'region', stats, campaignId: 'camp-first' },
+      completer
+    )
+
+    expect(outcome.ok).toBe(true)
+    if (!outcome.ok) return
+    expect(outcome.naming.displayName).toBe('Greenfold Vale')
+  })
+})
+
+describe('realizePlaceNaming region retry', () => {
   it('invents and validates region display name and history against landlocked stats', async () => {
     const stats: RegionPlaceStats = {
       dominantLandType: 'grassland',
@@ -103,7 +130,34 @@ describe('realizePlaceNaming settlement', () => {
   })
 })
 
-describe('realizePantheon', () => {
+describe('realizePlaceNaming coastal regions', () => {
+  it('allows coastal naming when the region touches the ocean', async () => {
+    const stats: RegionPlaceStats = {
+      dominantLandType: 'coast',
+      isOcean: false,
+      isLandlocked: false,
+      touchesOcean: true,
+      waterContent: 0.4
+    }
+    const completer = scriptedCompleter([
+      JSON.stringify({
+        displayName: 'Harbor Reach',
+        history: 'A busy port where traders gather.'
+      })
+    ])
+
+    const outcome = await realizePlaceNaming(
+      { kind: 'region', stats, campaignId: 'camp-coastal' },
+      completer
+    )
+
+    expect(outcome.ok).toBe(true)
+    if (!outcome.ok) return
+    expect(outcome.naming.displayName).toBe('Harbor Reach')
+  })
+})
+
+describe('realizePantheon success paths', () => {
   it('returns campaign-scoped deities with validated names and guarded domains', async () => {
     const completer = scriptedCompleter([
       JSON.stringify({
@@ -145,6 +199,62 @@ describe('realizePantheon', () => {
     expect(outcome.ok).toBe(true)
     if (!outcome.ok) return
     expect(outcome.pantheon.deities[0]?.domain).not.toMatch(/saving throw/i)
+  })
+})
+
+describe('realizePantheon validation failures', () => {
+  it('rejects pantheons with the wrong deity count', async () => {
+    const completer = scriptedCompleter([
+      JSON.stringify({
+        deities: [{ name: 'Only One', domain: 'storms' }]
+      })
+    ])
+
+    const outcome = await realizePantheon({ campaignId: 'camp-count', count: 2 }, completer)
+
+    expect(outcome.ok).toBe(false)
+    if (outcome.ok) return
+    expect(outcome.reason).toMatch(/expected 2 deities/i)
+  })
+
+  it('rejects deity names that require fallback substitution', async () => {
+    const completer = scriptedCompleter([
+      JSON.stringify({
+        deities: [{ name: '', domain: 'storms' }]
+      })
+    ])
+
+    const outcome = await realizePantheon({ campaignId: 'camp-fallback', count: 1 }, completer)
+
+    expect(outcome.ok).toBe(false)
+  })
+})
+
+describe('worldNaming parsing', () => {
+  it('returns failure when drafts are empty or JSON is invalid', async () => {
+    const stats: RegionPlaceStats = {
+      dominantLandType: 'grassland',
+      isOcean: false,
+      isLandlocked: true,
+      touchesOcean: false,
+      waterContent: 0.05
+    }
+    const emptyCompleter = scriptedCompleter([
+      JSON.stringify({ displayName: '', history: '' })
+    ])
+    const invalidCompleter = scriptedCompleter(['not json at all'])
+
+    const emptyOutcome = await realizePlaceNaming(
+      { kind: 'region', stats, campaignId: 'camp-empty' },
+      emptyCompleter
+    )
+    const invalidOutcome = await realizePlaceNaming(
+      { kind: 'region', stats, campaignId: 'camp-invalid' },
+      invalidCompleter
+    )
+
+    expect(emptyOutcome.ok).toBe(false)
+    expect(invalidOutcome.ok).toBe(false)
   })
 })
 

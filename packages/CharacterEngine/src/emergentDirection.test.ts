@@ -42,4 +42,9 @@ describe('emergentDirection', () => {
     }
     expect(detectEmergentDirection('pc-kit', 'Fighter')).toBeUndefined()
   })
+
+  it('rejects empty character ids and tags', () => {
+    expect(() => recordTaggedPlayPattern('  ', 'stealth')).toThrow(/characterId/i)
+    expect(() => recordTaggedPlayPattern('pc-1', '  ')).toThrow(/tag/i)
+  })
 })

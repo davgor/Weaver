@@ -15,7 +15,8 @@ import {
   realizeRegionName,
   realizeSettlementName,
   regenerateRegionName,
-  assertValidatedPlaceNaming
+  assertValidatedPlaceNaming,
+  toValidatedPlaceNaming
 } from './worldNamingOrchestration.js'
 import { DmNamingError } from './errors.js'
 import type { Aabb, WorldMeta } from '@weaver/world-engine'
@@ -108,7 +109,7 @@ describe('worldNamingOrchestration realize', () => {
       narrationApi(),
       { service: regionalService, worldId: 'w1' },
       completer,
-      { campaignId: 'camp-dm', regionId: region.regionId }
+      { campaignId: 'camp-dm', regionId: region.regionId, seed: 'region-seed' }
     )
 
     expect(updated.displayName).toBe('Greenfold')
@@ -155,6 +156,22 @@ describe('worldNamingOrchestration validation gate', () => {
     } as never
 
     expect(() => assertValidatedPlaceNaming(dmInvented)).toThrow(DmNamingError)
+  })
+
+  it('rejects validated naming with empty displayName or history', () => {
+    const emptyName = toValidatedPlaceNaming(narrationApi(), {
+      campaignId: 'camp-dm',
+      displayName: '   ',
+      history: 'Valid history.'
+    })
+    const emptyHistory = toValidatedPlaceNaming(narrationApi(), {
+      campaignId: 'camp-dm',
+      displayName: 'Valid Name',
+      history: ' '
+    })
+
+    expect(() => assertValidatedPlaceNaming(emptyName)).toThrow(/must not be empty/i)
+    expect(() => assertValidatedPlaceNaming(emptyHistory)).toThrow(/must not be empty/i)
   })
 })
 
@@ -221,5 +238,54 @@ describe('pantheon orchestration', () => {
     )
 
     expect(pantheon.deities).toHaveLength(2)
+  })
+
+  it('throws when narration cannot invent a valid pantheon', async () => {
+    await expect(
+      realizeCampaignPantheon(
+        narrationApi(),
+        scriptedCompleter([
+          JSON.stringify({
+            deities: [{ name: 'Only One', domain: 'storms' }]
+          })
+        ]),
+        { campaignId: 'camp-dm', count: 2 }
+      )
+    ).rejects.toThrow(DmNamingError)
+  })
+})
+
+describe('worldNamingOrchestration not-found guards', () => {
+  it('throws when region or settlement ids are missing', async () => {
+    const dataRoot = tempRoot()
+    const regionalService = createRegionalService({ dataRoot, world: makeWorld() })
+    const civilizationService = createCivilizationService({
+      dataRoot,
+      regional: regionalService,
+      world: makeWorld()
+    })
+    const regional = { service: regionalService, worldId: 'w1' }
+    const completer = scriptedCompleter([
+      JSON.stringify({ displayName: 'Nowhere', history: 'Missing place.' })
+    ])
+
+    await expect(
+      realizeRegionName(narrationApi(), regional, completer, {
+        campaignId: 'camp-dm',
+        regionId: 'missing-region'
+      })
+    ).rejects.toThrow(/region not found/i)
+
+    await expect(
+      realizeSettlementName(
+        {
+          narration: narrationApi(),
+          civilization: { service: civilizationService, worldId: 'w1' },
+          regional,
+          completer
+        },
+        { campaignId: 'camp-dm', civilizationId: 'missing-settlement' }
+      )
+    ).rejects.toThrow(/settlement not found/i)
   })
 })

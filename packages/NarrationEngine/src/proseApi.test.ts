@@ -130,6 +130,51 @@ describe('claim reject and rewrite', () => {
   })
 })
 
+describe('social stream validation failures', () => {
+  it('rejects social output when rewrite cannot fix contradictions', async () => {
+    const peers = peersWithTexts([
+      'A stranger appears.\n<<<CLAIMS\nnpcPresent:npc-missing\n>>>',
+      'Still inventing.\n<<<CLAIMS\nnpcPresent:npc-missing\n>>>'
+    ])
+    const events = []
+
+    for await (const event of streamSocial(dialogueInput('npc-mira'), peers)) {
+      events.push(event)
+    }
+
+    expect(events).toEqual([{ type: 'rejected', validation: expect.any(Object) }])
+    expect(projectSocial()).toEqual([])
+  })
+
+  it('rewrites invalid social output once before streaming chunks', async () => {
+    const peers = peersWithTexts([
+      'A stranger appears.\n<<<CLAIMS\nnpcPresent:npc-missing\n>>>',
+      'Mira nods.\n<<<CLAIMS\nnpcPresent:npc-mira\n>>>'
+    ])
+    const events = []
+
+    for await (const event of streamSocial(dialogueInput('npc-mira'), peers)) {
+      events.push(event)
+    }
+
+    expect(events.some((event) => event.type === 'line')).toBe(true)
+    expect(projectSocial().map((line) => line.text)).toEqual(['Mira nods.'])
+  })
+
+  it('streams single-word replies as one chunk', async () => {
+    const peers = peersWithTexts(['Hello.\n<<<CLAIMS\nnpcPresent:npc-mira\n>>>'])
+    const chunks: string[] = []
+
+    for await (const event of streamSocial(dialogueInput('npc-mira'), peers)) {
+      if (event.type === 'chunk' && !event.done) {
+        chunks.push(event.text)
+      }
+    }
+
+    expect(chunks).toEqual(['Hello.'])
+  })
+})
+
 function dialogueInput(speakerId: string) {
   return {
     prompt: 'Mira replies.',

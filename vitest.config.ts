@@ -22,6 +22,11 @@ export default defineConfig({
         '**/preload/**',
         '**/renderer/**',
         '**/logger.ts',
+        // Thin engine catalog/IPC wiring (same operational-glue carve-out as Electron main).
+        '**/endpoints.ts',
+        '**/proseEndpoints.ts',
+        '**/ragEndpoints.ts',
+        '**/engineApi.ts',
         'scripts/deadcode-check.mjs',
         'scripts/deadcode-refresh.mjs',
         'scripts/discoverTestFiles.mjs',

@@ -10,6 +10,7 @@ import {
   upsertDmNpcOpinion
 } from './index.js'
 import { seedNpc } from './testHelpers.js'
+import { replaceNpc } from './store.js'
 
 const CAMPAIGN_A = 'campaign-a'
 const CAMPAIGN_B = 'campaign-b'
@@ -148,5 +149,31 @@ describe('getNpcDossier endpoint', () => {
 
     expect(dossier.dmOpinion).toBe('Endpoint note')
     expect(dossier.traits.race.name).toBe('Human')
+  })
+})
+
+describe('getNpcDossier optional identity fields', () => {
+  beforeEach(resetDossierState)
+
+  it('includes displayName and background when present on the NPC record', () => {
+    const npc = seedNpc({
+      npcId: 'npc-rich',
+      campaignId: CAMPAIGN_A,
+      regionId: 'north'
+    })
+    replaceNpc({
+      ...npc,
+      displayName: 'Captain Mira',
+      identity: {
+        ...npc.identity,
+        background: { backgroundId: 'warden', name: 'Road Warden' }
+      }
+    })
+
+    const dossier = getNpcDossier({ npcId: 'npc-rich', campaignId: CAMPAIGN_A })
+
+    expect(dossier.displayName).toBe('Captain Mira')
+    expect(dossier.traits.background).toEqual({ backgroundId: 'warden', name: 'Road Warden' })
+    expect(dossier.dmOpinion).toBeNull()
   })
 })
