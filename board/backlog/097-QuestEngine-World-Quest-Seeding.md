@@ -4,7 +4,7 @@ Add `packages/QuestEngine` (`@weaver/quest-engine`): deterministic, LLM-free own
 
 **Depends on:** `012` / `013` / `016` (world/region/settlement facts to bind), `028-CharacterEngine-Journal-Logbook-Quests-Spellbook` (PC quest log remains the acceptance surface), `037` / `032` (NPC/item ids for FK targets), `052-DMEngine-Campaign-Generation-Pipeline` (orchestration host for a seed stage).
 
-**Feeds:** `098-CampaignEngine-Full-Bootstrap-And-Admin-Inspect` (preferred host for quest seed during full bootstrap), DMEngine campaign-gen quest stage / `proposeQuest` (should reference QuestEngine definitions), NarrationEngine quest flavor fill (titles/briefs via Narration — QuestEngine stores validated text + structure, does not invent). Location-gated offers may use `096-CharacterEngine-Location-Ownership` later (not a hard dependency for seeding).
+**Feeds:** DMEngine campaign-gen quest stage, DM `proposeQuest` (should reference QuestEngine definitions), NarrationEngine quest flavor fill (titles/briefs via Narration — QuestEngine stores validated text + structure, does not invent). Location-gated offers may use `096-CharacterEngine-Location-Ownership` later (not a hard dependency for seeding).
 
 **Ownership split (chosen):**
 | Package | Owns |
