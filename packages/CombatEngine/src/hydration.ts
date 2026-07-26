@@ -45,7 +45,9 @@ export function hydrateCombatantFromEnemySnapshot(
     kind: 'enemy',
     displayName: snapshot.name,
     abilityScores: { ...snapshot.abilities.scores },
-    hp: { current: snapshot.hp.current, max: snapshot.hp.max }
+    hp: { current: snapshot.hp.current, max: snapshot.hp.max },
+    damageResistances: [...snapshot.damageTypes.resisted],
+    damageVulnerabilities: [...snapshot.damageTypes.vulnerable]
   }
 }
 

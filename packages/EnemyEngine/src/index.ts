@@ -2,7 +2,7 @@ export type { EnemyEngineApi, EngineEndpoint } from './types.js'
 export type * from './types.js'
 export { getBestiaryEntry, hydrateBestiaryEntry, listBestiary } from './bestiary.js'
 export { assignQuestFoes, generateEncounterFoes, hydrateCombatantFromFoe } from './generation.js'
-export { clearEnemyStore, getGeneratedFoe } from './store.js'
+export { clearEnemyStore, getGeneratedFoe, listGeneratedFoes, saveGeneratedFoe } from './store.js'
 export { requestCombatToken } from './tokenHook.js'
 
 import { buildEndpoints, health } from './endpoints.js'
@@ -24,3 +24,12 @@ export const enemyEngine: EnemyEngineApi = {
     return await match.invoke(payload)
   }
 }
+
+export {
+  exportCampaignSlice as exportEnemyCampaignSlice,
+  importCampaignSlice as importEnemyCampaignSlice,
+  ENEMY_SLICE_VERSION,
+  EnemyPortabilitySchemaError,
+  type EnemyCampaignSlice,
+  type EnemyPortabilityContext
+} from './portability/index.js'

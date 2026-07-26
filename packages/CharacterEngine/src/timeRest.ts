@@ -51,6 +51,12 @@ export function getCampaignDay(campaignId: string): number {
   return campaignDays.get(campaignId) ?? 0
 }
 
+export function setCampaignDay(campaignId: string, day: number): CampaignDay {
+  assertDay(day, 'day')
+  campaignDays.set(campaignId, day)
+  return { campaignId, day }
+}
+
 export function longRest(campaignId: string): CampaignDay {
   const day = nextDayAfterLongRest(getCampaignDay(campaignId))
   campaignDays.set(campaignId, day)

@@ -3,6 +3,7 @@ import './sidebar.css'
 
 interface SidebarProps {
   campaigns: CampaignSummary[]
+  onNewCampaign: () => void
 }
 
 export function Sidebar(props: SidebarProps): JSX.Element {
@@ -10,7 +11,7 @@ export function Sidebar(props: SidebarProps): JSX.Element {
     <aside className="sidebar" aria-label="Campaigns">
       <div className="sidebar-header">Campaigns</div>
       {props.campaigns.length === 0 ? (
-        <p className="sidebar-empty">No campaigns yet. Campaign create/play wiring comes next — engines are already linked.</p>
+        <p className="sidebar-empty">No campaigns yet. Create one to generate a world and begin.</p>
       ) : (
         <ul className="sidebar-campaign-list">
           {props.campaigns.map((campaign) => (
@@ -26,7 +27,7 @@ export function Sidebar(props: SidebarProps): JSX.Element {
         </ul>
       )}
       <div className="sidebar-footer">
-        <button type="button" disabled title="Campaign creation lands in a follow-up ticket">
+        <button type="button" onClick={props.onNewCampaign}>
           New Campaign
         </button>
       </div>

@@ -1,6 +1,18 @@
-import type { AbilityScores } from '@weaver/character-engine'
+import type {
+  Ability,
+  AbilityScores,
+  Condition,
+  DamageType,
+  DyingState,
+  RollMode
+} from '@weaver/character-engine'
 import type { GenerateEncounterFoesInput } from '@weaver/enemy-engine'
-import type { GenerateLootRequest, LootDrop } from '@weaver/item-engine'
+import type {
+  GenerateLootRequest,
+  LootDrop,
+  ResolvedWeaponDamage,
+  WeaponDamageProfile
+} from '@weaver/item-engine'
 import type {
   DefeatDispositionValue,
   SetNpcDefeatDispositionInput
@@ -25,6 +37,8 @@ export type HitPointState = {
   max: number
 }
 
+export type AttackRange = 'melee' | 'ranged'
+
 export type EncounterCombatantInput = {
   id: string
   kind: CombatantKind
@@ -33,6 +47,10 @@ export type EncounterCombatantInput = {
   hp?: HitPointState
   armorClass?: number
   conditions?: readonly CombatConditionId[]
+  characterConditions?: readonly Condition[]
+  damageResistances?: readonly DamageType[]
+  damageVulnerabilities?: readonly DamageType[]
+  dying?: DyingState | null
 }
 
 export type InitiativeResult = {
@@ -41,9 +59,15 @@ export type InitiativeResult = {
   total: number
 }
 
-export type EncounterCombatant = Omit<EncounterCombatantInput, 'conditions'> & {
+export type EncounterCombatant = Omit<
+  EncounterCombatantInput,
+  'conditions' | 'characterConditions' | 'damageResistances' | 'damageVulnerabilities'
+> & {
   initiative: InitiativeResult
   conditions: CombatConditionId[]
+  characterConditions: Condition[]
+  damageResistances: DamageType[]
+  damageVulnerabilities: DamageType[]
 }
 
 export type CurrentTurnState = {
@@ -75,6 +99,44 @@ export type TurnLogEntry =
       combatantId: string
       movement: CombatMovementInput
     }
+  | {
+      kind: 'attack'
+      round: number
+      combatantId: string
+      attack: AttackTurnLogEntry
+    }
+
+export type AttackRollResult = {
+  rollMode: RollMode
+  rolls: readonly number[]
+  selectedRoll: number
+  abilityModifier: number
+  proficiencyBonusApplied: number
+  total: number
+  targetArmorClass: number
+  naturalOne: boolean
+  critical: boolean
+  hit: boolean
+}
+
+export type AttackTurnLogEntry = {
+  targetId: string
+  weaponInstanceId: string
+  hit: boolean
+  critical: boolean
+  totalDamage: number
+}
+
+export type AttackResolution = {
+  attackerId: string
+  targetId: string
+  weaponInstanceId: string
+  attack: AttackRollResult
+  damage: ResolvedWeaponDamage[]
+  totalDamage: number
+  onHitEffectIds: string[]
+  target: EncounterCombatant
+}
 
 export type EncounterState = {
   encounterId: string
@@ -134,6 +196,35 @@ export type EncounterLookupInput = {
 export type SubmitCombatActionInput = EncounterLookupInput & {
   combatantId: string
   action: TypedCombatActionInput
+}
+
+export type ResolveAttackInput = EncounterLookupInput & {
+  attackerId: string
+  targetId: string
+  weaponInstanceId: string
+  attackAbility: Ability
+  proficient: boolean
+  proficiencyBonus: number
+  range?: AttackRange
+}
+
+export type ResolveAttackAgainstCombatantsInput = {
+  attacker: EncounterCombatant
+  target: EncounterCombatant
+  weaponInstanceId: string
+  attackAbility: Ability
+  proficient: boolean
+  proficiencyBonus: number
+  range?: AttackRange
+}
+
+export type AttackResolutionDeps = {
+  roller?: () => number
+  getWeaponDamageProfile?: (weaponInstanceId: string) => WeaponDamageProfile
+}
+
+export type ResolveAttackResult = AttackResolution & {
+  encounter: EncounterState
 }
 
 export type SubmitMovementInput = EncounterLookupInput & {

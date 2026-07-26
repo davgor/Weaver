@@ -4,6 +4,10 @@ import { resolveBrowserWindowIconPath } from './appIcon.js'
 import { buildStartupBoot } from './engineCatalog.js'
 import { initAutoUpdate, registerAutoUpdateHandlers } from './autoUpdate.js'
 import { registerCharacterSheetHandlers } from './characterSheet/registerHandlers.js'
+import { registerNpcDossierHandlers } from './npcDossier/registerHandlers.js'
+import { registerSettingsHandlers } from './settings/registerHandlers.js'
+import { registerCampaignCreateHandlers } from './campaignCreate/registerHandlers.js'
+import { registerOnboardingHandlers } from './onboarding/registerHandlers.js'
 import { setupGlobalErrorLogging } from './logger.js'
 import { APP_DISPLAY_NAME } from '../shared/appBranding.js'
 
@@ -64,6 +68,10 @@ function registerGameHandlers(): void {
   ipcMain.handle('campaigns:list', () => [])
   ipcMain.handle('app:getVersion', () => app.getVersion())
   registerCharacterSheetHandlers()
+  registerNpcDossierHandlers()
+  registerSettingsHandlers()
+  registerCampaignCreateHandlers()
+  registerOnboardingHandlers()
 }
 
 app.whenReady().then(() => {

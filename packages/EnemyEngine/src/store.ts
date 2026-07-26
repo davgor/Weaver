@@ -41,6 +41,10 @@ export function clearEnemyStore(): void {
   tokenCache.clear()
 }
 
+export function listGeneratedFoes(): GeneratedFoeRef[] {
+  return [...generatedFoes.values()].map(cloneFoe)
+}
+
 function cloneFoe(foe: GeneratedFoeRef): GeneratedFoeRef {
   const copy = {
     foeId: foe.foeId,

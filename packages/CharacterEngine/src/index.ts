@@ -39,3 +39,12 @@ export const characterEngine: CharacterEngineApi = {
     return await match.invoke(payload)
   }
 }
+
+export {
+  exportCampaignSlice as exportCharacterCampaignSlice,
+  importCampaignSlice as importCharacterCampaignSlice,
+  CHARACTER_SLICE_VERSION,
+  CharacterPortabilitySchemaError,
+  type CharacterCampaignSlice,
+  type CharacterPortabilityContext
+} from './portability/index.js'

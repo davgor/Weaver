@@ -28,3 +28,11 @@ export { createWorldService } from './store/worldService.js'
 export type { CreateWorldOptions, ExpandWorldOptions, WorldService } from './store/worldService.js'
 export { worldEngine } from './engineApi.js'
 export type { WorldEngineApi } from './engineApi.js'
+export {
+  exportCampaignSlice as exportWorldCampaignSlice,
+  importCampaignSlice as importWorldCampaignSlice,
+  WORLD_SLICE_VERSION,
+  WorldPortabilitySchemaError,
+  type WorldCampaignSlice,
+  type WorldPortabilityContext
+} from './portability/index.js'

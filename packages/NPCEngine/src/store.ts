@@ -69,6 +69,19 @@ export function listWorldFacts(): WorldFact[] {
   return [...worldFacts.values()].map(copyWorldFact)
 }
 
+export function listNpcsForCampaign(campaignId: string): NpcRecord[] {
+  return [...npcs.values()]
+    .filter((npc) => npc.campaignId === campaignId)
+    .map(copyNpc)
+}
+
+export function clearCampaignNpcs(campaignId: string): void {
+  for (const npc of listNpcsForCampaign(campaignId)) {
+    npcs.delete(npc.npcId)
+    memories.delete(npc.npcId)
+  }
+}
+
 function copyNpc(npc: NpcRecord): NpcRecord {
   return {
     ...npc,

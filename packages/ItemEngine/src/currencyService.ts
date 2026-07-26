@@ -20,6 +20,8 @@ export type CurrencyService = {
   credit: (characterId: string, amount: number) => CurrencyBalanceSnapshot
   debit: (characterId: string, amount: number) => CurrencyBalanceSnapshot
   getBalance: (characterId: string) => number
+  snapshotBalances: (characterIds: readonly string[]) => Record<string, number>
+  restoreBalances: (balances: Record<string, number>) => void
 }
 
 export class CurrencyError extends Error {
@@ -94,6 +96,22 @@ class InMemoryCurrencyService implements CurrencyService {
 
   getBalance(characterId: string): number {
     return this.balances.get(requireCharacterId(characterId)) ?? 0
+  }
+
+  snapshotBalances(characterIds: readonly string[]): Record<string, number> {
+    const snapshot: Record<string, number> = {}
+    for (const characterId of characterIds) {
+      const id = requireCharacterId(characterId)
+      snapshot[id] = this.getBalance(id)
+    }
+    return snapshot
+  }
+
+  restoreBalances(balances: Record<string, number>): void {
+    for (const [characterId, balance] of Object.entries(balances)) {
+      const id = requireCharacterId(characterId)
+      this.balances.set(id, requireAmount(balance))
+    }
   }
 }
 

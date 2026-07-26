@@ -4,33 +4,14 @@
 
 Epic ids are grouped by package/theme (e.g. `021`-`031` = CharacterEngine), **not** by dependency order. Picking tickets in numeric order alone will hand you one before something it depends on exists. Work wave by wave instead: everything in a wave has no unmet dependency on anything else still pending, so tickets within a wave can run in any order (including in parallel).
 
-4 waves, 17 pending epics.
+2 waves, 4 pending epics.
 
 ## Wave 1
-
-- `049-CombatEngine-Hit-Damage-Crit-Conditions`
-- `052-DMEngine-Campaign-Generation-Pipeline`
-- `061-DMEngine-Guided-Character-Creation-Orchestration`
-- `074-ElectronAITTRPG-Npc-Dossier-And-Relationship-Ui`
-- `075-ElectronAITTRPG-Settings-Ui`
-- `092-Repo-Eighty-Percent-Test-Coverage-Ci` _(in-progress)_
-
-## Wave 2
-
-- `053-DMEngine-Turn-Routing`
-- `057-DMEngine-Ask-The-Dm`
-- `058-DMEngine-Shared-Time-And-Hub-Recap`
-- `059-DMEngine-Campaign-Portability`
-- `062-DMEngine-Context-Efficiency-And-Rag-Integration`
-- `069-ElectronAITTRPG-Campaign-Creation-And-Review-Ui`
-- `070-ElectronAITTRPG-Onboarding-Wizard-Ui`
-
-## Wave 3
 
 - `054-DMEngine-World-Mutations-And-Live-Population`
 - `071-ElectronAITTRPG-Campaign-Hub-Ui`
 - `072-ElectronAITTRPG-Play-View-Ui`
 
-## Wave 4
+## Wave 2
 
 - `076-ElectronAITTRPG-Play-Shell-Resilience`

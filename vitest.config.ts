@@ -8,6 +8,8 @@ export default defineConfig({
       'scripts/**/*.test.mjs'
     ],
     environment: 'node',
+    // Windows CI shards can spend >5s on better-sqlite3 world/civ bootstraps.
+    testTimeout: 30_000,
     reporters: ['default'],
     coverage: {
       provider: 'v8',
@@ -21,6 +23,7 @@ export default defineConfig({
         '**/main/index.ts',
         '**/preload/**',
         '**/renderer/**',
+        '**/registerHandlers.ts',
         '**/logger.ts',
         // Thin engine catalog/IPC wiring (same operational-glue carve-out as Electron main).
         '**/endpoints.ts',

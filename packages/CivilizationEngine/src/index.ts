@@ -81,3 +81,11 @@ export type {
 } from './settlementNaming.js'
 export { civilizationEngine } from './engineApi.js'
 export type { CivilizationEngineApi } from './engineApi.js'
+export {
+  exportCampaignSlice as exportCivilizationCampaignSlice,
+  importCampaignSlice as importCivilizationCampaignSlice,
+  CIVILIZATION_SLICE_VERSION,
+  CivilizationPortabilitySchemaError,
+  type CivilizationCampaignSlice,
+  type CivilizationPortabilityContext
+} from './portability/index.js'
