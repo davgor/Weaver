@@ -8,9 +8,9 @@ Port the four character-scoped record types that make up a character's persisten
 
 ## Acceptance criteria
 
-- [ ] Journal: character-authored/DM-authored narrative entries, queryable by character and (optionally) linked NPC
-- [ ] Log book: structured event entries distinct from free-form journal prose
-- [ ] Quest log: main and side quests with status (active/complete/failed), each with a stable id DMEngine can reference when proposing updates
-- [ ] Known-actions surface (spellbook UI): known `actionId`s (not copied ActionEngine definitions), populated by starting loadout and level-up; may include both `spell` and `classAction` flavor ids
-- [ ] Cross-character log-book writes are supported (an event affecting multiple PCs writes to each), matching the Campaign Hub's multi-PC model
-- [ ] All four are per-character records, isolated from other characters in the same campaign except where an explicit cross-write is authored
+- [x] Journal: character-authored/DM-authored narrative entries, queryable by character and (optionally) linked NPC
+- [x] Log book: structured event entries distinct from free-form journal prose
+- [x] Quest log: main and side quests with status (active/complete/failed), each with a stable id DMEngine can reference when proposing updates
+- [x] Known-actions surface (spellbook UI): known `actionId`s (not copied ActionEngine definitions), populated by starting loadout and level-up; may include both `spell` and `classAction` flavor ids
+- [x] Cross-character log-book writes are supported (an event affecting multiple PCs writes to each), matching the Campaign Hub's multi-PC model
+- [x] All four are per-character records, isolated from other characters in the same campaign except where an explicit cross-write is authored

@@ -10,7 +10,7 @@ describe('ElectronAdmin CharacterEngine contract', () => {
       {
         id: 'CharacterEngine',
         title: 'Character Engine',
-        description: 'Deterministic player-character ability and resolution model',
+        description: 'Deterministic player-character facts and resolution model',
         endpoints: expect.arrayContaining([
           { name: 'health', description: 'Return package health metadata' },
           {

@@ -8,7 +8,7 @@ Port deterministic loot-table generation so encounter and quest rewards come fro
 
 ## Acceptance criteria
 
-- [ ] Loot table API takes an encounter/quest difficulty or tag and returns a deterministic (seedable) set of item instances
-- [ ] Loot generation is pure/unit-tested — no LLM call inside this package to decide what drops
-- [ ] Generated loot integrates with the item template catalog from `032` rather than fabricating ad hoc item shapes
-- [ ] DMEngine/NarrationEngine consume generated loot for flavor text; they cannot alter the underlying item facts
+- [x] Loot table API takes an encounter/quest difficulty or tag and returns a deterministic (seedable) set of item instances
+- [x] Loot generation is pure/unit-tested — no LLM call inside this package to decide what drops
+- [x] Generated loot integrates with the item template catalog from `032` rather than fabricating ad hoc item shapes
+- [x] DMEngine/NarrationEngine consume generated loot for flavor text; they cannot alter the underlying item facts

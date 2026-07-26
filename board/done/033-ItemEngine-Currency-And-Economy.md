@@ -8,7 +8,7 @@ Port the single-currency economy model, where the engine is the only thing allow
 
 ## Acceptance criteria
 
-- [ ] Single currency balance per character, debited/credited only through this package's API — no other package writes currency directly
-- [ ] `clampProposedPrice`-equivalent function bounds any DM/NarrationEngine-proposed price into an acceptable range before a debit/credit is applied
-- [ ] Insufficient-funds and negative-amount cases are rejected with typed errors, not silently clamped to zero
-- [ ] Unit tests cover clamp boundaries and reject-vs-clamp behavior explicitly
+- [x] Single currency balance per character, debited/credited only through this package's API — no other package writes currency directly
+- [x] `clampProposedPrice`-equivalent function bounds any DM/NarrationEngine-proposed price into an acceptable range before a debit/credit is applied
+- [x] Insufficient-funds and negative-amount cases are rejected with typed errors, not silently clamped to zero
+- [x] Unit tests cover clamp boundaries and reject-vs-clamp behavior explicitly

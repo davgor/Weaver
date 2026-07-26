@@ -10,9 +10,9 @@ Port image generation for NPC/enemy/companion/PC portraits, including the plugga
 
 ## Acceptance criteria
 
-- [ ] A provider-agnostic image generation interface (cloud API / Player2 / local-model rails), selectable via settings with no code change to swap
-- [ ] NPC, enemy, companion, and player-character portrait generation all call this one interface rather than each owning a bespoke image pipeline
-- [ ] Generation is gated by the campaign's generative-tokens flag and is always non-blocking/asynchronous relative to the entity's construction
-- [ ] Player character icons additionally support manual Upload/Replace as an alternative to generation
-- [ ] Failure of the image provider degrades to "no portrait" without failing the owning entity's construction or the campaign-create pipeline
-- [ ] Root README's `NarrationEngine` package-table row is updated to name visual-token generation alongside prose invention (first sub-ticket of this epic)
+- [x] A provider-agnostic image generation interface (cloud API / Player2 / local-model rails), selectable via settings with no code change to swap
+- [x] NPC, enemy, companion, and player-character portrait generation all call this one interface rather than each owning a bespoke image pipeline
+- [x] Generation is gated by the campaign's generative-tokens flag and is always non-blocking/asynchronous relative to the entity's construction
+- [x] Player character icons additionally support manual Upload/Replace as an alternative to generation
+- [x] Failure of the image provider degrades to "no portrait" without failing the owning entity's construction or the campaign-create pipeline
+- [x] Root README's `NarrationEngine` package-table row is updated to name visual-token generation alongside prose invention (first sub-ticket of this epic)

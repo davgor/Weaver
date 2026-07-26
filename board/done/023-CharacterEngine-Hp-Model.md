@@ -8,10 +8,10 @@ Port the hit-point model: rolled hit die per level plus the Body modifier once a
 
 ## Acceptance criteria
 
-- [ ] `computeMaxHp(hitDie, level, bodyMod)` (or equivalent) is a pure, unit-tested function
-- [ ] Level-1 HP = hit die roll (or archetype-fixed die) + Body modifier; persisted, not recomputed on every read
-- [ ] Villager/civilian default (10 HP) and catalog-monster hydration path both documented as consumers of this function, not separate formulas
-- [ ] Catalog-authored `hp` fields are explicitly reference-only — hydration always recomputes from hit die + level
+- [x] `computeMaxHp(hitDie, level, bodyMod)` (or equivalent) is a pure, unit-tested function
+- [x] Level-1 HP = hit die roll (or archetype-fixed die) + Body modifier; persisted, not recomputed on every read
+- [x] Villager/civilian default (10 HP) and catalog-monster hydration path both documented as consumers of this function, not separate formulas
+- [x] Catalog-authored `hp` fields are explicitly reference-only — hydration always recomputes from hit die + level
 
 ## Notes
 
