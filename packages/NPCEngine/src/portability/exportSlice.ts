@@ -1,3 +1,4 @@
+import { listNpcLocations } from '../location.js'
 import { listNpcsForCampaign } from '../store.js'
 import { NPC_SLICE_VERSION, type NpcCampaignSlice, type NpcPortabilityContext } from './types.js'
 
@@ -7,6 +8,7 @@ export function exportCampaignSlice(ctx: NpcPortabilityContext): NpcCampaignSlic
     sliceVersion: NPC_SLICE_VERSION,
     campaignId: ctx.campaignId,
     npcIds: npcs.map((npc) => npc.npcId),
-    npcs
+    npcs,
+    locations: listNpcLocations(ctx.campaignId)
   }
 }

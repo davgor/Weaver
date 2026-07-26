@@ -1,3 +1,7 @@
+import {
+  clearNpcLocationsForCampaign,
+  restoreNpcLocations
+} from '../location.js'
 import { clearCampaignNpcs, saveNpc } from '../store.js'
 import {
   NPC_SLICE_VERSION,
@@ -9,8 +13,10 @@ import {
 export function importCampaignSlice(ctx: NpcPortabilityContext, slice: NpcCampaignSlice): void {
   assertSliceVersion(slice)
   assertCampaignMatch(ctx.campaignId, slice.campaignId)
+  assertLocationCampaignIds(ctx.campaignId, slice.locations)
 
   clearCampaignNpcs(ctx.campaignId)
+  clearNpcLocationsForCampaign(ctx.campaignId)
   for (const npc of slice.npcs) {
     if (npc.campaignId !== ctx.campaignId) {
       throw new NpcPortabilitySchemaError(
@@ -18,6 +24,20 @@ export function importCampaignSlice(ctx: NpcPortabilityContext, slice: NpcCampai
       )
     }
     saveNpc(npc)
+  }
+  restoreNpcLocations(slice.locations)
+}
+
+function assertLocationCampaignIds(
+  campaignId: string,
+  locations: NpcCampaignSlice['locations']
+): void {
+  for (const location of locations) {
+    if (location.campaignId !== campaignId) {
+      throw new NpcPortabilitySchemaError(
+        `Location ${location.npcId} belongs to campaign ${location.campaignId}, expected ${campaignId}`
+      )
+    }
   }
 }
 

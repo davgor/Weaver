@@ -1,0 +1,128 @@
+import { getCampaignDay } from '@weaver/character-engine'
+import { NpcEngineError } from './errors.js'
+
+export const LOCATION_KINDS = ['overworld', 'settlement', 'dungeon'] as const
+
+export type LocationKind = (typeof LOCATION_KINDS)[number]
+
+export type NpcLocation = {
+  npcId: string
+  campaignId: string
+  regionId: string
+  placeId?: string
+  locationKind: LocationKind
+  updatedDay?: number
+}
+
+export type SetNpcLocationInput = {
+  npcId: string
+  campaignId: string
+  regionId: string
+  placeId?: string
+  locationKind: LocationKind
+  /** When omitted, stamped from the campaign day counter. */
+  updatedDay?: number
+}
+
+const locations = new Map<string, NpcLocation>()
+
+export function isLocationKind(value: unknown): value is LocationKind {
+  return typeof value === 'string' && LOCATION_KINDS.some((kind) => kind === value)
+}
+
+export function validateNpcLocation(input: NpcLocation): NpcLocation {
+  assertNonEmpty(input.npcId, 'npcId')
+  assertNonEmpty(input.campaignId, 'campaignId')
+  assertNonEmpty(input.regionId, 'regionId')
+  if (input.placeId !== undefined) {
+    assertNonEmpty(input.placeId, 'placeId')
+  }
+  if (!isLocationKind(input.locationKind)) {
+    throw new NpcEngineError(
+      'LOCATION_INPUT_INVALID',
+      `locationKind must be one of: ${LOCATION_KINDS.join(', ')}`
+    )
+  }
+  if (input.updatedDay !== undefined) {
+    assertNonNegativeInteger(input.updatedDay, 'updatedDay')
+  }
+  return copyLocation(input)
+}
+
+export function setNpcLocation(input: SetNpcLocationInput): NpcLocation {
+  const updatedDay = input.updatedDay ?? getCampaignDay(input.campaignId)
+  const record = validateNpcLocation({
+    npcId: input.npcId,
+    campaignId: input.campaignId,
+    regionId: input.regionId,
+    locationKind: input.locationKind,
+    updatedDay,
+    ...(input.placeId === undefined ? {} : { placeId: input.placeId })
+  })
+  locations.set(record.npcId, record)
+  return copyLocation(record)
+}
+
+export function getNpcLocation(npcId: string): NpcLocation | null {
+  const record = locations.get(npcId)
+  return record === undefined ? null : copyLocation(record)
+}
+
+export function clearNpcLocation(npcId: string): boolean {
+  return locations.delete(npcId)
+}
+
+export function listNpcLocations(campaignId?: string): NpcLocation[] {
+  const records = [...locations.values()].map(copyLocation)
+  if (campaignId === undefined) {
+    return records.sort(byNpcId)
+  }
+  return records.filter((record) => record.campaignId === campaignId).sort(byNpcId)
+}
+
+export function clearNpcLocationStore(): void {
+  locations.clear()
+}
+
+export function clearNpcLocationsForCampaign(campaignId: string): void {
+  for (const record of listNpcLocations(campaignId)) {
+    locations.delete(record.npcId)
+  }
+}
+
+export function restoreNpcLocations(records: readonly NpcLocation[]): void {
+  for (const record of records) {
+    const validated = validateNpcLocation(record)
+    locations.set(validated.npcId, validated)
+  }
+}
+
+function copyLocation(record: NpcLocation): NpcLocation {
+  return {
+    npcId: record.npcId,
+    campaignId: record.campaignId,
+    regionId: record.regionId,
+    locationKind: record.locationKind,
+    ...(record.placeId === undefined ? {} : { placeId: record.placeId }),
+    ...(record.updatedDay === undefined ? {} : { updatedDay: record.updatedDay })
+  }
+}
+
+function byNpcId(left: NpcLocation, right: NpcLocation): number {
+  return left.npcId.localeCompare(right.npcId)
+}
+
+function assertNonEmpty(value: string, label: string): void {
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    throw new NpcEngineError('LOCATION_INPUT_INVALID', `${label} must be a non-empty string`)
+  }
+}
+
+function assertNonNegativeInteger(value: number, label: string): void {
+  if (!Number.isInteger(value) || value < 0) {
+    throw new NpcEngineError(
+      'LOCATION_INPUT_INVALID',
+      `${label} must be a non-negative integer`
+    )
+  }
+}

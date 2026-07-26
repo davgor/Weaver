@@ -1,4 +1,5 @@
 import { describe, expect, it, beforeEach } from 'vitest'
+import { getNpcLocation, setNpcLocation } from '../location.js'
 import { clearNpcStore, saveNpc } from '../store.js'
 import { exportCampaignSlice, importCampaignSlice } from './index.js'
 import {
@@ -14,18 +15,71 @@ beforeEach(() => {
 })
 
 describe('NPCEngine campaign portability', () => {
-  it('round-trips campaign npc ids', () => {
+  it('round-trips campaign npc ids and empty locations', () => {
     saveNpc(minimalNpc('npc-a'))
     saveNpc(minimalNpc('npc-b'))
 
     const ctx = { campaignId: CAMPAIGN_ID }
     const slice = exportCampaignSlice(ctx)
     expect(slice.npcIds.sort()).toEqual(['npc-a', 'npc-b'])
+    expect(slice.locations).toEqual([])
+    expect(slice.sliceVersion).toBe(NPC_SLICE_VERSION)
 
     clearNpcStore()
     importCampaignSlice(ctx, slice)
     const restored = exportCampaignSlice(ctx)
     expect(restored.npcIds.sort()).toEqual(['npc-a', 'npc-b'])
+    expect(restored.locations).toEqual([])
+  })
+})
+
+describe('NPCEngine campaign portability locations', () => {
+  it('round-trips non-empty NPC current locations', () => {
+    saveNpc(minimalNpc('npc-placed'))
+    setNpcLocation({
+      npcId: 'npc-placed',
+      campaignId: CAMPAIGN_ID,
+      regionId: 'region-moved',
+      placeId: 'place-inn',
+      locationKind: 'settlement',
+      updatedDay: 4
+    })
+
+    const ctx = { campaignId: CAMPAIGN_ID }
+    const slice = exportCampaignSlice(ctx)
+    expect(slice.locations).toEqual([
+      {
+        npcId: 'npc-placed',
+        campaignId: CAMPAIGN_ID,
+        regionId: 'region-moved',
+        placeId: 'place-inn',
+        locationKind: 'settlement',
+        updatedDay: 4
+      }
+    ])
+
+    clearNpcStore()
+    importCampaignSlice(ctx, slice)
+    expect(getNpcLocation('npc-placed')).toEqual(slice.locations[0])
+  })
+
+  it('rejects location records belonging to a different campaign', () => {
+    saveNpc(minimalNpc('npc-loc-mismatch'))
+    const ctx = { campaignId: CAMPAIGN_ID }
+    const slice = exportCampaignSlice(ctx)
+    const badSlice: NpcCampaignSlice = {
+      ...slice,
+      locations: [
+        {
+          npcId: 'npc-loc-mismatch',
+          campaignId: 'other-campaign',
+          regionId: 'region-x',
+          locationKind: 'overworld'
+        }
+      ]
+    }
+    expect(() => importCampaignSlice(ctx, badSlice)).toThrow(NpcPortabilitySchemaError)
+    expect(() => importCampaignSlice(ctx, badSlice)).toThrow(/belongs to campaign/)
   })
 })
 

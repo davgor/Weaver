@@ -1,4 +1,5 @@
 import { NpcEngineError } from './errors.js'
+import { clearNpcLocation, clearNpcLocationStore } from './location.js'
 import type { NpcMemory, NpcPortrait, NpcRecord, SpeakingStyle, WorldFact } from './types.js'
 
 const npcs = new Map<string, NpcRecord>()
@@ -9,6 +10,7 @@ export function clearNpcStore(): void {
   npcs.clear()
   memories.clear()
   worldFacts.clear()
+  clearNpcLocationStore()
 }
 
 export function saveNpc(npc: NpcRecord): NpcRecord {
@@ -79,6 +81,7 @@ export function clearCampaignNpcs(campaignId: string): void {
   for (const npc of listNpcsForCampaign(campaignId)) {
     npcs.delete(npc.npcId)
     memories.delete(npc.npcId)
+    clearNpcLocation(npc.npcId)
   }
 }
 

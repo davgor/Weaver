@@ -10,6 +10,21 @@ export { clearDmOpinionStore, getNpcDossier, upsertDmNpcOpinion } from './dossie
 export { hydrateNpcCombatTier, setNpcDefeatDisposition } from './combatDisposition.js'
 export { applyNpcWorldMutation } from './worldMutation.js'
 export {
+  LOCATION_KINDS,
+  clearNpcLocation,
+  clearNpcLocationStore,
+  clearNpcLocationsForCampaign,
+  getNpcLocation,
+  isLocationKind,
+  listNpcLocations,
+  restoreNpcLocations,
+  setNpcLocation,
+  validateNpcLocation,
+  type LocationKind,
+  type NpcLocation,
+  type SetNpcLocationInput
+} from './location.js'
+export {
   addNpcToFaction,
   clearFactionStore,
   createFaction,
