@@ -1,6 +1,6 @@
 {
   "name": "@weaver/electron-admin",
-  "version": "0.16.0",
+  "version": "0.17.0",
   "private": true,
   "description": "AI ADMIN panel for app/LLM metrics, test functions, and DEV tooling",
   "type": "module",
