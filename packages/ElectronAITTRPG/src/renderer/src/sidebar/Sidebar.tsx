@@ -21,17 +21,13 @@ interface CampaignActionContext {
 }
 
 export function Sidebar(props: SidebarProps): JSX.Element {
-  const importInputRef = useRef<HTMLInputElement | null>(null)
+  const importInputRef = useRef<HTMLInputElement>(null)
   const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null)
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
   const selectedCampaign = props.campaigns.find((campaign) => campaign.id === selectedCampaignId) ?? null
-  const actionContext: CampaignActionContext = {
-    onCampaignsChanged: props.onCampaignsChanged,
-    setBusy,
-    setStatusMessage
-  }
+  const actionContext = buildActionContext(props.onCampaignsChanged, setBusy, setStatusMessage)
 
   return (
     <aside className="sidebar" aria-label="Campaigns">
@@ -91,9 +87,20 @@ function CampaignList(props: {
   )
 }
 
+function buildActionContext(
+  onCampaignsChanged: (() => void | Promise<void>) | undefined,
+  setBusy: (busy: boolean) => void,
+  setStatusMessage: (message: string | null) => void
+): CampaignActionContext {
+  if (onCampaignsChanged === undefined) {
+    return { setBusy, setStatusMessage }
+  }
+  return { onCampaignsChanged, setBusy, setStatusMessage }
+}
+
 function ImportExportActions(props: {
   busy: boolean
-  importInputRef: React.RefObject<HTMLInputElement | null>
+  importInputRef: React.RefObject<HTMLInputElement>
   selectedCampaign: CampaignSummary | null
   actionContext: CampaignActionContext
   onNewCampaign: () => void
@@ -167,7 +174,7 @@ function CampaignRailButtons(props: {
 }
 
 function CampaignImportInput(props: {
-  importInputRef: React.RefObject<HTMLInputElement | null>
+  importInputRef: React.RefObject<HTMLInputElement>
   actionContext: CampaignActionContext
   onSelectCampaign: (campaignId: string) => void
 }): JSX.Element {
