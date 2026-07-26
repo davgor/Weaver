@@ -8,6 +8,7 @@ import { UpdateBanner } from './autoUpdate/UpdateBanner'
 import { CharacterSheetOverlay } from './characterSheet/CharacterSheetOverlay'
 import { PlayViewShell } from './characterSheet/PlayViewShell'
 import { CampaignHubScreen } from './campaignHub/CampaignHubScreen'
+import { PlayErrorBoundary } from './playView/PlayErrorBoundary'
 import { PlayViewScreen } from './playView/PlayViewScreen'
 import { NpcDossierOverlay } from './npcDossier/NpcDossierOverlay'
 import { SettingsOverlay } from './settings/SettingsOverlay'
@@ -193,7 +194,11 @@ function MainSurfaceView(props: {
     )
   }
   if (props.surface.stage === 'play') {
-    return <PlayViewScreen {...props.surface} />
+    return (
+      <PlayErrorBoundary key={`${props.surface.campaignId}:${props.surface.characterId}`}>
+        <PlayViewScreen {...props.surface} />
+      </PlayErrorBoundary>
+    )
   }
   return <EmptyMainPanel knownPeople={props.knownNpcLinks} onOpenNpc={props.onOpenNpc} />
 }

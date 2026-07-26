@@ -4,33 +4,40 @@ import type {
   AskDmHistoryEntry,
   CombatChromeSnapshot,
   D20RollFeedback,
-  PlayContext
+  PlayContext,
+  SubmitPlayActionResult
 } from '../../../shared/play/types'
 import { nextD20OverlayState, type D20OverlayState } from './d20OverlayState'
 import { incomingGlowIds } from './glowState'
 import { parseNarrativeEmphasis, type NarrativeSegment } from './narrativeEmphasis'
+import {
+  applyPlayTurnOutcome,
+  createPlayTurnUiState,
+  reducePlayTurnUi,
+  type PlayTurnUiState
+} from './playTurnState'
 import './playView.css'
 
 type PlayViewScreenProps = PlayContext
 
 export function PlayViewScreen(props: PlayViewScreenProps): JSX.Element {
-  const [scene, setScene] = useState<SceneBlock[]>([])
-  const [social, setSocial] = useState<SocialLine[]>([])
+  const [ui, setUi] = useState(createPlayTurnUiState)
   const [glowIds, setGlowIds] = useState<string[]>([])
-  const [combat, setCombat] = useState<CombatChromeSnapshot>({ active: false })
   const [roll, setRoll] = useState<D20OverlayState>({ phase: 'idle' })
   const [streamingText, setStreamingText] = useState('')
   const [askEntries, setAskEntries] = useState<AskDmHistoryEntry[]>([])
 
   async function submit(text: string): Promise<void> {
-    const previousSocialIds = social.map((line) => line.id)
+    const previousSocialIds = ui.social.map((line) => line.id)
+    setUi((current) => reducePlayTurnUi(current, { type: 'submit-started', text }))
     const result = await window.aiTtrpg.play.submitAction({ ...props, text })
-    setScene(result.scene)
-    setCombat(result.combat)
-    setGlowIds(incomingGlowIds(previousSocialIds, result.social.map((line) => line.id)))
-    await streamLatestSocial(result.social, setStreamingText)
-    setSocial(result.social)
-    showRoll(result.roll, setRoll)
+    await applySubmitResult(result, {
+      previousSocialIds,
+      setUi,
+      setGlowIds,
+      setStreamingText,
+      setRoll
+    })
   }
 
   async function ask(question: string): Promise<void> {
@@ -40,15 +47,62 @@ export function PlayViewScreen(props: PlayViewScreenProps): JSX.Element {
 
   return (
     <main className="main-panel play-view">
-      <CombatChrome combat={combat} />
+      <CombatChrome combat={ui.combat} />
+      <TurnFailureBanner message={ui.turnError} onDismiss={() => setUi((c) => reducePlayTurnUi(c, { type: 'clear-error' }))} />
       <section className="play-view-columns">
-        <SceneColumn scene={scene} />
-        <SocialColumn social={social} streamingText={streamingText} glowIds={glowIds} />
+        <SceneColumn scene={ui.scene} />
+        <SocialColumn social={ui.social} streamingText={streamingText} glowIds={glowIds} />
       </section>
-      <SessionInput onSubmit={submit} />
+      <SessionInput
+        text={ui.draftText}
+        busy={ui.busy}
+        onChange={(text) => setUi((current) => reducePlayTurnUi(current, { type: 'draft', text }))}
+        onSubmit={submit}
+      />
       <AskDmPanel entries={askEntries} onAsk={ask} />
       <D20Overlay state={roll} />
     </main>
+  )
+}
+
+type SubmitResultHandlers = {
+  previousSocialIds: string[]
+  setUi: Dispatch<SetStateAction<PlayTurnUiState>>
+  setGlowIds: Dispatch<SetStateAction<string[]>>
+  setStreamingText: Dispatch<SetStateAction<string>>
+  setRoll: Dispatch<SetStateAction<D20OverlayState>>
+}
+
+async function applySubmitResult(
+  result: SubmitPlayActionResult,
+  handlers: SubmitResultHandlers
+): Promise<void> {
+  if (!result.ok) {
+    handlers.setUi((current) =>
+      reducePlayTurnUi(current, { type: 'submit-failed', message: result.message })
+    )
+    return
+  }
+  handlers.setUi((current) => applyPlayTurnOutcome(current, result))
+  handlers.setGlowIds(
+    incomingGlowIds(handlers.previousSocialIds, result.social.map((line) => line.id))
+  )
+  await streamLatestSocial(result.social, handlers.setStreamingText)
+  showRoll(result.roll, handlers.setRoll)
+}
+
+function TurnFailureBanner(props: {
+  message: string | null
+  onDismiss: () => void
+}): JSX.Element | null {
+  if (props.message === null) return null
+  return (
+    <aside className="play-turn-error" role="status">
+      <p>{props.message}</p>
+      <button type="button" onClick={props.onDismiss}>
+        Dismiss
+      </button>
+    </aside>
   )
 }
 
@@ -83,12 +137,26 @@ function SocialColumn(props: {
   )
 }
 
-function SessionInput(props: { onSubmit: (text: string) => Promise<void> }): JSX.Element {
-  const [text, setText] = useState('')
+function SessionInput(props: {
+  text: string
+  busy: boolean
+  onChange: (text: string) => void
+  onSubmit: (text: string) => Promise<void>
+}): JSX.Element {
   return (
-    <form className="play-input" onSubmit={(event) => void submitForm(event, text, setText, props.onSubmit)}>
-      <input value={text} onChange={(event) => setText(event.target.value)} placeholder="What do you do?" />
-      <button type="submit">Send</button>
+    <form
+      className="play-input"
+      onSubmit={(event) => void submitSession(event, props.text, props.busy, props.onSubmit)}
+    >
+      <input
+        value={props.text}
+        disabled={props.busy}
+        onChange={(event) => props.onChange(event.target.value)}
+        placeholder="What do you do?"
+      />
+      <button type="submit" disabled={props.busy}>
+        Send
+      </button>
     </form>
   )
 }
@@ -156,6 +224,18 @@ function EmphasisSegment(props: { segment: NarrativeSegment }): JSX.Element {
   if (props.segment.emphasis === 'bold') return <strong>{props.segment.text}</strong>
   if (props.segment.emphasis === 'italic') return <em>{props.segment.text}</em>
   return <>{props.segment.text}</>
+}
+
+function submitSession(
+  event: FormEvent,
+  text: string,
+  busy: boolean,
+  submit: (text: string) => Promise<void>
+): Promise<void> {
+  event.preventDefault()
+  const trimmed = text.trim()
+  if (busy || trimmed.length === 0) return Promise.resolve()
+  return submit(trimmed)
 }
 
 function submitForm(

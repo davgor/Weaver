@@ -25,6 +25,7 @@ describe('turnService', () => {
     await expect(
       service.submitAction({ campaignId: 'camp-1', characterId: 'pc-1', text: 'look around' })
     ).resolves.toMatchObject({
+      ok: true,
       scene: [{ id: 'scene-1', text: 'The door opens.' }],
       social: [{ id: 'social-1', text: 'This way.' }],
       roll: { visible: true, label: 'narration check', roll: 12 }
@@ -38,6 +39,7 @@ describe('turnService', () => {
         encounterId: 'enc-1'
       })
     ).resolves.toMatchObject({
+      ok: true,
       combat: { active: true, encounterId: 'enc-1' },
       roll: { visible: true, label: 'combat check', roll: 16 }
     })

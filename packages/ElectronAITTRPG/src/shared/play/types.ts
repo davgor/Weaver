@@ -43,12 +43,22 @@ export type CombatChromeSnapshot =
       turnOrder: CombatChromeCombatant[]
     }
 
-export type SubmitPlayActionResult = {
+export type SubmitPlayActionSuccess = {
+  ok: true
   scene: SceneBlock[]
   social: SocialLine[]
   combat: CombatChromeSnapshot
   roll: D20RollFeedback | null
 }
+
+type SubmitPlayActionFailure = {
+  ok: false
+  kind: 'turn'
+  message: string
+  code: string
+}
+
+export type SubmitPlayActionResult = SubmitPlayActionSuccess | SubmitPlayActionFailure
 
 export type AskDmResult = {
   answer: string

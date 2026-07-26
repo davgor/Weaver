@@ -4,11 +4,11 @@ import { clearNarrationStore, type TextCompleter } from '@weaver/narration-engin
 import { resolveTurn, type ResolveTurnDeps } from '@weaver/dm-engine'
 import { createCurrencyService, clampProposedPrice } from '@weaver/item-engine'
 
-describe('ElectronAITTRPG contract: DMEngine turn routing APIs', () => {
-  beforeEach(() => {
-    clearNarrationStore()
-  })
+beforeEach(() => {
+  clearNarrationStore()
+})
 
+describe('ElectronAITTRPG contract: DMEngine turn routing success paths', () => {
   it('resolves a free-text play turn into scene/social projections without using ask-DM channel', async () => {
     const result = await resolveTurn(
       { channel: 'play', campaignId: 'camp-turn', characterId: 'pc-turn', text: 'look around' },
@@ -52,6 +52,44 @@ describe('ElectronAITTRPG contract: DMEngine turn routing APIs', () => {
 
     expect(result.route).toBe('combat')
     expect(result.resolution).toMatchObject({ kind: 'combat' })
+  })
+})
+
+describe('ElectronAITTRPG contract: DMEngine turn routing failure paths', () => {
+  it('rejects ask-DM channel before routing and does not persist', async () => {
+    const persisted: unknown[] = []
+    await expect(
+      resolveTurn(
+        {
+          channel: 'askDm',
+          campaignId: 'camp-turn',
+          characterId: 'pc-turn',
+          text: 'How does grappling work?'
+        },
+        deps({
+          persist: (record) => {
+            persisted.push(record)
+          }
+        })
+      )
+    ).rejects.toMatchObject({ code: 'DM_TURN_ASK_DM_REJECTED' })
+    expect(persisted).toHaveLength(0)
+  })
+
+  it('does not persist when intent routing returns malformed provider output', async () => {
+    const persisted: unknown[] = []
+    await expect(
+      resolveTurn(
+        { channel: 'play', campaignId: 'camp-turn', characterId: 'pc-turn', text: 'look around' },
+        deps({
+          completer: { completeText: async () => ({ text: 'not-json', backend: 'test' }) },
+          persist: (record) => {
+            persisted.push(record)
+          }
+        })
+      )
+    ).rejects.toMatchObject({ code: 'DM_TURN_ROUTE_INVALID' })
+    expect(persisted).toHaveLength(0)
   })
 })
 
