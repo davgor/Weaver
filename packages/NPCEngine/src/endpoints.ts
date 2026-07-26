@@ -1,6 +1,14 @@
 import { getNpcDossier, upsertDmNpcOpinion } from './dossier.js'
 import { appendNpcMemory, appendWorldFact, queryNpcGroundingContext } from './memory.js'
 import { constructNpc } from './construction.js'
+import {
+  clearNpcLocation,
+  getNpcLocation,
+  isLocationKind,
+  listNpcLocations,
+  setNpcLocation,
+  type SetNpcLocationInput
+} from './location.js'
 import { getNpc } from './store.js'
 import { hydrateNpcCombatTier, setNpcDefeatDisposition } from './combatDisposition.js'
 import {
@@ -72,7 +80,17 @@ export function buildEndpoints(): EngineEndpoint[] {
     endpoint('updateNpcSpeakingStyle', 'Update an NPC speaking style sample', speakingStyleEndpoint),
     endpoint('selectSocialResponders', 'Select deterministic Social turn responders', respondersEndpoint),
     endpoint('requestNpcPortrait', 'Queue an NPC portrait generation request', npcPortraitEndpoint),
-    endpoint('requestCompanionPortrait', 'Queue a companion portrait generation request', companionPortraitEndpoint)
+    endpoint('requestCompanionPortrait', 'Queue a companion portrait generation request', companionPortraitEndpoint),
+    ...locationEndpoints()
+  ]
+}
+
+function locationEndpoints(): EngineEndpoint[] {
+  return [
+    endpoint('setNpcLocation', 'Upsert per-NPC current placement (opaque region/place ids)', setLocationEndpoint),
+    endpoint('getNpcLocation', 'Read per-NPC current placement or null when unset', getLocationEndpoint),
+    endpoint('clearNpcLocation', 'Remove stored per-NPC current placement', clearLocationEndpoint),
+    endpoint('listNpcLocations', 'List current placements, optionally filtered by campaignId', listLocationsEndpoint)
   ]
 }
 
@@ -169,6 +187,73 @@ function npcPortraitEndpoint(payload: unknown) {
 
 function companionPortraitEndpoint(payload: unknown) {
   return requestCompanionPortrait(asPayload<CompanionPortraitHookRequest>(payload, 'requestCompanionPortrait'))
+}
+
+function setLocationEndpoint(payload: unknown) {
+  return setNpcLocation(readSetNpcLocationPayload(payload))
+}
+
+function getLocationEndpoint(payload: unknown) {
+  return getNpcLocation(readString(asRecord(payload, 'getNpcLocation'), 'npcId'))
+}
+
+function clearLocationEndpoint(payload: unknown) {
+  return clearNpcLocation(readString(asRecord(payload, 'clearNpcLocation'), 'npcId'))
+}
+
+function listLocationsEndpoint(payload: unknown) {
+  if (payload === undefined) {
+    return listNpcLocations()
+  }
+  const record = asRecord(payload, 'listNpcLocations')
+  const campaignId = record['campaignId']
+  if (campaignId === undefined) {
+    return listNpcLocations()
+  }
+  if (typeof campaignId !== 'string' || campaignId.trim().length === 0) {
+    throw new Error('Expected campaignId to be a non-empty string')
+  }
+  return listNpcLocations(campaignId)
+}
+
+function readSetNpcLocationPayload(payload: unknown): SetNpcLocationInput {
+  const record = asRecord(payload, 'setNpcLocation')
+  const locationKind = record['locationKind']
+  if (!isLocationKind(locationKind)) {
+    throw new Error('Expected locationKind to be overworld, settlement, or dungeon')
+  }
+  const placeId = optionalString(record, 'placeId')
+  const updatedDay = optionalNumber(record, 'updatedDay')
+  return {
+    npcId: readString(record, 'npcId'),
+    campaignId: readString(record, 'campaignId'),
+    regionId: readString(record, 'regionId'),
+    locationKind,
+    ...(placeId === undefined ? {} : { placeId }),
+    ...(updatedDay === undefined ? {} : { updatedDay })
+  }
+}
+
+function optionalString(record: Record<string, unknown>, key: string): string | undefined {
+  const value = record[key]
+  if (value === undefined) {
+    return undefined
+  }
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    throw new Error(`Expected ${key} to be a non-empty string`)
+  }
+  return value
+}
+
+function optionalNumber(record: Record<string, unknown>, key: string): number | undefined {
+  const value = record[key]
+  if (value === undefined) {
+    return undefined
+  }
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    throw new Error(`Expected ${key} to be a number`)
+  }
+  return value
 }
 
 function asPayload<T>(payload: unknown, label: string): T {

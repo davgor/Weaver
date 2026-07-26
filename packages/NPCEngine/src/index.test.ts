@@ -14,7 +14,11 @@ const EXPECTED_ENDPOINTS = [
   'getNpcDossier',
   'upsertDmNpcOpinion',
   'selectSocialResponders',
-  'requestNpcPortrait'
+  'requestNpcPortrait',
+  'setNpcLocation',
+  'getNpcLocation',
+  'clearNpcLocation',
+  'listNpcLocations'
 ] as const
 
 function resetEndpointTestState() {

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { clearNpcPlaceholderStore, ensureNpcPlaceholders } from '@weaver/civilization-engine'
 import { setCampaignRaceRoster } from '@weaver/character-engine'
-import { clearNpcStore, constructNpc, getNpc } from './index.js'
+import { clearNpcStore, constructNpc, getNpc, getNpcLocation } from './index.js'
 
 function resetConstructionState() {
   clearNpcStore()
@@ -43,6 +43,28 @@ describe('NPC construction and identity', () => {
   it('models animals and constructs as non-speaking without speaking-style fields', () => {
     const [slot] = ensureNpcPlaceholders(placeholderInput())
     expectConstructIsNonSpeaking(slot.slotId)
+  })
+
+  it('seeds current location from the claimed placeholder without changing spawn fields', () => {
+    const [slot] = ensureNpcPlaceholders(placeholderInput())
+    const npc = constructNpc({
+      ...baseConstructFields(slot.slotId),
+      npcId: 'npc-seed-location',
+      alignment: 'neutral',
+      temperament: 'calm',
+      abilityScores: { Body: 10, Agility: 10, Mind: 10, Presence: 10 }
+    })
+
+    expect(npc.regionId).toBe('region-identity')
+    expect(npc.civilizationId).toBe('civ-identity')
+    expect(getNpcLocation('npc-seed-location')).toEqual({
+      npcId: 'npc-seed-location',
+      campaignId: 'campaign-identity',
+      regionId: 'region-identity',
+      placeId: 'civ-identity',
+      locationKind: 'settlement',
+      updatedDay: 0
+    })
   })
 })
 

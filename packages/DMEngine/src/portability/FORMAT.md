@@ -45,7 +45,7 @@ New exports should always write the latest `version` and slice versions. Older b
 | `world` | WorldEngine | World metadata and deterministic seed/bounds |
 | `regional` | RegionalEngine | Region records and cell membership |
 | `civilization` | CivilizationEngine | Settlements, claims, NPC placeholder slots |
-| `npc` | NPCEngine | Campaign NPC records |
+| `npc` | NPCEngine | Campaign NPC records + current locations (sliceVersion 2+) |
 | `enemy` | EnemyEngine | Bestiary ids + generated foe snapshots |
 | `character` | CharacterEngine | Campaign day, death mode, companion ids, locations (sliceVersion 2+) |
 | `item` | ItemEngine | Per-character currency balances |

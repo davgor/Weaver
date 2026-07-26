@@ -1,6 +1,7 @@
 import { getAbilityModifier, listCampaignRaces, selectRace } from '@weaver/character-engine'
 import { claimNpcPlaceholder } from '@weaver/civilization-engine'
 import { assertText } from './errors.js'
+import { setNpcLocation } from './location.js'
 import { requestNpcPortrait } from './portraitHook.js'
 import { saveNpc } from './store.js'
 import type { ConstructNpcInput, NpcIdentityBundle, NpcRecord, NpcSpeciesKind } from './types.js'
@@ -28,8 +29,19 @@ export function constructNpc(input: ConstructNpcInput): NpcRecord {
     ...optionalFlavor(input, identity.nonSpeaking),
     ...optionalSpeakingStyle(input, identity.nonSpeaking)
   })
+  seedCurrentLocation(npc)
   queuePortraitIfRequested(input, npc.npcId)
   return npc
+}
+
+function seedCurrentLocation(npc: NpcRecord): void {
+  setNpcLocation({
+    npcId: npc.npcId,
+    campaignId: npc.campaignId,
+    regionId: npc.regionId,
+    placeId: npc.civilizationId,
+    locationKind: 'settlement'
+  })
 }
 
 function buildIdentity(input: ConstructNpcInput): NpcIdentityBundle {
