@@ -9,5 +9,8 @@ Add a Vitest coverage gate (lines/functions/branches/statements ≥ 80%) and a G
 - [x] `.github/workflows/pr-checks.yml` runs the coverage gate on PRs / main pushes
 - [x] Unit tests lock the coverage script, Vitest thresholds, and CI workflow step
 - [x] Current repo passes the 80% gate (add tests where needed; exclude only non-testable glue if required and document why)
+- [x] Wave 6 low-coverage modules have targeted tests for NPC dossier, settings, guided creation, and campaign normalization branch paths
+- [x] Thin `registerHandlers.ts` IPC wiring is excluded from coverage without excluding business logic
+- [x] `npm run test:coverage` reports branches, lines, functions, and statements at or above 80%
 - [x] `npm test`, `npm run lint`, `npm run build`, `npm run deadcode` pass
-- [ ] `npm run ci:act` pass (`pr-checks.yml` + `deadcode.yml`) — blocked until Docker Desktop is running
+- [ ] Cloud gate: GitHub PR checks (`pr-checks` + `deadcode`) pass and PR marked ready (replaces local `ci:act` in cloud sessions)

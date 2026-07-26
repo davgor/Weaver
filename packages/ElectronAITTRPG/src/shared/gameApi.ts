@@ -1,4 +1,6 @@
 import type { CharacterSheetApi } from './characterSheet/types.js'
+import type { NpcDossierApi } from './npcDossier/types.js'
+import type { SettingsApi } from './settings/types.js'
 
 export type CampaignSummary = {
   id: string
@@ -28,6 +30,8 @@ export type GameApi = {
     list: () => Promise<CampaignSummary[]>
   }
   characterSheet: CharacterSheetApi
+  npcDossier: NpcDossierApi
+  settings: SettingsApi
   app: {
     getVersion: () => Promise<string>
   }

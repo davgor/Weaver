@@ -48,6 +48,12 @@
   cursor: pointer;
 }
 
+.titlebar-settings-button {
+  width: auto;
+  padding: 0 12px;
+  letter-spacing: 0.04em;
+}
+
 .titlebar-button:hover {
   background: var(--surface-hover);
 }

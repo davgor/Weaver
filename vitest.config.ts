@@ -21,6 +21,7 @@ export default defineConfig({
         '**/main/index.ts',
         '**/preload/**',
         '**/renderer/**',
+        '**/registerHandlers.ts',
         '**/logger.ts',
         // Thin engine catalog/IPC wiring (same operational-glue carve-out as Electron main).
         '**/endpoints.ts',
