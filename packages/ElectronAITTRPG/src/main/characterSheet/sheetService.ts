@@ -42,7 +42,7 @@ export function createLiveCharacterSheetPorts(): CharacterSheetPorts {
   })
 }
 
-export function rememberSheetContext(request: LoadCharacterSheetRequest): void {
+function rememberSheetContext(request: LoadCharacterSheetRequest): void {
   activeRequest = {
     characterId: request.characterId,
     characterName: request.characterName,
