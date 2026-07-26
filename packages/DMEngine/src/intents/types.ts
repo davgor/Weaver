@@ -19,6 +19,7 @@ export type CharacterTravelApi = {
 
 export type TravelDestinationLookup = {
   isGenerated: (destinationId: string) => boolean
+  ensureGenerated?: (destinationId: string) => void
 }
 
 export type BuyIntentRequest = {

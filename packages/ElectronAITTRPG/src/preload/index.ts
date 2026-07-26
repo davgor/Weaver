@@ -9,6 +9,7 @@ import type {
   BackgroundStepRequest,
   CampaignCreateDraft,
   CampaignSummary,
+  CampaignHubSnapshot,
   CharacterSheetSnapshot,
   CompanionsStepRequest,
   EquipItemRequest,
@@ -16,11 +17,16 @@ import type {
   GameApi,
   GenerateRegionNpcRequest,
   GuidedIdentityRequest,
+  OpenCampaignRequest,
   LoadCharacterSheetRequest,
   MechanicalSetupRequest,
   OnboardingContextRequest,
   RaceStepRequest,
   RegenerateSectionRequest,
+  AskDmRequest,
+  AskDmResult,
+  SubmitPlayActionRequest,
+  SubmitPlayActionResult,
   StartupBootSnapshot,
   UnequipItemRequest,
   UpdateReviewFieldRequest
@@ -42,7 +48,8 @@ const api: GameApi = {
     getBoot: (): Promise<StartupBootSnapshot> => ipcRenderer.invoke('startup:getBoot')
   },
   campaigns: {
-    list: (): Promise<CampaignSummary[]> => ipcRenderer.invoke('campaigns:list')
+    list: (): Promise<CampaignSummary[]> => ipcRenderer.invoke('campaigns:list'),
+    open: (request: OpenCampaignRequest) => ipcRenderer.invoke('campaigns:open', request)
   },
   campaignCreate: {
     startGeneration: (draft: CampaignCreateDraft) =>
@@ -56,6 +63,16 @@ const api: GameApi = {
       ipcRenderer.invoke('campaignCreate:generateRegionNpc', request),
     confirmReview: () => ipcRenderer.invoke('campaignCreate:confirmReview'),
     assertCanContinue: () => ipcRenderer.invoke('campaignCreate:assertCanContinue')
+  },
+  campaignHub: {
+    load: (campaignId: string): Promise<CampaignHubSnapshot> =>
+      ipcRenderer.invoke('campaignHub:load', campaignId),
+    addCharacter: (campaignId: string) => ipcRenderer.invoke('campaignHub:addCharacter', campaignId)
+  },
+  play: {
+    submitAction: (request: SubmitPlayActionRequest): Promise<SubmitPlayActionResult> =>
+      ipcRenderer.invoke('play:submitAction', request),
+    askDm: (request: AskDmRequest): Promise<AskDmResult> => ipcRenderer.invoke('play:askDm', request)
   },
   onboarding: {
     begin: (request: BeginOnboardingRequest) => ipcRenderer.invoke('onboarding:begin', request),

@@ -48,6 +48,30 @@ describe('travelHandler', () => {
       expect((error as Error).message).toMatch(/place\.missing/)
     }
   })
+
+  it('mints an ungenerated destination through an optional live population hook before travel', () => {
+    const minted: string[] = []
+    const destinations: TravelDestinationLookup = {
+      isGenerated: (destinationId) => minted.includes(destinationId),
+      ensureGenerated: (destinationId) => {
+        minted.push(destinationId)
+      }
+    }
+
+    const result = resolveTravelIntent(
+      { advanceTravelDays },
+      destinations,
+      {
+        campaignId: 'campaign-travel-mint',
+        destinationId: 'place.new-bridge',
+        proposedDays: 2
+      }
+    )
+
+    expect(minted).toEqual(['place.new-bridge'])
+    expect(result.destinationId).toBe('place.new-bridge')
+    expect(result.advance.advancedDays).toBe(2)
+  })
 })
 
 function alwaysGenerated(): TravelDestinationLookup {

@@ -59,6 +59,13 @@ type OnboardingRecord = {
   selections: OnboardingSelectionsSnapshot
 }
 
+export type OnboardingCharacterSummary = {
+  campaignId: string
+  characterId: string
+  characterName: string
+  phase: WizardPhase
+}
+
 export type OnboardingCharacterPorts = {
   pointBuyAbilityScores: typeof pointBuyAbilityScores
   assignStandardArrayAbilityScores: typeof assignStandardArrayAbilityScores
@@ -111,6 +118,8 @@ export type OnboardingService = {
   listRaces: (campaignId: string) => ReturnType<typeof listCampaignRaces>
   listBackgrounds: (campaignId: string) => ReturnType<typeof listCampaignBackgrounds>
   rollAbilityScores: () => ReturnType<typeof rollAbilityScoreDraft>
+  listCharacters: (campaignId: string) => OnboardingCharacterSummary[]
+  listCompletedCharacters: (campaignId: string) => OnboardingCharacterSummary[]
 }
 
 const records = new Map<string, OnboardingRecord>()
@@ -179,7 +188,9 @@ export function createOnboardingService(ports: OnboardingPorts): OnboardingServi
     listArchetypes: () => ports.character.listArchetypes(),
     listRaces: (campaignId) => ports.character.listCampaignRaces(campaignId),
     listBackgrounds: (campaignId) => ports.character.listCampaignBackgrounds(campaignId),
-    rollAbilityScores: () => ports.character.rollAbilityScoreDraft()
+    rollAbilityScores: () => ports.character.rollAbilityScoreDraft(),
+    listCharacters: (campaignId) => listOnboardingCharacters(campaignId),
+    listCompletedCharacters: (campaignId) => listCompletedOnboardingCharacters(campaignId)
   }
 }
 
@@ -231,6 +242,16 @@ export function goBackOnboarding(
 
 export function clearOnboardingStore(): void {
   records.clear()
+}
+
+export function listOnboardingCharacters(campaignId: string): OnboardingCharacterSummary[] {
+  return [...records.values()]
+    .filter((record) => record.campaignId === campaignId)
+    .map(toCharacterSummary)
+}
+
+export function listCompletedOnboardingCharacters(campaignId: string): OnboardingCharacterSummary[] {
+  return listOnboardingCharacters(campaignId).filter((record) => record.phase === 'complete')
 }
 
 function beginOnboardingRecord(request: BeginOnboardingRequest): OnboardingSnapshot {
@@ -432,6 +453,15 @@ function resolveAbilityScores(
 function snapshotFor(record: OnboardingRecord): OnboardingSnapshot {
   const guided = getGuidedCreationState(record.characterId)
   return snapshotWithGuidedState(record, guided)
+}
+
+function toCharacterSummary(record: OnboardingRecord): OnboardingCharacterSummary {
+  return {
+    campaignId: record.campaignId,
+    characterId: record.characterId,
+    characterName: record.characterName,
+    phase: record.phase
+  }
 }
 
 function snapshotWithGuidedState(

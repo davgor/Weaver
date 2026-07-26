@@ -59,6 +59,10 @@ export type DefeatDispositionSource = {
   actorId: string
 }
 
+export const NPC_WORLD_STATUSES = ['active', 'killed', 'retired', 'vanished'] as const
+export type NpcWorldStatus = (typeof NPC_WORLD_STATUSES)[number]
+export type NpcWorldMutation = { kind: Exclude<NpcWorldStatus, 'active'> }
+
 export type NpcPortrait = {
   imagePath: string
   provider: ImageGenerationSettings['provider']
@@ -77,6 +81,7 @@ export type NpcRecord = {
   speciesKind: NpcSpeciesKind
   combatStats: NpcCombatStats
   factionIds: string[]
+  worldStatus?: NpcWorldStatus
   displayName?: string
   dialogueFlavor?: string
   speakingStyle?: SpeakingStyle

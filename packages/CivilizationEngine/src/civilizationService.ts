@@ -27,7 +27,8 @@ import type {
   PopulationAggregate,
   PopulationChange,
   ProposeCivilizationsOpts,
-  RegionCivilizationSummary
+  RegionCivilizationSummary,
+  SettlementMutation
 } from './types.js'
 
 export type CivilizationService = {
@@ -45,6 +46,11 @@ export type CivilizationService = {
     worldId: string,
     civilizationId: string,
     change: PopulationChange
+  ) => CivilizationRecord
+  applySettlementMutation: (
+    worldId: string,
+    civilizationId: string,
+    mutation: SettlementMutation
   ) => CivilizationRecord
   reconcilePopulation: (worldId: string, regionId?: string) => PopulationAggregate
   listNpcPlaceholders: (worldId: string, civilizationId: string) => NpcPlaceholderSlot[]
@@ -101,7 +107,8 @@ function toSummary(record: CivilizationRecord): CivilizationSummary {
     npcSlotCount: record.npcSlotCount,
     npcSlotsAssigned: record.npcSlotsAssigned,
     bounds: { ...record.bounds },
-    statsVersion: record.statsVersion
+    statsVersion: record.statsVersion,
+    mutationStatus: record.mutationStatus ?? 'intact'
   }
 }
 
@@ -124,6 +131,7 @@ function recordFromCandidate(
     bounds: { ...candidate.bounds },
     seedSalt: candidate.seedSalt,
     population: candidate.population,
+    mutationStatus: existing?.mutationStatus ?? 'intact',
     npcSlotCount: candidate.npcSlots.length,
     npcSlotsAssigned: slotsAssigned,
     statsVersion: candidate.statsVersion,
@@ -264,6 +272,24 @@ class DefaultCivilizationService implements CivilizationService {
       return owner?.civilizationId === civilizationId
     }))
     this.ensureNpcPlaceholders(worldId, civilizationId)
+    return this.store.getCivilization(worldId, civilizationId) ?? updated
+  }
+
+  applySettlementMutation(
+    worldId: string,
+    civilizationId: string,
+    mutation: SettlementMutation
+  ): CivilizationRecord {
+    requireWorldId(worldId)
+    const record = this.store.getCivilization(worldId, civilizationId)
+    if (!record) throw new Error(`Civilization not found: ${civilizationId}`)
+    const updated = {
+      ...record,
+      mutationStatus: settlementStatus(record.mutationStatus, mutation),
+      population: settlementPopulation(record.population, mutation),
+      updatedAt: nowIso()
+    }
+    this.store.saveCivilization(updated, this.cellsForCivilization(worldId, civilizationId))
     return this.store.getCivilization(worldId, civilizationId) ?? updated
   }
 
@@ -450,4 +476,20 @@ class DefaultCivilizationService implements CivilizationService {
 
 export function createCivilizationService(options: CivilizationServiceOptions): CivilizationService {
   return new DefaultCivilizationService(options)
+}
+
+function settlementStatus(
+  current: CivilizationRecord['mutationStatus'] | undefined,
+  mutation: SettlementMutation
+): NonNullable<CivilizationRecord['mutationStatus']> {
+  if (mutation.kind === 'burned') return current === 'destroyed' ? 'destroyed' : 'burned'
+  if (mutation.kind === 'destroyed') return 'destroyed'
+  return current ?? 'intact'
+}
+
+function settlementPopulation(current: number, mutation: SettlementMutation): number {
+  if (mutation.population !== undefined) {
+    return applyPopulationChange(current, mutation.population)
+  }
+  return mutation.kind === 'destroyed' ? 0 : current
 }

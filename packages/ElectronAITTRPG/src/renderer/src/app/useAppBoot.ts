@@ -13,6 +13,7 @@ const BOOTING: StartupBootSnapshot = {
 export function useAppBoot(): {
   boot: StartupBootSnapshot
   campaigns: CampaignSummary[]
+  refreshCampaigns: () => Promise<void>
 } {
   const [boot, setBoot] = useState<StartupBootSnapshot>(BOOTING)
   const [campaigns, setCampaigns] = useState<CampaignSummary[]>([])
@@ -24,7 +25,7 @@ export function useAppBoot(): {
       if (cancelled) return
       setBoot(nextBoot)
       if (nextBoot.phase !== 'ready') return
-      const list = await window.aiTtrpg.campaigns.list()
+      const list = await loadCampaigns()
       if (!cancelled) setCampaigns(list)
     }
     void load()
@@ -33,5 +34,9 @@ export function useAppBoot(): {
     }
   }, [])
 
-  return { boot, campaigns }
+  return { boot, campaigns, refreshCampaigns: async () => setCampaigns(await loadCampaigns()) }
+}
+
+function loadCampaigns(): Promise<CampaignSummary[]> {
+  return window.aiTtrpg.campaigns.list()
 }

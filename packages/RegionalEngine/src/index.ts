@@ -7,6 +7,8 @@ export type {
   LandTypeHistogram,
   RegionCandidate,
   RegionCellRef,
+  RegionMutation,
+  RegionMutationStatus,
   RegionRecord,
   RegionScope,
   RegionStats,
@@ -16,7 +18,7 @@ export type {
   RegionalWorldReader,
   WorldMeta
 } from './types.js'
-export { REGION_STATS_VERSION, regionSummary } from './types.js'
+export { REGION_MUTATION_STATUSES, REGION_STATS_VERSION, regionSummary } from './types.js'
 export { createRegionalService } from './regionService.js'
 export { createRegionStore } from './store/regionStore.js'
 export { realizeRegionNaming, RegionNamingError } from './regionNaming.js'

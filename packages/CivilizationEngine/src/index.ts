@@ -23,13 +23,16 @@ export type {
   RegionRecord,
   RegionSummary,
   SettlementKind,
+  SettlementMutation,
+  SettlementMutationStatus,
   SparseOverlay,
   WorldMeta
 } from './types.js'
 export {
   CIVILIZATION_STATS_VERSION,
   LAND_USES,
-  SETTLEMENT_KINDS
+  SETTLEMENT_KINDS,
+  SETTLEMENT_MUTATION_STATUSES
 } from './types.js'
 export { OVERLAY_KEYS, isOverlayKey, overlaysFromDraft, parseLandUse } from './overlayContract.js'
 export {

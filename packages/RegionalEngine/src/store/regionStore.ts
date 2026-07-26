@@ -1,7 +1,14 @@
 import Database from 'better-sqlite3'
 import { mkdirSync } from 'node:fs'
 import { join } from 'node:path'
-import type { Aabb, LandType, LandTypeHistogram, RegionCellRef, RegionRecord } from '../types.js'
+import type {
+  Aabb,
+  LandType,
+  LandTypeHistogram,
+  RegionCellRef,
+  RegionMutationStatus,
+  RegionRecord
+} from '../types.js'
 
 type SqliteDb = Database.Database
 type SqlValue = string | number | null
@@ -10,6 +17,7 @@ type RegionRow = {
   regionId: string
   worldId: string
   sourceExpansionId: string | null
+  mutationStatus: RegionMutationStatus
   dominantLandType: LandType
   landTypeHistogram: string
   averageElevation: number
@@ -55,6 +63,7 @@ function ensureSchema(db: SqliteDb): void {
       regionId TEXT PRIMARY KEY,
       worldId TEXT NOT NULL,
       sourceExpansionId TEXT,
+      mutationStatus TEXT NOT NULL DEFAULT 'intact',
       dominantLandType TEXT NOT NULL,
       landTypeHistogram TEXT NOT NULL,
       averageElevation REAL NOT NULL,
@@ -105,6 +114,9 @@ function ensureNamingColumns(db: SqliteDb): void {
   if (!columns.includes('namingRealizedAt')) {
     db.exec('ALTER TABLE regions ADD COLUMN namingRealizedAt TEXT')
   }
+  if (!columns.includes('mutationStatus')) {
+    db.exec(`ALTER TABLE regions ADD COLUMN mutationStatus TEXT NOT NULL DEFAULT 'intact'`)
+  }
 }
 
 function openDb(dataRoot: string, worldId: string): SqliteDb {
@@ -132,6 +144,7 @@ function rowToRegion(row: RegionRow): RegionRecord {
   const record: RegionRecord = {
     regionId: row.regionId,
     worldId: row.worldId,
+    mutationStatus: row.mutationStatus,
     dominantLandType: row.dominantLandType,
     landTypeHistogram: parseHistogram(row.landTypeHistogram),
     averageElevation: row.averageElevation,
@@ -161,6 +174,7 @@ function regionParams(region: RegionRecord): Record<string, SqlValue> {
     regionId: region.regionId,
     worldId: region.worldId,
     sourceExpansionId: region.sourceExpansionId ?? null,
+    mutationStatus: region.mutationStatus ?? 'intact',
     dominantLandType: region.dominantLandType,
     landTypeHistogram: JSON.stringify(region.landTypeHistogram),
     averageElevation: region.averageElevation,
@@ -211,8 +225,14 @@ export type RegionStore = {
 
 function insertRegion(db: SqliteDb, region: RegionRecord): void {
   db.prepare(
-    `INSERT OR REPLACE INTO regions VALUES
-    (@regionId, @worldId, @sourceExpansionId, @dominantLandType, @landTypeHistogram,
+    `INSERT OR REPLACE INTO regions (
+      regionId, worldId, sourceExpansionId, mutationStatus, dominantLandType,
+      landTypeHistogram, averageElevation, minElevation, maxElevation,
+      waterContent, isOcean, touchesOcean, isLandlocked, cellCount,
+      minX, minY, maxX, maxY, centroidX, centroidY, statsVersion,
+      extraStats, displayName, history, namingRealizedAt, createdAt, updatedAt
+    ) VALUES
+    (@regionId, @worldId, @sourceExpansionId, @mutationStatus, @dominantLandType, @landTypeHistogram,
      @averageElevation, @minElevation, @maxElevation, @waterContent, @isOcean,
      @touchesOcean, @isLandlocked, @cellCount, @minX, @minY, @maxX, @maxY,
      @centroidX, @centroidY, @statsVersion, @extraStats, @displayName, @history,

@@ -129,6 +129,28 @@ export type {
   StageOutput
 } from './campaignGen/types.js'
 
+export {
+  emitWorldMutation
+} from './worldMutations/index.js'
+export type {
+  NpcWorldMutationRequest,
+  RegionWorldMutation,
+  SettlementWorldMutation,
+  WorldMutation,
+  WorldMutationDeps,
+  WorldMutationResult
+} from './worldMutations/index.js'
+
+export {
+  clearPlaceProposalRegistry,
+  resolvePlaceProposal
+} from './playPopulation/index.js'
+export type {
+  LivePopulationDeps,
+  PlaceProposal,
+  ResolvedPlaceProposal
+} from './playPopulation/index.js'
+
 // Turn routing (epic 053).
 export {
   TurnRoutingError,

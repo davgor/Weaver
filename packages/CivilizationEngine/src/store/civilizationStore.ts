@@ -2,7 +2,13 @@ import Database from 'better-sqlite3'
 import { mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import type { NpcPlaceholderSlot, NpcPlaceholderStatus, NpcRoleHint } from '../npcPlaceholders.js'
-import type { Aabb, CivilizationRecord, Point, SettlementKind } from '../types.js'
+import type {
+  Aabb,
+  CivilizationRecord,
+  Point,
+  SettlementKind,
+  SettlementMutationStatus
+} from '../types.js'
 
 type SqliteDb = Database.Database
 
@@ -21,6 +27,7 @@ type CivRow = {
   centroidY: number | null
   seedSalt: number
   population: number
+  mutationStatus: SettlementMutationStatus
   npcSlotCount: number
   npcSlotsAssigned: number
   statsVersion: number
@@ -95,6 +102,7 @@ function createCivilizationTables(db: SqliteDb): void {
       centroidY REAL,
       seedSalt INTEGER NOT NULL,
       population INTEGER NOT NULL,
+      mutationStatus TEXT NOT NULL DEFAULT 'intact',
       npcSlotCount INTEGER NOT NULL,
       npcSlotsAssigned INTEGER NOT NULL,
       statsVersion INTEGER NOT NULL,
@@ -142,6 +150,9 @@ function ensureNamingColumns(db: SqliteDb): void {
   if (!columns.includes('namingRealizedAt')) {
     db.exec('ALTER TABLE civilizations ADD COLUMN namingRealizedAt TEXT')
   }
+  if (!columns.includes('mutationStatus')) {
+    db.exec(`ALTER TABLE civilizations ADD COLUMN mutationStatus TEXT NOT NULL DEFAULT 'intact'`)
+  }
 }
 
 function openDb(dataRoot: string, worldId: string): SqliteDb {
@@ -175,6 +186,7 @@ function rowToRecord(row: CivRow): CivilizationRecord {
     bounds: { minX: row.minX, minY: row.minY, maxX: row.maxX, maxY: row.maxY },
     seedSalt: row.seedSalt,
     population: row.population,
+    mutationStatus: row.mutationStatus,
     npcSlotCount: row.npcSlotCount,
     npcSlotsAssigned: row.npcSlotsAssigned,
     statsVersion: row.statsVersion,
@@ -208,10 +220,15 @@ function rowToSlot(row: SlotRow): NpcPlaceholderSlot {
 
 function insertCivilization(db: SqliteDb, record: CivilizationRecord): void {
   db.prepare(
-    `INSERT INTO civilizations VALUES (
+    `INSERT INTO civilizations (
+      civilizationId, worldId, regionId, kind, originX, originY,
+      minX, minY, maxX, maxY, centroidX, centroidY, seedSalt,
+      population, mutationStatus, npcSlotCount, npcSlotsAssigned, statsVersion,
+      extraStats, displayName, history, namingRealizedAt, createdAt, updatedAt
+    ) VALUES (
       @civilizationId, @worldId, @regionId, @kind, @originX, @originY,
       @minX, @minY, @maxX, @maxY, @centroidX, @centroidY, @seedSalt,
-      @population, @npcSlotCount, @npcSlotsAssigned, @statsVersion,
+      @population, @mutationStatus, @npcSlotCount, @npcSlotsAssigned, @statsVersion,
       @extraStats, @displayName, @history, @namingRealizedAt, @createdAt, @updatedAt
     )
     ON CONFLICT(civilizationId) DO UPDATE SET
@@ -219,7 +236,8 @@ function insertCivilization(db: SqliteDb, record: CivilizationRecord): void {
       originY=excluded.originY, minX=excluded.minX, minY=excluded.minY,
       maxX=excluded.maxX, maxY=excluded.maxY, centroidX=excluded.centroidX,
       centroidY=excluded.centroidY, seedSalt=excluded.seedSalt,
-      population=excluded.population, npcSlotCount=excluded.npcSlotCount,
+      population=excluded.population, mutationStatus=excluded.mutationStatus,
+      npcSlotCount=excluded.npcSlotCount,
       npcSlotsAssigned=excluded.npcSlotsAssigned, statsVersion=excluded.statsVersion,
       extraStats=excluded.extraStats, displayName=excluded.displayName,
       history=excluded.history, namingRealizedAt=excluded.namingRealizedAt,
@@ -239,6 +257,7 @@ function insertCivilization(db: SqliteDb, record: CivilizationRecord): void {
     centroidY: record.centroid?.y ?? null,
     seedSalt: record.seedSalt,
     population: record.population,
+    mutationStatus: record.mutationStatus ?? 'intact',
     npcSlotCount: record.npcSlotCount,
     npcSlotsAssigned: record.npcSlotsAssigned,
     statsVersion: record.statsVersion,
