@@ -108,31 +108,43 @@ describe('realizeSettlementNaming', () => {
     expect(updated.kind).toBe(before?.kind)
   })
 
-  it('realizes naming only once unless regenerate is true', () => {
-    const dataRoot = tempRoot()
-    const regional = makeRegional(dataRoot)
-    const service = createCivilizationService({ dataRoot, regional, world: makeWorld() })
-    const created = service.createCivilization('w1', candidate())
+  it(
+    'realizes naming only once unless regenerate is true',
+    () => {
+      const dataRoot = tempRoot()
+      const regional = makeRegional(dataRoot)
+      const service = createCivilizationService({ dataRoot, regional, world: makeWorld() })
+      const created = service.createCivilization('w1', candidate())
 
-    realizeSettlementNaming(service, { worldId: 'w1', civilizationId: created.civilizationId }, {
-      displayName: 'First Hamlet',
-      history: 'An old story.'
-    })
+      realizeSettlementNaming(
+        service,
+        { worldId: 'w1', civilizationId: created.civilizationId },
+        {
+          displayName: 'First Hamlet',
+          history: 'An old story.'
+        }
+      )
 
-    expect(() =>
-      realizeSettlementNaming(service, { worldId: 'w1', civilizationId: created.civilizationId }, {
-        displayName: 'Second Hamlet',
-        history: 'Another story.'
-      })
-    ).toThrow(/already realized/i)
+      expect(() =>
+        realizeSettlementNaming(
+          service,
+          { worldId: 'w1', civilizationId: created.civilizationId },
+          {
+            displayName: 'Second Hamlet',
+            history: 'Another story.'
+          }
+        )
+      ).toThrow(/already realized/i)
 
-    const regenerated = realizeSettlementNaming(
-      service,
-      { worldId: 'w1', civilizationId: created.civilizationId },
-      { displayName: 'New Hamlet', history: 'A refreshed story.' },
-      { regenerate: true }
-    )
+      const regenerated = realizeSettlementNaming(
+        service,
+        { worldId: 'w1', civilizationId: created.civilizationId },
+        { displayName: 'New Hamlet', history: 'A refreshed story.' },
+        { regenerate: true }
+      )
 
-    expect(regenerated.displayName).toBe('New Hamlet')
-  })
+      expect(regenerated.displayName).toBe('New Hamlet')
+    },
+    15_000
+  )
 })

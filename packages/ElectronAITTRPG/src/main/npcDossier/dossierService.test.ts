@@ -62,7 +62,13 @@ function makeDossier(npcId: string): NpcDossier {
     regionId: 'region-1',
     civilizationId: 'civ-1',
     traits: {
-      race: { raceId: 'human', name: 'Human' },
+      race: {
+        campaignId: 'campaign-1',
+        characterId: npcId,
+        raceId: 'human',
+        name: 'Human',
+        lore: 'Adaptable road folk.'
+      },
       alignment: 'neutral',
       temperament: 'steady',
       nonSpeaking: false,

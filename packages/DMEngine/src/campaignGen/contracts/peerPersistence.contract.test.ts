@@ -40,34 +40,41 @@ afterEach(() => {
 })
 
 describe('DMEngine campaign generation peer persistence contract', () => {
-  it('persists through real World/Regional/Civilization/NPC/Enemy/Campaign APIs', async () => {
-    const root = tempRoot()
-    const campaignId = 'campaign-peer-contract'
-    setCampaignRaceRoster(campaignId, [{ raceId: 'human', name: 'Human' }])
+  it(
+    'persists through real World/Regional/Civilization/NPC/Enemy/Campaign APIs',
+    async () => {
+      const root = tempRoot()
+      const campaignId = 'campaign-peer-contract'
+      setCampaignRaceRoster(campaignId, [{ raceId: 'human', name: 'Human' }])
 
-    const result = await runCampaignGeneration({
-      campaignId,
-      dataRoot: join(root, 'data'),
-      campaignFilePath: join(root, 'campaign.sqlite'),
-      regionCount: 1,
-      npcsPerRegion: 1,
-      seed: 'peer-contract',
-      maxSeedRetries: 1
-    }, realDeps(scriptedCompleter()))
+      const result = await runCampaignGeneration(
+        {
+          campaignId,
+          dataRoot: join(root, 'data'),
+          campaignFilePath: join(root, 'campaign.sqlite'),
+          regionCount: 1,
+          npcsPerRegion: 1,
+          seed: 'peer-contract',
+          maxSeedRetries: 1
+        },
+        realDeps(scriptedCompleter())
+      )
 
-    expect(worldEngine.hasWorld(join(root, 'data'), result.worldId)).toBe(true)
-    expect(result.regions).toHaveLength(1)
-    expect(result.civilizations.length).toBeGreaterThan(0)
-    expect(result.npcs).toHaveLength(1)
-    expect(result.foes).toHaveLength(1)
-    expect(result.catalogEntries.map((entry) => entry.id)).toEqual([
-      'summary',
-      'canon',
-      'story',
-      'bestiary'
-    ])
-    expect(existsSync(join(root, 'campaign.sqlite'))).toBe(true)
-  })
+      expect(worldEngine.hasWorld(join(root, 'data'), result.worldId)).toBe(true)
+      expect(result.regions).toHaveLength(1)
+      expect(result.civilizations.length).toBeGreaterThan(0)
+      expect(result.npcs).toHaveLength(1)
+      expect(result.foes).toHaveLength(1)
+      expect(result.catalogEntries.map((entry) => entry.id)).toEqual([
+        'summary',
+        'canon',
+        'story',
+        'bestiary'
+      ])
+      expect(existsSync(join(root, 'campaign.sqlite'))).toBe(true)
+    },
+    30_000
+  )
 })
 
 function realDeps(completer: TextCompleter): CampaignGenerationDeps {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { LlmBackend } from '@weaver/llm-engine'
+import { DEFAULT_MODEL, type LlmStatus } from '@weaver/llm-engine'
 import { buildDefaultSettingsSnapshot } from '../../shared/settings/types.js'
 import { checkSettingsConnection } from './checkConnection.js'
 import type { LocalLlmStatusPort, TextCompletionClientFactory } from './settingsPorts.js'
@@ -114,11 +114,10 @@ describe('checkSettingsConnection local provider failures', () => {
     const result = await checkSettingsConnection(
       {
         llmEngine: {
+          ...localLlm('ready', 'cpu'),
           health: () => {
             throw new Error('runtime missing')
-          },
-          getStatus: async () => ({ phase: 'ready' }),
-          resolveBackend: async () => 'cpu'
+          }
         }
       },
       buildDefaultSettingsSnapshot(),
@@ -133,10 +132,22 @@ describe('checkSettingsConnection local provider failures', () => {
   })
 })
 
-function localLlm(phase: string, backend: LlmBackend): LocalLlmStatusPort {
+function localLlm(phase: LlmStatus['phase'], backend: 'vulkan' | 'cpu'): LocalLlmStatusPort {
   return {
-    health: () => ({ ok: true }),
-    getStatus: async () => ({ phase }),
+    health: () => ({ ok: true, package: '@weaver/llm-engine', version: '0.1.0' }),
+    getStatus: async () => statusFor(phase, backend),
     resolveBackend: async () => backend
+  }
+}
+
+function statusFor(phase: LlmStatus['phase'], backend: 'vulkan' | 'cpu'): LlmStatus {
+  return {
+    phase,
+    backend,
+    model: DEFAULT_MODEL,
+    modelPath: null,
+    error: null,
+    bytesDownloaded: 0,
+    bytesTotal: null
   }
 }
