@@ -1,5 +1,7 @@
 const REQUIRED_ENGINE_IDS = [
   'CombatEngine',
+  'ActionEngine',
+  'CharacterEngine',
   'WorldEngine',
   'RegionalEngine',
   'CivilizationEngine',

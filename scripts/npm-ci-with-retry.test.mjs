@@ -22,4 +22,25 @@ describe('npm-ci-with-retry', () => {
     expect(result.attempts).toBe(2)
     expect(calls).toBe(2)
   })
+
+  it('continues retrying when node_modules cleanup throws', async () => {
+    let calls = 0
+    const logs = []
+    const result = await runNpmCiWithRetry({
+      attempts: 3,
+      delayMs: 1,
+      runCommand: async () => {
+        calls += 1
+        return { code: calls === 3 ? 0 : 1 }
+      },
+      rmNodeModules: async () => {
+        throw new Error('EPERM: operation not permitted')
+      },
+      sleep: async () => {},
+      log: (msg) => logs.push(msg)
+    })
+    expect(result.attempts).toBe(3)
+    expect(calls).toBe(3)
+    expect(logs.some((msg) => msg.includes('cleanup warning'))).toBe(true)
+  })
 })

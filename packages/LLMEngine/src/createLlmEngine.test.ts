@@ -1,7 +1,7 @@
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, expectTypeOf, it, vi } from 'vitest'
 import { createLlmEngine } from './createLlmEngine.js'
 import { DEFAULT_MODEL } from './modelCatalog.js'
-import type { CreateRuntime, FileStore } from './types.js'
+import type { CreateRuntime, FileStore, TextRequest, TextResponse } from './types.js'
 
 function memoryFiles(existing = new Set<string>()): FileStore {
   return {
@@ -13,13 +13,27 @@ function memoryFiles(existing = new Set<string>()): FileStore {
 
 function stubRuntime(): CreateRuntime {
   return async () => ({
-    complete: async () => ({ text: '', backend: 'cpu' }),
+    completeText: async () => ({ text: '', backend: 'cpu' }),
     dispose: async () => undefined
   })
 }
 
-describe('createLlmEngine — complete gate', () => {
-  it('refuses complete when the model is not installed', async () => {
+describe('createLlmEngine — completeText contract', () => {
+  it('publishes only prompt/context/maxTokens in and text/backend out', () => {
+    expectTypeOf<TextRequest>().toEqualTypeOf<{
+      prompt: string
+      context?: string
+      maxTokens?: number
+    }>()
+    expectTypeOf<TextResponse>().toEqualTypeOf<{
+      text: string
+      backend: 'vulkan' | 'cpu'
+    }>()
+  })
+})
+
+describe('createLlmEngine — completeText install gate', () => {
+  it('refuses completeText when the model is not installed', async () => {
     const createRuntime = vi.fn<CreateRuntime>()
     const engine = createLlmEngine({
       dataDir: '/data',
@@ -29,15 +43,21 @@ describe('createLlmEngine — complete gate', () => {
       createRuntime
     })
     await expect(
-      engine.complete({ messages: [{ role: 'user', content: 'hi' }] })
+      engine.completeText({ prompt: 'hi' })
     ).rejects.toThrow(/not installed/i)
     expect(createRuntime).not.toHaveBeenCalled()
   })
+})
 
-  it('completes through the injected runtime after install', async () => {
+describe('createLlmEngine — completeText runtime', () => {
+  it('completes raw text through the injected runtime after install', async () => {
     const existing = new Set<string>()
+    let captured: TextRequest | null = null
     const createRuntime = vi.fn<CreateRuntime>(async ({ backend }) => ({
-      complete: async () => ({ text: 'hello from fake', backend }),
+      completeText: async (request) => {
+        captured = request
+        return { text: 'hello from fake', backend }
+      },
       dispose: async () => undefined
     }))
     const engine = createLlmEngine({
@@ -54,10 +74,19 @@ describe('createLlmEngine — complete gate', () => {
 
     expect((await engine.getStatus()).phase).toBe('not_installed')
     await engine.install()
-    const reply = await engine.complete({
-      messages: [{ role: 'user', content: 'ping' }]
+    const reply = await engine.completeText({
+      prompt: 'ping',
+      context: 'plain setting notes',
+      maxTokens: 24
     })
     expect(reply).toEqual({ text: 'hello from fake', backend: 'vulkan' })
+    expect(Object.keys(reply).sort()).toEqual(['backend', 'text'])
+    expect(captured).toEqual({
+      prompt: 'ping',
+      context: 'plain setting notes',
+      maxTokens: 24
+    })
+    expect(Object.keys(captured ?? {}).sort()).toEqual(['context', 'maxTokens', 'prompt'])
     expect(createRuntime).toHaveBeenCalledWith({
       modelPath: `/data/models/${DEFAULT_MODEL.filename}`,
       backend: 'vulkan'
@@ -65,8 +94,51 @@ describe('createLlmEngine — complete gate', () => {
   })
 })
 
+describe('createLlmEngine — deprecated complete wrapper', () => {
+  it('keeps deprecated complete as a thin chat-to-text wrapper', async () => {
+    const existing = new Set<string>()
+    let captured: TextRequest | null = null
+    const createRuntime = vi.fn<CreateRuntime>(async ({ backend }) => ({
+      completeText: async (request) => {
+        captured = request
+        return { text: 'wrapped', backend }
+      },
+      dispose: async () => undefined
+    }))
+    const engine = createLlmEngine({
+      dataDir: '/data',
+      files: memoryFiles(existing),
+      downloader: {
+        download: async (_url, dest) => {
+          existing.add(dest)
+        }
+      },
+      probe: { supportsVulkan: () => false },
+      createRuntime
+    })
+
+    await engine.install()
+    await expect(
+      engine.complete({
+        messages: [
+          { role: 'system', content: 'world facts only' },
+          { role: 'user', content: 'first request' },
+          { role: 'assistant', content: 'prior reply' },
+          { role: 'user', content: 'latest request' }
+        ],
+        maxTokens: 12
+      })
+    ).resolves.toEqual({ text: 'wrapped', backend: 'cpu' })
+    expect(captured).toEqual({
+      prompt: 'latest request',
+      context: 'world facts only',
+      maxTokens: 12
+    })
+  })
+})
+
 describe('createLlmEngine — admin endpoints', () => {
-  it('exposes admin endpoints including status and model spec', async () => {
+  it('exposes admin endpoints including install and completeText', async () => {
     const engine = createLlmEngine({
       dataDir: '/data',
       files: memoryFiles(),
@@ -76,14 +148,24 @@ describe('createLlmEngine — admin endpoints', () => {
     })
     const names = engine.listEndpoints().map((e) => e.name)
     expect(names).toEqual(
-      expect.arrayContaining(['health', 'describeRole', 'getStatus', 'getModelSpec', 'resolveBackend'])
+      expect.arrayContaining([
+        'health',
+        'describeRole',
+        'getStatus',
+        'install',
+        'getModelSpec',
+        'resolveBackend',
+        'completeText'
+      ])
     )
     await expect(engine.call('resolveBackend')).resolves.toBe('cpu')
     await expect(engine.call('getModelSpec')).resolves.toMatchObject({
       id: DEFAULT_MODEL.id
     })
   })
+})
 
+describe('createLlmEngine — admin payload compatibility', () => {
   it('accepts an optional payload without breaking existing endpoints', async () => {
     const engine = createLlmEngine({
       dataDir: '/data',
@@ -94,6 +176,44 @@ describe('createLlmEngine — admin endpoints', () => {
     })
     await expect(engine.call('getModelSpec', { probe: true })).resolves.toMatchObject({
       id: DEFAULT_MODEL.id
+    })
+  })
+})
+
+describe('createLlmEngine — admin completeText smoke', () => {
+  it('exercises completeText through the admin call path', async () => {
+    const existing = new Set<string>()
+    let captured: TextRequest | null = null
+    const engine = createLlmEngine({
+      dataDir: '/data',
+      files: memoryFiles(existing),
+      downloader: {
+        download: async (_url, dest) => {
+          existing.add(dest)
+        }
+      },
+      probe: { supportsVulkan: () => false },
+      createRuntime: async ({ backend }) => ({
+        completeText: async (request) => {
+          captured = request
+          return { text: 'admin smoke', backend }
+        },
+        dispose: async () => undefined
+      })
+    })
+
+    await expect(engine.call('install')).resolves.toMatchObject({ phase: 'ready' })
+    await expect(
+      engine.call('completeText', {
+        prompt: 'Say hello',
+        context: 'Admin smoke test',
+        maxTokens: 8
+      })
+    ).resolves.toEqual({ text: 'admin smoke', backend: 'cpu' })
+    expect(captured).toEqual({
+      prompt: 'Say hello',
+      context: 'Admin smoke test',
+      maxTokens: 8
     })
   })
 })

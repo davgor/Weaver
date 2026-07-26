@@ -4,20 +4,9 @@
 
 Epic ids are grouped by package/theme (e.g. `021`-`031` = CharacterEngine), **not** by dependency order. Picking tickets in numeric order alone will hand you one before something it depends on exists. Work wave by wave instead: everything in a wave has no unmet dependency on anything else still pending, so tickets within a wave can run in any order (including in parallel).
 
-11 waves, 67 pending epics.
+10 waves, 59 pending epics.
 
 ## Wave 1
-
-- `012-WorldEngine-Chunked-Map-Store`
-- `019-LLMEngine-Text-Passthrough-API`
-- `020-Repo-Cve-Dependency-Fixes` _(in-progress)_
-- `021-CharacterEngine-Core-Ability-Model`
-- `032-ItemEngine-Item-Model-And-Inventory`
-- `081-DMEngine-Campaign-Persistence-And-Migrations`
-- `082-ActionEngine-Ability-Effect-And-Range-Model`
-- `086-DungeonEngine-Instanced-Map-Store` _(in-progress)_
-
-## Wave 2
 
 - `013-RegionalEngine-Map-Segmentation`
 - `022-CharacterEngine-Ability-Score-Generation`
@@ -32,7 +21,7 @@ Epic ids are grouped by package/theme (e.g. `021`-`031` = CharacterEngine), **no
 - `067-LLMEngine-Multi-Cloud-Provider-Adapters`
 - `083-ActionEngine-Catalog-And-Known-Actions`
 
-## Wave 3
+## Wave 2
 
 - `016-CivilizationEngine-Settlement-Placement`
 - `024-CharacterEngine-Damage-Conditions-Dying`
@@ -42,7 +31,7 @@ Epic ids are grouped by package/theme (e.g. `021`-`031` = CharacterEngine), **no
 - `068-LLMEngine-Usage-Metering`
 - `073-ElectronAITTRPG-Character-Sheet-Ui`
 
-## Wave 4
+## Wave 3
 
 - `025-CharacterEngine-Xp-And-Level-Up`
 - `027-CharacterEngine-Death-Modes-And-Obituary`
@@ -51,7 +40,7 @@ Epic ids are grouped by package/theme (e.g. `021`-`031` = CharacterEngine), **no
 - `045-EnemyEngine-Bestiary-Catalog`
 - `077-ElectronAdmin-Llm-Usage-Dashboard`
 
-## Wave 5
+## Wave 4
 
 - `038-NPCEngine-Memory-Isolation`
 - `039-NPCEngine-Attackable-Civilian-Combat-Disposition`
@@ -62,7 +51,7 @@ Epic ids are grouped by package/theme (e.g. `021`-`031` = CharacterEngine), **no
 - `047-EnemyEngine-Combat-Token-Hook`
 - `048-CombatEngine-Encounter-Lifecycle`
 
-## Wave 6
+## Wave 5
 
 - `030-CharacterEngine-Companions-And-Inactive-Proxy`
 - `041-NPCEngine-Relationship-Web`
@@ -72,7 +61,7 @@ Epic ids are grouped by package/theme (e.g. `021`-`031` = CharacterEngine), **no
 - `063-NarrationEngine-Scene-Social-Split-And-Streaming`
 - `084-ActionEngine-Use-Resolution-And-Lockout`
 
-## Wave 7
+## Wave 6
 
 - `042-NPCEngine-Dossier-Model`
 - `060-DMEngine-World-Naming-And-History-Authoring`
@@ -80,14 +69,14 @@ Epic ids are grouped by package/theme (e.g. `021`-`031` = CharacterEngine), **no
 - `064-NarrationEngine-Tone-And-Terminology-Guards`
 - `065-NarrationEngine-Rag-Retrieval`
 
-## Wave 8
+## Wave 7
 
 - `052-DMEngine-Campaign-Generation-Pipeline`
 - `070-ElectronAITTRPG-Onboarding-Wizard-Ui`
 - `074-ElectronAITTRPG-Npc-Dossier-And-Relationship-Ui`
 - `075-ElectronAITTRPG-Settings-Ui`
 
-## Wave 9
+## Wave 8
 
 - `053-DMEngine-Turn-Routing`
 - `057-DMEngine-Ask-The-Dm`
@@ -96,12 +85,12 @@ Epic ids are grouped by package/theme (e.g. `021`-`031` = CharacterEngine), **no
 - `062-DMEngine-Context-Efficiency-And-Rag-Integration`
 - `069-ElectronAITTRPG-Campaign-Creation-And-Review-Ui`
 
-## Wave 10
+## Wave 9
 
 - `054-DMEngine-World-Mutations-And-Live-Population`
 - `071-ElectronAITTRPG-Campaign-Hub-Ui`
 - `072-ElectronAITTRPG-Play-View-Ui`
 
-## Wave 11
+## Wave 10
 
 - `076-ElectronAITTRPG-Play-Shell-Resilience`

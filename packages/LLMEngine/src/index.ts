@@ -15,7 +15,9 @@ import type {
   InstallProgress,
   LlmRuntime,
   LlmStatus,
-  InstallPhase
+  InstallPhase,
+  TextRequest,
+  TextResponse
 } from './types.js'
 
 export type {
@@ -33,7 +35,9 @@ export type {
   LlmEngineApi,
   LlmRuntime,
   LlmStatus,
-  ModelSpec
+  ModelSpec,
+  TextRequest,
+  TextResponse
 }
 
 export {

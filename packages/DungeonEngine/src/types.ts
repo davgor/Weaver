@@ -13,6 +13,12 @@ export type Aabb = {
   maxY: number
 }
 
+export type DungeonPoint = {
+  floorIndex: number
+  x: number
+  y: number
+}
+
 export type DungeonCell = {
   floorIndex: number
   x: number
@@ -24,6 +30,30 @@ export type FloorRecord = {
   floorIndex: number
   bounds: Aabb
   cellCount: number
+}
+
+export type DungeonRoom = {
+  roomId: string
+  floorIndex: number
+  bounds: Aabb
+  center: { x: number; y: number }
+}
+
+export type DungeonConnectionKind = 'corridor' | 'stairs'
+
+export type DungeonConnection = {
+  connectionId: string
+  kind: DungeonConnectionKind
+  fromRoomId: string
+  toRoomId: string
+  fromFloorIndex: number
+  toFloorIndex: number
+  points: DungeonPoint[]
+}
+
+export type DungeonTopology = {
+  rooms: DungeonRoom[]
+  connections: DungeonConnection[]
 }
 
 export type DungeonMeta = {
@@ -42,6 +72,15 @@ export type SparseOverlay = {
   y: number
   key: string
   value: string
+}
+
+export type EntranceFacing = 'north' | 'south' | 'east' | 'west'
+
+export type OverworldEntrance = {
+  worldId: string
+  x: number
+  y: number
+  facing?: EntranceFacing
 }
 
 export function encodeTile(tile: TileType): number {

@@ -1,5 +1,16 @@
-import type { Aabb, DungeonCell, DungeonMeta, FloorRecord } from '../types.js'
+import type {
+  Aabb,
+  DungeonCell,
+  DungeonConnection,
+  DungeonMeta,
+  DungeonRoom,
+  DungeonTopology,
+  FloorRecord,
+  OverworldEntrance,
+  SparseOverlay
+} from '../types.js'
 import { assertAabb } from '../types.js'
+import { assertOverworldEntrance, type WorldLookup } from '../entrance.js'
 import { generateDungeonLayout } from '../layout/generateLayout.js'
 import { readChunkTile } from './chunks.js'
 import {
@@ -18,6 +29,24 @@ export type CreateDungeonOptions = {
   width?: number
   height?: number
   theme?: string
+}
+
+export type RestockDungeonContext = {
+  meta: DungeonMeta
+  topology: DungeonTopology
+  overlays: SparseOverlay[]
+}
+
+export type RestockDungeonCallback = (context: RestockDungeonContext) => SparseOverlay[] | void
+
+export type DungeonServiceOptions = {
+  restock?: RestockDungeonCallback
+  worldLookup?: WorldLookup
+}
+
+export type DungeonInstanceLifecycleResult = {
+  meta: DungeonMeta
+  overlays: SparseOverlay[]
 }
 
 export type DungeonService = {
@@ -41,6 +70,15 @@ export type DungeonService = {
   }) => DungeonCell[]
   getFloor: (dungeonId: string, floorIndex: number) => Iterable<DungeonCell>
   getDungeonWhole: (dungeonId: string) => Iterable<DungeonCell>
+  listRooms: (dungeonId: string, floorIndex?: number) => DungeonRoom[]
+  getRoom: (dungeonId: string, roomId: string) => DungeonRoom | null
+  listConnections: (dungeonId: string, floorIndex?: number) => DungeonConnection[]
+  getTopology: (dungeonId: string, floorIndex?: number) => DungeonTopology
+  resetDungeonInstance: (dungeonId: string) => DungeonInstanceLifecycleResult
+  restockDungeonInstance: (dungeonId: string) => DungeonInstanceLifecycleResult
+  setOverworldEntrance: (dungeonId: string, entrance: OverworldEntrance) => OverworldEntrance
+  getOverworldEntrance: (dungeonId: string) => OverworldEntrance | null
+  clearOverworldEntrance: (dungeonId: string) => void
 }
 
 function newId(): string {
@@ -77,7 +115,15 @@ function createDungeonAt(dataRoot: string, opts: CreateDungeonOptions): { meta: 
     height,
     createdAt: new Date().toISOString()
   }
-  writeMeta(dataRoot, dungeonId, { meta, floors, overlays: [], chunkManifest })
+  writeMeta(dataRoot, dungeonId, {
+    meta,
+    floors,
+    rooms: layout.floors.flatMap((floor) => floor.rooms),
+    connections: layout.connections,
+    overlays: [],
+    chunkManifest,
+    entrance: null
+  })
   return { meta }
 }
 
@@ -121,7 +167,64 @@ function getSpecific(
   return cells
 }
 
-export function createDungeonService(dataRoot: string): DungeonService {
+function touchesFloor(connection: DungeonConnection, floorIndex: number): boolean {
+  return connection.fromFloorIndex === floorIndex || connection.toFloorIndex === floorIndex
+}
+
+function listRooms(dataRoot: string, dungeonId: string, floorIndex?: number): DungeonRoom[] {
+  const { rooms } = readMeta(dataRoot, dungeonId)
+  return floorIndex === undefined ? rooms : rooms.filter((room) => room.floorIndex === floorIndex)
+}
+
+function listConnections(dataRoot: string, dungeonId: string, floorIndex?: number): DungeonConnection[] {
+  const { connections } = readMeta(dataRoot, dungeonId)
+  return floorIndex === undefined ? connections : connections.filter((connection) => touchesFloor(connection, floorIndex))
+}
+
+function getTopology(dataRoot: string, dungeonId: string, floorIndex?: number): DungeonTopology {
+  return {
+    rooms: listRooms(dataRoot, dungeonId, floorIndex),
+    connections: listConnections(dataRoot, dungeonId, floorIndex)
+  }
+}
+
+function resetInstance(dataRoot: string, dungeonId: string): DungeonInstanceLifecycleResult {
+  const file = readMeta(dataRoot, dungeonId)
+  writeMeta(dataRoot, dungeonId, { ...file, overlays: [] })
+  return { meta: file.meta, overlays: [] }
+}
+
+function isRestockableOverlay(overlay: SparseOverlay): boolean {
+  return overlay.key === 'restockable' || overlay.key.startsWith('restock:')
+}
+
+function restockInstance(
+  dataRoot: string,
+  dungeonId: string,
+  callback?: RestockDungeonCallback
+): DungeonInstanceLifecycleResult {
+  const file = readMeta(dataRoot, dungeonId)
+  const retained = file.overlays.filter((overlay) => !isRestockableOverlay(overlay))
+  const added = callback?.({ meta: file.meta, topology: getTopology(dataRoot, dungeonId), overlays: retained }) ?? []
+  const overlays = [...retained, ...added]
+  writeMeta(dataRoot, dungeonId, { ...file, overlays })
+  return { meta: file.meta, overlays }
+}
+
+function setEntrance(
+  dataRoot: string,
+  dungeonId: string,
+  entrance: OverworldEntrance,
+  worldLookup?: WorldLookup
+): OverworldEntrance {
+  if (!worldLookup) throw new Error('worldLookup required to set overworld entrance')
+  const validated = assertOverworldEntrance(entrance, worldLookup)
+  const file = readMeta(dataRoot, dungeonId)
+  writeMeta(dataRoot, dungeonId, { ...file, entrance: validated })
+  return validated
+}
+
+export function createDungeonService(dataRoot: string, options: DungeonServiceOptions = {}): DungeonService {
   return {
     createDungeon: (opts = {}) => createDungeonAt(dataRoot, opts),
     hasDungeon: (dungeonId) => hasMeta(dataRoot, dungeonId),
@@ -142,6 +245,19 @@ export function createDungeonService(dataRoot: string): DungeonService {
     getDungeonWhole: function* (dungeonId) {
       const { meta } = readMeta(dataRoot, dungeonId)
       for (let f = 0; f < meta.floorCount; f++) yield* iterateFloor(dataRoot, dungeonId, f)
+    },
+    listRooms: (dungeonId, floorIndex) => listRooms(dataRoot, dungeonId, floorIndex),
+    getRoom: (dungeonId, roomId) => readMeta(dataRoot, dungeonId).rooms.find((room) => room.roomId === roomId) ?? null,
+    listConnections: (dungeonId, floorIndex) => listConnections(dataRoot, dungeonId, floorIndex),
+    getTopology: (dungeonId, floorIndex) => getTopology(dataRoot, dungeonId, floorIndex),
+    resetDungeonInstance: (dungeonId) => resetInstance(dataRoot, dungeonId),
+    restockDungeonInstance: (dungeonId) => restockInstance(dataRoot, dungeonId, options.restock),
+    setOverworldEntrance: (dungeonId, entrance) =>
+      setEntrance(dataRoot, dungeonId, entrance, options.worldLookup),
+    getOverworldEntrance: (dungeonId) => readMeta(dataRoot, dungeonId).entrance ?? null,
+    clearOverworldEntrance: (dungeonId) => {
+      const file = readMeta(dataRoot, dungeonId)
+      writeMeta(dataRoot, dungeonId, { ...file, entrance: null })
     }
   }
 }

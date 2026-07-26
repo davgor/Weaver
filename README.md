@@ -1,6 +1,6 @@
 # Weaver
 
-TypeScript monorepo for a modular TTRPG game. Deterministic engines own rules and data; **LLMEngine** owns the local model runtime (Qwen2.5 7B Instruct Q4_K_M; Vulkan then CPU). LLMs only invent through **NarrationEngine** (validated against peer engines) and orchestrate through **DMEngine** (API calls into other packages — no invented facts).
+TypeScript monorepo for a modular TTRPG game. Deterministic engines own rules and data; **LLMEngine** owns only local model install/runtime and raw text passthrough (`completeText`). LLMs only invent through **NarrationEngine** (validated against peer engines) and orchestrate through **DMEngine** (API calls into other packages — no invented facts).
 
 ## For AI agents working on this repo
 
@@ -17,15 +17,15 @@ Package names encode where code belongs. Follow these conventions on every chang
 
 **Cross-package contracts:** packages stay isolated; integrations go through published APIs only. Whenever one package calls another’s API, the **consumer** must have `*.contract.test.ts` coverage against the real provider (see delivery-standards skill). Unit tests do not replace contract tests at the peer boundary.
 
-**LLM boundary (engines only):** **LLMEngine** owns the local model runtime and install lifecycle (UI packages prompt the download). Only **NarrationEngine** invents story prose (and must validate against peer engine data). Only **DMEngine** orchestrates the LLM against other engines via their APIs — it must not invent combat/world/item/NPC/enemy/**action** facts. Deterministic engines stay LLM-free and must not import Electron or LLM providers.
+**LLM boundary (engines only):** **LLMEngine** owns the local model runtime, install lifecycle, and raw `completeText({ prompt, context?, maxTokens? })` passthrough (UI packages prompt the download). It does not provide JSON/schema/tool modes or decide which APIs to call. Only **NarrationEngine** invents story prose (and must validate against peer engine data). Only **DMEngine** orchestrates the LLM against other engines via their APIs — it must not invent combat/world/item/NPC/enemy/**action** facts. Deterministic engines stay LLM-free and must not import Electron or LLM providers.
 
 ### Package details
 
 | Package | npm name | Role |
 |---------|----------|------|
 | `packages/CombatEngine` | `@weaver/combat-engine` | **Deterministic combat rules and resolution.** Owns turn order, hit/damage resolution, and related combat state — no Electron, no LLM invention. Consumes ActionEngine when a combatant uses an ability (lockout / effect application); does not own ability definitions. |
-| `packages/ActionEngine` *(planned — board 082)* | `@weaver/action-engine` | **Deterministic abilities & effects.** Spells and class actions are one `Action` type (flavor tags are cosmetic): shared effect catalog, typed ranges (`feet` or `meleeWeapon`), Action-turn costs — no mana, no LLM invention. Not yet scaffolded; first sub-ticket of epic `082` stands up the package. |
-| `packages/CharacterEngine` *(planned — board 021)* | `@weaver/character-engine` | **Deterministic player-character facts.** Ability scores, HP, XP/leveling, archetypes, death modes, journal/log book/quest log/known-action list (UI may still say “spellbook”) — the PC-side counterpart to NPCEngine/EnemyEngine. Known action *ids* live here; ActionEngine owns definitions. No Electron, no LLM invention. Not yet scaffolded; first sub-ticket of epic `021` stands up the package. |
+| `packages/ActionEngine` | `@weaver/action-engine` | **Deterministic abilities & effects.** Spells and class actions are one `Action` type (flavor tags are cosmetic): shared effect catalog, typed ranges (`feet` or `meleeWeapon`), Action-turn costs — no mana, no LLM invention. Combat, Character, DM, and Electron callers use this package for ability/effect facts instead of branching on spell vs. class-action flavor. |
+| `packages/CharacterEngine` | `@weaver/character-engine` | **Deterministic player-character facts and core resolution.** Owns Body/Agility/Mind/Presence, ability modifiers, `d20 + modifier + optional proficiency` checks, and AC from Agility plus caller-supplied armor. Later epics add HP, XP/leveling, archetypes, death modes, journal/log book/quest log/known-action list (UI may still say “spellbook”). Known action *ids* live here; ActionEngine owns definitions. No Electron, no LLM invention. |
 | `packages/WorldEngine` | `@weaver/world-engine` | **Perlin-based world generation** for each game/campaign. Terrain/map facts live here so narration and UI consume generated data rather than inventing geography. |
 | `packages/RegionalEngine` | `@weaver/regional-engine` | **Deterministic map segmentation** over WorldEngine cells. Assigns machine region ids and LLM-ready summary stats (no display names or prose). LLM-free. |
 | `packages/CivilizationEngine` | `@weaver/civilization-engine` | **Deterministic settlements on regions** (farmhouse → city), population ledger, map overlays, and NPC placeholder slots for later assignment. LLM-free; no NPC construction or display names. |
@@ -34,8 +34,8 @@ Package names encode where code belongs. Follow these conventions on every chang
 | `packages/ItemEngine` | `@weaver/item-engine` | **Create and modify game items.** Item definitions, mutations, and inventory-facing item APIs — deterministic, LLM-free. |
 | `packages/NPCEngine` | `@weaver/npc-engine` | **Construct NPCs** for campaigns (stats, identity, placement data). Deterministic construction; dialogue flavor may be narrated elsewhere but NPC facts stay here. |
 | `packages/EnemyEngine` | `@weaver/enemy-engine` | **Construct enemies** for combat encounters. Encounter-ready enemy data consumed by CombatEngine / DM orchestration. |
-| `packages/DMEngine` | `@weaver/dm-engine` | **DM / story control via engine APIs.** Orchestrates peer engines (and the LLM against those APIs). Does **not** invent world or combat facts itself — it pulls from the other packages. |
-| `packages/LLMEngine` | `@weaver/llm-engine` | **Local LLM runtime controller.** Pins Qwen2.5 7B Instruct (Q4_K_M); prefers Vulkan, falls back to CPU. Exposes install status/`install`/`complete` so Electron UI can prompt download — no game invention here. |
+| `packages/DMEngine` | `@weaver/dm-engine` | **DM / story control via engine APIs.** Orchestrates peer engines (and the LLM against those APIs), owns campaign SQLite open/create/migrations, and exposes the Electron → DMEngine → SQLite persistence call path. Renderers must use typed Electron engine bridges; no raw SQL IPC. Does **not** invent world or combat facts itself — it pulls from the other packages. |
+| `packages/LLMEngine` | `@weaver/llm-engine` | **Local LLM runtime controller.** Pins Qwen2.5 7B Instruct (Q4_K_M); prefers Vulkan, falls back to CPU. Exposes install status/`install`/`completeText` raw text passthrough so Electron UI can prompt download and exercise generation — no game invention, structured output, or tool calling here. |
 | `packages/ElectronAdmin` | `@weaver/electron-admin` | **AI ADMIN** Electron app (`npm run admin`). DEV panel for app/LLM metrics, exercising engine endpoints, and related tooling. UI + IPC only; no game business logic. Releasable alongside AI TTRPG. |
 | `packages/ElectronAITTRPG` | `@weaver/electron-aittrpg` | **AI TTRPG** releasable Electron game client (`npm run ai-ttrpg`; Win/Mac packaging). Product chrome/icons; wires UI to engines. No business rules in this package — call engines instead. |
 

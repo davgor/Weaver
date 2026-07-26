@@ -1,6 +1,8 @@
 import { app, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'node:path'
 import { combatEngine } from '@weaver/combat-engine'
+import { actionEngine } from '@weaver/action-engine'
+import { characterEngine } from '@weaver/character-engine'
 import { worldEngine } from '@weaver/world-engine'
 import { regionalEngine } from '@weaver/regional-engine'
 import { civilizationEngine } from '@weaver/civilization-engine'
@@ -14,10 +16,12 @@ import { llmEngine } from '@weaver/llm-engine'
 import { APP_DISPLAY_NAME } from '../shared/appBranding.js'
 import { buildCatalog, dispatchEngineCall, type DispatchableEngine } from './engineDispatch.js'
 
-// Add new engines here as they're scaffolded (e.g. CharacterEngine — board epic 021)
+// Add new engines here as they're scaffolded
 // and to REQUIRED_ENGINE_IDS in ElectronAITTRPG/src/shared/engineHealth.ts.
 const engines: readonly DispatchableEngine[] = [
   combatEngine,
+  actionEngine,
+  characterEngine,
   worldEngine,
   regionalEngine,
   civilizationEngine,
