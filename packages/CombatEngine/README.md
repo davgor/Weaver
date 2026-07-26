@@ -14,22 +14,51 @@ Owns turn order, hit/damage resolution, combatant state, and related combat fact
 
 ## Status
 
-Scaffold. Exposes the shared admin/health endpoint surface (`health`, `listEndpoints`, `call`). Full design lives in epics [048](../../board/backlog/048-CombatEngine-Encounter-Lifecycle.md)–[051](../../board/backlog/051-CombatEngine-Dynamic-Start-And-Triggers.md).
+Encounter lifecycle implemented for epic [048](../../board/in-progress/048-CombatEngine-Encounter-Lifecycle.md): durable encounter start/query, initiative (`d20 + Agility modifier`), and one Action + Movement per turn. Remaining hit/damage and resolution design lives in epics [049](../../board/backlog/049-CombatEngine-Hit-Damage-Crit-Conditions.md)–[051](../../board/backlog/051-CombatEngine-Dynamic-Start-And-Triggers.md).
 
-## Public API (today)
+## Public API
 
 ```ts
-import { combatEngine } from '@weaver/combat-engine'
+import {
+  combatEngine,
+  createJsonEncounterStore,
+  startEncounter,
+  submitCombatAction
+} from '@weaver/combat-engine'
 
 combatEngine.health()
 combatEngine.listEndpoints()
 await combatEngine.call('health')
+
+const store = createJsonEncounterStore({ dataRoot: '/path/to/campaign-data' })
+const encounter = startEncounter({
+  encounterId: 'encounter-1',
+  combatants: [
+    {
+      id: 'hero-1',
+      kind: 'character',
+      abilityScores: { Body: 10, Agility: 14, Mind: 10, Presence: 10 }
+    }
+  ],
+  store
+})
+
+submitCombatAction({
+  encounterId: encounter.encounterId,
+  combatantId: encounter.currentTurn.combatantId,
+  action: { type: 'typed-action', action: 'Strike the goblin with my sword' },
+  store
+})
 ```
 
 | Export | Notes |
 |--------|--------|
 | `combatEngine` | Singleton `CombatEngineApi` |
-| `CombatEngineApi` / `EngineEndpoint` | Types |
+| `startEncounter` / `getEncounter` / `endTurn` | Durable encounter lifecycle |
+| `submitCombatAction` / `submitMovement` | One typed free-text Action and one Movement per turn |
+| `createJsonEncounterStore` | JSON file store under `dataRoot/combat/encounters` |
+| `hydrateCombatantFromNpcId` / `hydrateCombatantFromNpcRecord` / `hydrateCombatantFromFoeRef` | Adapters for published NPCEngine and EnemyEngine combat data |
+| `CombatEngineApi` / `EngineEndpoint` and encounter types | Types |
 
 ## Planned direction (from epics 048–051)
 

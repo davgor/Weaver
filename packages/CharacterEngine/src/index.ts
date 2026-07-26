@@ -1,5 +1,6 @@
 export * from './abilities.js'
 export * from './abilityScoreGeneration.js'
+export * from './damageTypes.js'
 export type { CharacterEngineApi, EngineEndpoint } from './endpoints.js'
 export * from './errors.js'
 export * from './hp.js'

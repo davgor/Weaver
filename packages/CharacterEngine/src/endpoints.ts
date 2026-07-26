@@ -18,6 +18,12 @@ import {
   type AbilityRollDetails,
   type RolledAbilityScoreDraft
 } from './abilityScoreGeneration.js'
+import {
+  applyDamageModifiers,
+  isDamageType,
+  listDamageTypes,
+  type DamageType
+} from './damageTypes.js'
 import { computeMaxHp, getCharacterStats, persistCharacterMaxHp } from './hp.js'
 import {
   addJournalEntry,
@@ -73,6 +79,7 @@ export function buildEndpoints(): EngineEndpoint[] {
     ...coreEndpoints(),
     ...abilityGenerationEndpoints(),
     ...hpEndpoints(),
+    ...damageTypeEndpoints(),
     ...recordEndpoints(),
     ...raceBackgroundEndpoints(),
     ...timeRestEndpoints()
@@ -105,6 +112,24 @@ function coreEndpoints(): EngineEndpoint[] {
       name: 'armorClass',
       description: 'Calculate 10 + Agility modifier + armor bonus',
       invoke: (payload) => calculateArmorClass(parseArmorClassPayload(payload))
+    }
+  ]
+}
+
+function damageTypeEndpoints(): EngineEndpoint[] {
+  return [
+    {
+      name: 'listDamageTypes',
+      description: 'List canonical damage types',
+      invoke: () => listDamageTypes()
+    },
+    {
+      name: 'applyDamageModifiers',
+      description: 'Apply resistance/vulnerability multipliers for a damage type',
+      invoke: (payload) => {
+        const request = parseDamageModifierPayload(payload)
+        return applyDamageModifiers(request.amount, request)
+      }
     }
   ]
 }
@@ -266,6 +291,37 @@ function parseArmorClassPayload(payload: unknown): ArmorClassInput {
     agilityScore: readNumber(record, 'agilityScore'),
     armorBonus: readNumber(record, 'armorBonus')
   }
+}
+
+function parseDamageModifierPayload(payload: unknown): {
+  amount: number
+  damageType: DamageType
+  resistances: DamageType[]
+  vulnerabilities: DamageType[]
+} {
+  const record = readRecord(payload, 'applyDamageModifiers')
+  return {
+    amount: readNumber(record, 'amount'),
+    damageType: readDamageType(record, 'damageType'),
+    resistances: readDamageTypeList(record, 'resistances'),
+    vulnerabilities: readDamageTypeList(record, 'vulnerabilities')
+  }
+}
+
+function readDamageType(record: Record<string, unknown>, key: string): DamageType {
+  const value = record[key]
+  if (!isDamageType(value)) {
+    throw new Error(`Expected ${key} to be a known damage type`)
+  }
+  return value
+}
+
+function readDamageTypeList(record: Record<string, unknown>, key: string): DamageType[] {
+  const value = record[key]
+  if (!Array.isArray(value) || !value.every(isDamageType)) {
+    throw new Error(`Expected ${key} to be an array of damage types`)
+  }
+  return [...value]
 }
 
 function parseResolutionPayload(payload: unknown): AbilityResolutionInput {

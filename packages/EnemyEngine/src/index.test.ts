@@ -12,6 +12,12 @@ describe('@weaver/enemy-engine', () => {
     const endpoints = enemyEngine.listEndpoints()
     expect(endpoints.length).toBeGreaterThan(0)
     expect(endpoints.some((e) => e.name === 'health')).toBe(true)
+    expect(endpoints.map((e) => e.name)).toEqual(expect.arrayContaining([
+      'listBestiary',
+      'generateEncounterFoes',
+      'hydrateCombatantFromFoe',
+      'requestCombatToken'
+    ]))
   })
 
   it('invokes the health endpoint', async () => {
@@ -26,5 +32,16 @@ describe('@weaver/enemy-engine', () => {
 
   it('rejects unknown endpoints', async () => {
     await expect(enemyEngine.call('does-not-exist')).rejects.toThrow(/Unknown endpoint/)
+  })
+
+  it('invokes catalog and generation endpoints', async () => {
+    const bestiary = await enemyEngine.call('listBestiary')
+    const foes = await enemyEngine.call('generateEncounterFoes', {
+      difficulty: 'easy',
+      count: 1
+    })
+
+    expect(Array.isArray(bestiary)).toBe(true)
+    expect(foes).toMatchObject([{ bestiaryId: 'goblin-skirmisher' }])
   })
 })

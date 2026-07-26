@@ -8,7 +8,7 @@ Port the non-negotiable NPC memory rule from AI-DND-Matrix: no NPC can know some
 
 ## Acceptance criteria
 
-- [ ] Each NPC has its own private memory log, keyed to that NPC only
-- [ ] World facts are readable by an NPC only when explicitly tagged to that NPC's region or faction — untagged or other-region/faction facts are excluded by the query API itself, not by caller discipline
-- [ ] A contract test proves that querying NPC A's grounding context never returns NPC B's private memories
-- [ ] Memory-write API records provenance (which event/scene produced the memory) so later audits can trace a leak back to its source if the isolation rule is ever violated
+- [x] Each NPC has its own private memory log, keyed to that NPC only
+- [x] World facts are readable by an NPC only when explicitly tagged to that NPC's region or faction — untagged or other-region/faction facts are excluded by the query API itself, not by caller discipline
+- [x] A contract test proves that querying NPC A's grounding context never returns NPC B's private memories
+- [x] Memory-write API records provenance (which event/scene produced the memory) so later audits can trace a leak back to its source if the isolation rule is ever violated
