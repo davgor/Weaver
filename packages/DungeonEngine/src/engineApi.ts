@@ -1,5 +1,16 @@
 import { createDungeonService, type CreateDungeonOptions } from './store/dungeonService.js'
-import type { Aabb, DungeonCell, DungeonMeta, FloorRecord } from './types.js'
+import { createWorldEngineLookup } from './worldLookup.js'
+import type {
+  Aabb,
+  DungeonCell,
+  DungeonConnection,
+  DungeonMeta,
+  DungeonRoom,
+  DungeonTopology,
+  FloorRecord,
+  OverworldEntrance,
+  SparseOverlay
+} from './types.js'
 import { buildEndpoints } from './endpoints.js'
 
 export type DungeonEngineApi = {
@@ -31,6 +42,20 @@ export type DungeonEngineApi = {
   }) => DungeonCell[]
   getFloor: (dataRoot: string, dungeonId: string, floorIndex: number) => DungeonCell[]
   getDungeonWhole: (dataRoot: string, dungeonId: string) => DungeonCell[]
+  listRooms: (dataRoot: string, dungeonId: string, floorIndex?: number) => DungeonRoom[]
+  getRoom: (dataRoot: string, dungeonId: string, roomId: string) => DungeonRoom | null
+  listConnections: (dataRoot: string, dungeonId: string, floorIndex?: number) => DungeonConnection[]
+  getTopology: (dataRoot: string, dungeonId: string, floorIndex?: number) => DungeonTopology
+  resetDungeonInstance: (dataRoot: string, dungeonId: string) => { meta: DungeonMeta; overlays: SparseOverlay[] }
+  restockDungeonInstance: (dataRoot: string, dungeonId: string) => { meta: DungeonMeta; overlays: SparseOverlay[] }
+  setOverworldEntrance: (args: {
+    dataRoot: string
+    dungeonId: string
+    worldDataRoot: string
+    entrance: OverworldEntrance
+  }) => OverworldEntrance
+  getOverworldEntrance: (dataRoot: string, dungeonId: string) => OverworldEntrance | null
+  clearOverworldEntrance: (dataRoot: string, dungeonId: string) => void
 }
 
 const PACKAGE_NAME = '@weaver/dungeon-engine'
@@ -83,5 +108,34 @@ export const dungeonEngine: DungeonEngineApi = {
   },
   getDungeonWhole(dataRoot, dungeonId) {
     return [...createDungeonService(dataRoot).getDungeonWhole(dungeonId)]
+  },
+  listRooms(dataRoot, dungeonId, floorIndex) {
+    return createDungeonService(dataRoot).listRooms(dungeonId, floorIndex)
+  },
+  getRoom(dataRoot, dungeonId, roomId) {
+    return createDungeonService(dataRoot).getRoom(dungeonId, roomId)
+  },
+  listConnections(dataRoot, dungeonId, floorIndex) {
+    return createDungeonService(dataRoot).listConnections(dungeonId, floorIndex)
+  },
+  getTopology(dataRoot, dungeonId, floorIndex) {
+    return createDungeonService(dataRoot).getTopology(dungeonId, floorIndex)
+  },
+  resetDungeonInstance(dataRoot, dungeonId) {
+    return createDungeonService(dataRoot).resetDungeonInstance(dungeonId)
+  },
+  restockDungeonInstance(dataRoot, dungeonId) {
+    return createDungeonService(dataRoot).restockDungeonInstance(dungeonId)
+  },
+  setOverworldEntrance(args) {
+    return createDungeonService(args.dataRoot, {
+      worldLookup: createWorldEngineLookup(args.worldDataRoot)
+    }).setOverworldEntrance(args.dungeonId, args.entrance)
+  },
+  getOverworldEntrance(dataRoot, dungeonId) {
+    return createDungeonService(dataRoot).getOverworldEntrance(dungeonId)
+  },
+  clearOverworldEntrance(dataRoot, dungeonId) {
+    createDungeonService(dataRoot).clearOverworldEntrance(dungeonId)
   }
 }

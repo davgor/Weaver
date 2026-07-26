@@ -1,12 +1,22 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
-import type { DungeonMeta, FloorRecord } from '../types.js'
+import type {
+  DungeonConnection,
+  DungeonMeta,
+  DungeonRoom,
+  FloorRecord,
+  OverworldEntrance,
+  SparseOverlay
+} from '../types.js'
 
-type MetaFile = {
+export type MetaFile = {
   meta: DungeonMeta
   floors: FloorRecord[]
-  overlays: unknown[]
+  rooms: DungeonRoom[]
+  connections: DungeonConnection[]
+  overlays: SparseOverlay[]
   chunkManifest: string[]
+  entrance: OverworldEntrance | null
 }
 
 function dungeonDir(dataRoot: string, dungeonId: string): string {
@@ -20,7 +30,19 @@ function metaPath(dataRoot: string, dungeonId: string): string {
 export function readMeta(dataRoot: string, dungeonId: string): MetaFile {
   const path = metaPath(dataRoot, dungeonId)
   if (!existsSync(path)) throw new Error(`Dungeon not found: ${dungeonId}`)
-  return JSON.parse(readFileSync(path, 'utf8')) as MetaFile
+  const parsed = JSON.parse(readFileSync(path, 'utf8')) as Partial<MetaFile> & {
+    meta: DungeonMeta
+    floors: FloorRecord[]
+  }
+  return {
+    meta: parsed.meta,
+    floors: parsed.floors,
+    rooms: parsed.rooms ?? [],
+    connections: parsed.connections ?? [],
+    overlays: parsed.overlays ?? [],
+    chunkManifest: parsed.chunkManifest ?? [],
+    entrance: parsed.entrance ?? null
+  }
 }
 
 export function writeMeta(dataRoot: string, dungeonId: string, file: MetaFile): void {

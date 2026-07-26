@@ -13,7 +13,9 @@ import type {
   EngineEndpoint,
   LlmRuntime,
   LlmStatus,
-  InstallProgress
+  InstallProgress,
+  TextRequest,
+  TextResponse
 } from './types.js'
 
 export type LlmEngineApi = {
@@ -27,6 +29,8 @@ export type LlmEngineApi = {
   getStatus: () => Promise<LlmStatus>
   resolveBackend: () => Promise<'vulkan' | 'cpu'>
   install: (onProgress?: (progress: InstallProgress) => void) => Promise<LlmStatus>
+  completeText: (request: TextRequest) => Promise<TextResponse>
+  /** @deprecated Use completeText({ prompt, context?, maxTokens? }). */
   complete: (request: ChatRequest) => Promise<ChatResponse>
   dispose: () => Promise<void>
 }
@@ -71,10 +75,13 @@ export function createLlmEngine(options: CreateLlmEngineOptions): LlmEngineApi {
     install(onProgress) {
       return installModel(options, onProgress)
     },
-    async complete(request) {
+    async completeText(request) {
       const ensured = await ensureRuntime(options, options.createRuntime, runtime)
       runtime = ensured.runtime
-      return ensured.runtime.complete(request)
+      return ensured.runtime.completeText(request)
+    },
+    complete(request) {
+      return api.completeText(chatRequestToTextRequest(request))
     },
     async dispose() {
       if (!runtime) return
@@ -102,13 +109,18 @@ function buildEndpoints(api: LlmEngineApi): EngineEndpoint[] {
         controlsRuntime: true,
         model: DEFAULT_MODEL.id,
         backends: ['vulkan', 'cpu'],
-        note: 'UI packages prompt model install; NarrationEngine/DMEngine consume complete().'
+        note: 'UI packages prompt model install; NarrationEngine/DMEngine consume completeText().'
       })
     },
     {
       name: 'getStatus',
       description: 'Return install/runtime status for the pinned local model',
       invoke: () => api.getStatus()
+    },
+    {
+      name: 'install',
+      description: 'Download the pinned local model if it is missing',
+      invoke: () => api.install()
     },
     {
       name: 'getModelSpec',
@@ -119,6 +131,80 @@ function buildEndpoints(api: LlmEngineApi): EngineEndpoint[] {
       name: 'resolveBackend',
       description: 'Resolve preferred backend (vulkan, else cpu)',
       invoke: () => api.resolveBackend()
+    },
+    {
+      name: 'completeText',
+      description: 'Run raw text passthrough completion with prompt/context/maxTokens',
+      invoke: (payload) => api.completeText(readTextRequest(payload))
     }
   ]
+}
+
+function chatRequestToTextRequest(request: ChatRequest): TextRequest {
+  const user = lastUserMessage(request.messages)
+  const context = systemText(request.messages)
+  return withOptionalTextFields({ prompt: user.content }, context, request.maxTokens)
+}
+
+function lastUserMessage(messages: ChatRequest['messages']): ChatRequest['messages'][number] {
+  for (let i = messages.length - 1; i >= 0; i -= 1) {
+    const message = messages[i]
+    if (message?.role === 'user') return message
+  }
+  throw new Error('Chat request requires a user message')
+}
+
+function systemText(messages: ChatRequest['messages']): string | undefined {
+  const parts = messages.filter((message) => message.role === 'system').map((message) => message.content)
+  if (parts.length === 0) return undefined
+  return parts.join('\n')
+}
+
+function readTextRequest(payload: unknown): TextRequest {
+  if (!isRecord(payload)) {
+    throw new Error('completeText payload must be an object')
+  }
+  rejectUnsupportedKeys(payload)
+  if (typeof payload.prompt !== 'string') {
+    throw new Error('completeText payload requires string prompt')
+  }
+  const context = optionalString(payload.context, 'context')
+  const maxTokens = optionalNumber(payload.maxTokens, 'maxTokens')
+  return withOptionalTextFields({ prompt: payload.prompt }, context, maxTokens)
+}
+
+function withOptionalTextFields(
+  base: { prompt: string },
+  context: string | undefined,
+  maxTokens: number | undefined
+): TextRequest {
+  return {
+    ...base,
+    ...(context === undefined ? {} : { context }),
+    ...(maxTokens === undefined ? {} : { maxTokens })
+  }
+}
+
+function rejectUnsupportedKeys(payload: Record<string, unknown>): void {
+  const allowed = new Set(['prompt', 'context', 'maxTokens'])
+  const unsupported = Object.keys(payload).filter((key) => !allowed.has(key))
+  if (unsupported.length > 0) {
+    throw new Error(`completeText payload has unsupported fields: ${unsupported.join(', ')}`)
+  }
+}
+
+function optionalString(value: unknown, name: string): string | undefined {
+  if (value === undefined) return undefined
+  if (typeof value === 'string') return value
+  throw new Error(`completeText payload field ${name} must be a string`)
+}
+
+function optionalNumber(value: unknown, name: string): number | undefined {
+  if (value === undefined) return undefined
+  if (typeof value === 'number') return value
+  throw new Error(`completeText payload field ${name} must be a number`)
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }

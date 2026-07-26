@@ -12,14 +12,19 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run --config ../../vitest.config.ts"
   },
-  "dependencies": {},
+  "dependencies": {
+    "better-sqlite3": "^13.0.1"
+  },
   "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
     "typescript": "^5.5.2"
   }
 }

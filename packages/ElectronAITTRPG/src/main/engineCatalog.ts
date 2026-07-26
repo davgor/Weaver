@@ -1,4 +1,6 @@
 import { combatEngine } from '@weaver/combat-engine'
+import { actionEngine } from '@weaver/action-engine'
+import { characterEngine } from '@weaver/character-engine'
 import { worldEngine } from '@weaver/world-engine'
 import { regionalEngine } from '@weaver/regional-engine'
 import { civilizationEngine } from '@weaver/civilization-engine'
@@ -14,6 +16,8 @@ import type { StartupBootSnapshot } from '../shared/gameApi.js'
 
 const engines = [
   combatEngine,
+  actionEngine,
+  characterEngine,
   worldEngine,
   regionalEngine,
   civilizationEngine,

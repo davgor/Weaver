@@ -1,5 +1,5 @@
 import type { LlmBackend } from './backend.js'
-import type { ChatMessage, ChatRequest, CreateRuntime, LlmRuntime } from './types.js'
+import type { CreateRuntime, LlmRuntime, TextRequest } from './types.js'
 
 type LlamaModule = {
   getLlama: (options: { gpu: 'vulkan' | false }) => Promise<{
@@ -56,7 +56,7 @@ function buildRuntime(parts: {
 }): LlmRuntime {
   const { llamaCpp, llama, model, context, backend } = parts
   return {
-    complete: (request) => completeWithSession(llamaCpp, context, backend, request),
+    completeText: (request) => completeWithSession(llamaCpp, context, backend, request),
     dispose: async () => {
       await context.dispose()
       await model.dispose()
@@ -69,19 +69,17 @@ async function completeWithSession(
   llamaCpp: LlamaModule,
   context: Awaited<ReturnType<LlamaModel['createContext']>>,
   backend: LlmBackend,
-  request: ChatRequest
+  request: TextRequest
 ): Promise<{ text: string; backend: LlmBackend }> {
-  const user = lastUserMessage(request.messages)
-  const systemPrompt = systemText(request.messages)
-  const session = createSession(llamaCpp, context, systemPrompt)
-  const text = await promptSession(session, user.content, request.maxTokens)
+  const session = createSession(llamaCpp, context, request.context)
+  const text = await promptSession(session, request.prompt, request.maxTokens)
   return { text, backend }
 }
 
 function createSession(
   llamaCpp: LlamaModule,
   context: Awaited<ReturnType<LlamaModel['createContext']>>,
-  systemPrompt: string | null
+  systemPrompt: string | undefined
 ) {
   if (systemPrompt) {
     return new llamaCpp.LlamaChatSession({
@@ -105,16 +103,3 @@ function promptSession(
   return session.prompt(text, { maxTokens })
 }
 
-function lastUserMessage(messages: ChatMessage[]): ChatMessage {
-  for (let i = messages.length - 1; i >= 0; i -= 1) {
-    const message = messages[i]
-    if (message?.role === 'user') return message
-  }
-  throw new Error('Chat request requires a user message')
-}
-
-function systemText(messages: ChatMessage[]): string | null {
-  const parts = messages.filter((m) => m.role === 'system').map((m) => m.content)
-  if (parts.length === 0) return null
-  return parts.join('\n')
-}

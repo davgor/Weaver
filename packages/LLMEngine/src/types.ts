@@ -27,15 +27,25 @@ export type ChatMessage = {
   content: string
 }
 
+export type TextRequest = {
+  prompt: string
+  context?: string
+  maxTokens?: number
+}
+
+export type TextResponse = {
+  text: string
+  backend: LlmBackend
+}
+
+/** @deprecated Use TextRequest / completeText for the public generation API. */
 export type ChatRequest = {
   messages: ChatMessage[]
   maxTokens?: number
 }
 
-export type ChatResponse = {
-  text: string
-  backend: LlmBackend
-}
+/** @deprecated Use TextResponse / completeText for the public generation API. */
+export type ChatResponse = TextResponse
 
 export type FileStore = {
   exists: (path: string) => boolean | Promise<boolean>
@@ -52,7 +62,7 @@ export type Downloader = {
 }
 
 export type LlmRuntime = {
-  complete: (request: ChatRequest) => Promise<ChatResponse>
+  completeText: (request: TextRequest) => Promise<TextResponse>
   dispose: () => Promise<void>
 }
 

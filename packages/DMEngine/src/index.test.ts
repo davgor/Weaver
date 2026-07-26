@@ -1,7 +1,19 @@
-import { describe, expect, it } from 'vitest'
+import { mkdtempSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { afterEach, describe, expect, it } from 'vitest'
 import { dmEngine } from './index.js'
 
 describe('@weaver/dm-engine', () => {
+  const tempRoots: string[] = []
+
+  afterEach(() => {
+    for (const root of tempRoots) {
+      rmSync(root, { force: true, recursive: true })
+    }
+    tempRoots.length = 0
+  })
+
   it('reports healthy', () => {
     const health = dmEngine.health()
     expect(health.ok).toBe(true)
@@ -12,6 +24,8 @@ describe('@weaver/dm-engine', () => {
     const endpoints = dmEngine.listEndpoints()
     expect(endpoints.length).toBeGreaterThan(0)
     expect(endpoints.some((e) => e.name === 'health')).toBe(true)
+    expect(endpoints.some((e) => e.name === 'campaign.create')).toBe(true)
+    expect(endpoints.some((e) => e.name === 'campaign.open')).toBe(true)
   })
 
   it('invokes the health endpoint', async () => {
@@ -27,4 +41,29 @@ describe('@weaver/dm-engine', () => {
   it('rejects unknown endpoints', async () => {
     await expect(dmEngine.call('does-not-exist')).rejects.toThrow(/Unknown endpoint/)
   })
+
+  it('exposes typed campaign create/open APIs', () => {
+    expect(typeof dmEngine.createCampaign).toBe('function')
+    expect(typeof dmEngine.openCampaign).toBe('function')
+  })
+
+  it('creates and opens campaigns through admin endpoints without raw SQL endpoints', async () => {
+    const filePath = campaignPath(tempRoots, 'admin.sqlite')
+    const createResult = await dmEngine.call('campaign.create', { campaignId: 'admin', filePath })
+    const openResult = await dmEngine.call('campaign.open', { campaignId: 'admin', filePath })
+    const endpointText = dmEngine
+      .listEndpoints()
+      .map((endpoint) => `${endpoint.name} ${endpoint.description}`)
+      .join('\n')
+
+    expect(createResult).toMatchObject({ campaignId: 'admin', filePath, appliedMigrations: [1] })
+    expect(openResult).toMatchObject({ campaignId: 'admin', filePath, appliedMigrations: [] })
+    expect(endpointText).not.toMatch(/sql/i)
+  })
 })
+
+function campaignPath(roots: string[], filename: string): string {
+  const root = mkdtempSync(join(tmpdir(), 'dm-engine-api-'))
+  roots.push(root)
+  return join(root, filename)
+}
