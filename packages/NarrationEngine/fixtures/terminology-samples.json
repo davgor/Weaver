@@ -1,0 +1,30 @@
+[
+  {
+    "id": "scene-courtyard",
+    "text": "Lantern light pools across the cobbles as rain begins.",
+    "expectClean": true
+  },
+  {
+    "id": "scene-beholder",
+    "text": "The beholder glares from the archway.",
+    "expectClean": false,
+    "expectedViolations": ["beholder"]
+  },
+  {
+    "id": "scene-d20",
+    "text": "Roll a d20 to see whether the lock yields.",
+    "expectClean": false,
+    "expectedViolations": ["d20"]
+  },
+  {
+    "id": "scene-branding",
+    "text": "This tale owes nothing to Dungeons & Dragons.",
+    "expectClean": false,
+    "expectedViolations": ["Dungeons & Dragons"]
+  },
+  {
+    "id": "scene-dm-code",
+    "text": "DM endpoint routed the scene update.",
+    "expectClean": true
+  }
+]

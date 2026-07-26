@@ -1,4 +1,5 @@
 import { AdminReadyView } from './AdminReadyView'
+import { LlmUsageDashboard } from './LlmUsageDashboard'
 import { useAdminState } from './useAdminState'
 import { APP_DISPLAY_NAME } from '../../shared/appBranding'
 
@@ -19,16 +20,19 @@ export function App() {
       {admin.state === 'loading' && <p className="status">Loading engines…</p>}
       {admin.state === 'error' && <p className="status error">{admin.error}</p>}
       {admin.state === 'ready' && (
-        <AdminReadyView
-          engines={admin.engines}
-          selected={admin.selected}
-          selectedId={admin.selectedId}
-          busy={admin.busy}
-          error={admin.error}
-          lastResult={admin.lastResult}
-          onSelect={admin.onSelect}
-          onRun={admin.onRun}
-        />
+        <>
+          <LlmUsageDashboard />
+          <AdminReadyView
+            engines={admin.engines}
+            selected={admin.selected}
+            selectedId={admin.selectedId}
+            busy={admin.busy}
+            error={admin.error}
+            lastResult={admin.lastResult}
+            onSelect={admin.onSelect}
+            onRun={admin.onRun}
+          />
+        </>
       )}
     </div>
   )

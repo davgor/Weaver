@@ -1,8 +1,7 @@
 import { extractClaims, stripClaimBlock } from './claimExtract.js'
-import { validateClaims } from './claimValidate.js'
+import { validateProse, type ProseValidationResult } from './proseValidate.js'
 import type { NarrationPeers, TextCompletionRequest } from './peers.js'
 import type {
-  ClaimValidationResult,
   FactualClaim,
   PersistOutcome,
   SceneGenerateInput,
@@ -89,7 +88,7 @@ async function* emitSocialStream(
 type ValidatedProse = {
   prose: string
   claims: FactualClaim[]
-  validation: ClaimValidationResult
+  validation: ProseValidationResult
 }
 
 async function completeValidated(
@@ -103,11 +102,14 @@ async function completeValidated(
 async function rewriteValidated(
   input: SceneGenerateInput,
   peers: NarrationPeers,
-  prior: ClaimValidationResult
+  prior: ProseValidationResult
 ): Promise<ValidatedProse | null> {
-  const rejected = prior.rejected.map((claim) => claim.reason).join('; ')
+  const issues = [
+    ...prior.rejected.map((claim) => claim.reason),
+    ...prior.toneViolations.map((violation) => `Tone violation: ${violation}`)
+  ].join('; ')
   const response = await peers.llm.completeText({
-    prompt: `${input.prompt}\nRewrite without these contradictions: ${rejected}`,
+    prompt: `${input.prompt}\nRewrite without these contradictions: ${issues}`,
     ...(input.context === undefined ? {} : { context: input.context }),
     ...(input.maxTokens === undefined ? {} : { maxTokens: input.maxTokens })
   })
@@ -116,8 +118,9 @@ async function rewriteValidated(
 
 function validateRaw(raw: string, peers: NarrationPeers): ValidatedProse {
   const claims = extractClaims(raw)
-  const prose = stripClaimBlock(raw)
-  return { prose, claims, validation: validateClaims(claims, peers) }
+  const rawProse = stripClaimBlock(raw)
+  const validation = validateProse(rawProse, claims, peers)
+  return { prose: validation.prose, claims, validation }
 }
 
 function toCompletionInput(input: SocialGenerateInput): SceneGenerateInput {

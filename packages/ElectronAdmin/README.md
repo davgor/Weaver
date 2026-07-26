@@ -23,7 +23,9 @@ UI + IPC for reviewing app/LLM metrics, listing engine packages, and exercising 
 
 ## Status (today)
 
-Admin shell loads engine summaries, lets you select an engine, run an endpoint, and inspect the last result (including LLMEngine install/status/complete surfaces). Useful while engines grow beyond health stubs.
+Admin shell loads engine summaries, lets you select an engine, run an endpoint, and inspect the last result (including LLMEngine install/status/complete surfaces). An LLM usage dashboard aggregates metering by purpose and provider with time-range filters, shows the active local model/provider at a glance, and supports a manual backend connection check — all via LLMEngine endpoints only.
+
+Registered engines live in `src/main/engines.ts` (also mirrored in ElectronAITTRPG `engineHealth.ts` when wiring the game app). Wave-five engines (`CharacterEngine`, `CombatEngine`, `ItemEngine`, `NPCEngine`, `EnemyEngine`, `DMEngine`, `NarrationEngine`) each expose real endpoints beyond `health` in the Admin catalog; see `engineCatalog.contract.test.ts`.
 
 ## Run & package
 

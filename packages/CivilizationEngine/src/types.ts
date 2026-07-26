@@ -49,6 +49,9 @@ export type CivilizationRecord = {
   npcSlotsAssigned: number
   statsVersion: number
   extraStats: Record<string, unknown>
+  displayName?: string
+  history?: string
+  namingRealizedAt?: string
   createdAt: string
   updatedAt: string
 }

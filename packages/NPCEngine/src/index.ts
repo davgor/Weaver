@@ -4,7 +4,8 @@ export { NpcEngineError } from './errors.js'
 export type { NpcEngineErrorCode } from './errors.js'
 export { constructNpc } from './construction.js'
 export { clearNpcStore, getNpc } from './store.js'
-export { appendNpcMemory, appendWorldFact, queryNpcGroundingContext } from './memory.js'
+export { appendNpcMemory, appendWorldFact, listWorldFactsMentioningNpc, queryNpcGroundingContext } from './memory.js'
+export { clearDmOpinionStore, getNpcDossier, upsertDmNpcOpinion } from './dossier.js'
 export { hydrateNpcCombatTier, setNpcDefeatDisposition } from './combatDisposition.js'
 export {
   addNpcToFaction,

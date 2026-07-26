@@ -11,6 +11,8 @@ const EXPECTED_ENDPOINTS = [
   'upsertNpcOpinion',
   'listNpcOpinionsHeldBy',
   'listNpcOpinionsAbout',
+  'getNpcDossier',
+  'upsertDmNpcOpinion',
   'selectSocialResponders',
   'requestNpcPortrait'
 ] as const

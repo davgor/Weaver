@@ -60,9 +60,37 @@ describe('@weaver/narration-engine', () => {
         'streamSocial',
         'generateScene',
         'decideSilentResolve',
-        'validateProseClaims'
+        'validateProseClaims',
+        'retrieveRelevantChunks',
+        'indexCampaignFact'
       ])
     )
+  })
+})
+
+describe('rag retrieval endpoints', () => {
+  it('indexes and retrieves campaign facts through call()', async () => {
+    await narrationEngine.call('indexCampaignFact', {
+      chunk: {
+        id: 'world-1',
+        campaignId: 'rag-campaign',
+        category: 'world',
+        text: 'The obsidian spire watches the northern pass'
+      }
+    })
+
+    const result = await narrationEngine.call('retrieveRelevantChunks', {
+      campaignId: 'rag-campaign',
+      query: 'obsidian spire',
+      mode: 'lexical'
+    })
+
+    expect(result).toMatchObject({
+      retrievalMode: 'lexical',
+      usedLexicalFallback: false,
+      totalChars: expect.any(Number)
+    })
+    expect((result as { chunks: Array<{ id: string }> }).chunks[0]?.id).toBe('world-1')
   })
 })
 

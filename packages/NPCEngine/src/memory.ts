@@ -15,6 +15,10 @@ export function appendWorldFact(fact: WorldFact): WorldFact {
   return saveWorldFact(fact)
 }
 
+export function listWorldFactsMentioningNpc(npcId: string): WorldFact[] {
+  return listWorldFacts().filter((fact) => fact.npcIds?.includes(npcId) ?? false)
+}
+
 export function queryNpcGroundingContext(input: QueryNpcGroundingContextInput): GroundingContext {
   const npc = requireNpc(input.npcId)
   return {

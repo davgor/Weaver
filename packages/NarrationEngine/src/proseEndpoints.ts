@@ -1,5 +1,5 @@
 import { extractClaims, stripClaimBlock } from './claimExtract.js'
-import { validateClaims } from './claimValidate.js'
+import { validateProse } from './proseValidate.js'
 import type { NarrationPeers } from './peers.js'
 import {
   clearNarrationStore,
@@ -41,10 +41,11 @@ export function buildProseEndpoints(getPeers: () => NarrationPeers | undefined):
     endpoint('validateProseClaims', 'Extract and validate claims in prose', (payload) => {
       const raw = readStringRecord(asRecord(payload, 'validateProseClaims'), 'prose')
       const claims = extractClaims(raw)
+      const validation = validateProse(stripClaimBlock(raw), claims, requirePeers(getPeers()))
       return {
-        prose: stripClaimBlock(raw),
+        prose: validation.prose,
         claims,
-        validation: validateClaims(claims, requirePeers(getPeers()))
+        validation
       }
     })
   ]

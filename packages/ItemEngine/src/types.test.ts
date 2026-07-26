@@ -28,7 +28,9 @@ describe('item model types', () => {
       durability: 7,
       charges: 2,
       customName: 'Roadworn Jerkin',
-      enchantmentRefs: ['enchantment.minor-ward']
+      enchantmentOverlays: [
+        { overlayId: 'overlay.minor-ward', kind: 'onHit', onHitEffectId: 'effect.minor-ward' }
+      ]
     }
 
     expect(instance.templateId).toBe(template.id)

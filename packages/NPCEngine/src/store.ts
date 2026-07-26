@@ -103,6 +103,7 @@ function copyWorldFact(fact: WorldFact): WorldFact {
     ...fact,
     provenance: { ...fact.provenance },
     ...(fact.regionIds === undefined ? {} : { regionIds: [...fact.regionIds] }),
-    ...(fact.factionIds === undefined ? {} : { factionIds: [...fact.factionIds] })
+    ...(fact.factionIds === undefined ? {} : { factionIds: [...fact.factionIds] }),
+    ...(fact.npcIds === undefined ? {} : { npcIds: [...fact.npcIds] })
   }
 }

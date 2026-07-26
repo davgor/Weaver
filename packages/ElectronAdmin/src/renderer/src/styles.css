@@ -234,8 +234,152 @@ pre {
   color: var(--danger);
 }
 
+.usage-dashboard {
+  margin-bottom: 1.5rem;
+  background: color-mix(in srgb, var(--panel) 92%, white);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  padding: 1.25rem;
+}
+
+.usage-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: start;
+  margin-bottom: 1rem;
+}
+
+.usage-dashboard h2,
+.usage-card h3 {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.usage-lede,
+.provider-detail,
+.connection-result {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.usage-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: end;
+}
+
+.range-picker {
+  display: grid;
+  gap: 0.25rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.range-picker select,
+.usage-actions button {
+  border: 1px solid var(--line);
+  background: #fff;
+  padding: 0.45rem 0.75rem;
+  font: inherit;
+}
+
+.usage-actions button.secondary {
+  background: var(--accent-soft);
+}
+
+.usage-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(240px, 320px) 1fr;
+}
+
+.usage-card {
+  border: 1px solid var(--line);
+  background: #fff;
+  padding: 1rem;
+}
+
+.provider-card {
+  grid-row: span 2;
+}
+
+.provider-facts {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0 0 0.75rem;
+}
+
+.provider-facts div {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.provider-facts dt {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.provider-facts dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+.provider-actions {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.provider-actions button {
+  border: 1px solid var(--line);
+  background: var(--accent-soft);
+  padding: 0.45rem 0.9rem;
+}
+
+.usage-table-wrap {
+  overflow: auto;
+}
+
+.usage-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.usage-table th,
+.usage-table td {
+  border-bottom: 1px solid var(--line);
+  padding: 0.45rem 0.5rem;
+  text-align: left;
+}
+
+.usage-table th {
+  color: var(--muted);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.usage-table tfoot td {
+  font-weight: 600;
+}
+
 @media (max-width: 860px) {
   .layout {
     grid-template-columns: 1fr;
+  }
+
+  .usage-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .provider-card {
+    grid-row: auto;
   }
 }

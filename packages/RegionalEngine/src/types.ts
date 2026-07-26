@@ -42,6 +42,9 @@ export type RegionRecord = RegionStats & {
   regionId: string
   worldId: string
   sourceExpansionId?: string
+  displayName?: string
+  history?: string
+  namingRealizedAt?: string
   createdAt: string
   updatedAt: string
 }
@@ -69,6 +72,8 @@ export type RegionSummary = Pick<
   | 'centroid'
   | 'statsVersion'
   | 'extraStats'
+  | 'displayName'
+  | 'history'
 >
 
 export type RegionalWorldReader = {
@@ -98,6 +103,11 @@ export type RegionalService = {
   deleteRegion: (worldId: string, regionId: string) => void
   hasRegions: (worldId: string) => boolean
   countRegions: (worldId: string) => number
+  updateRegionNaming: (
+    worldId: string,
+    regionId: string,
+    naming: { displayName: string; history: string; namingRealizedAt: string }
+  ) => RegionRecord
 }
 
 export function regionSummary(record: RegionRecord): RegionSummary {
@@ -120,5 +130,7 @@ export function regionSummary(record: RegionRecord): RegionSummary {
     extraStats: { ...record.extraStats }
   }
   if (record.sourceExpansionId !== undefined) summary.sourceExpansionId = record.sourceExpansionId
+  if (record.displayName !== undefined) summary.displayName = record.displayName
+  if (record.history !== undefined) summary.history = record.history
   return summary
 }

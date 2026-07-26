@@ -27,6 +27,7 @@
     "deadcode:refresh": "node scripts/deadcode-refresh.mjs",
     "ci:act": "node scripts/run-act.mjs",
     "board:order": "node scripts/board-order.mjs",
+    "terminology:check": "npm run terminology:check -w @weaver/narration-engine",
     "package": "npm run build:engines && npm run package -w @weaver/electron-aittrpg && npm run package -w @weaver/electron-admin",
     "package:win": "npm run build:engines && npm run package:win -w @weaver/electron-aittrpg && npm run package:win -w @weaver/electron-admin",
     "package:mac": "npm run build:engines && npm run package:mac -w @weaver/electron-aittrpg && npm run package:mac -w @weaver/electron-admin"
@@ -37,7 +38,7 @@
     "oxlint": "^1.71.0",
     "ts-prune": "^0.10.3",
     "typescript": "^5.5.2",
-    "vitest": "^4.1.9"
+    "vitest": "^4.1.10"
   },
   "engines": {
     "node": ">=20"

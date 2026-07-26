@@ -21,6 +21,7 @@
   "dependencies": {},
   "devDependencies": {
     "@weaver/action-engine": "*",
+    "@weaver/character-engine": "*",
     "typescript": "^5.5.2"
   }
 }

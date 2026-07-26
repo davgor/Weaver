@@ -99,6 +99,35 @@ describe('claim reject and rewrite', () => {
     })
     expect(projectScene().map((block) => block.text)).toEqual(['The courtyard falls quiet.'])
   })
+
+  it('scrubs trademark terms and rewrites once when tone violations remain', async () => {
+    const peers = peersWithTexts([
+      'Roll a d20 for initiative order.\n<<<CLAIMS\n>>>',
+      'You steady your breath and move on.\n<<<CLAIMS\n>>>'
+    ])
+
+    const outcome = await generateScene({ prompt: 'Narrate the hallway.' }, peers)
+
+    expect(outcome).toMatchObject({
+      status: 'persisted',
+      prose: 'You steady your breath and move on.'
+    })
+    expect(peers.calls[1]?.prompt).toContain('Tone violation: d20')
+  })
+
+  it('persists guarded prose with terminology rewrites applied', async () => {
+    const peers = peersWithTexts([
+      'The beholder waits in silence.\n<<<CLAIMS\nnpcPresent:npc-guard\n>>>'
+    ])
+
+    const outcome = await generateScene({ prompt: 'Narrate the vault.' }, peers)
+
+    expect(outcome).toMatchObject({
+      status: 'persisted',
+      prose: 'The eye tyrant waits in silence.'
+    })
+    expect(projectScene().map((block) => block.text)).toEqual(['The eye tyrant waits in silence.'])
+  })
 })
 
 function dialogueInput(speakerId: string) {

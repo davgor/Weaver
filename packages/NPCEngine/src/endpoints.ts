@@ -1,3 +1,4 @@
+import { getNpcDossier, upsertDmNpcOpinion } from './dossier.js'
 import { appendNpcMemory, appendWorldFact, queryNpcGroundingContext } from './memory.js'
 import { constructNpc } from './construction.js'
 import { getNpc } from './store.js'
@@ -24,6 +25,7 @@ import type {
   ConstructNpcInput,
   CreateFactionInput,
   HydrateNpcCombatTierInput,
+  GetNpcDossierInput,
   ListNpcOpinionsAboutInput,
   ListNpcOpinionsHeldByInput,
   NpcMemory,
@@ -35,6 +37,7 @@ import type {
   UpdateNpcSpeakingStyleInput,
   UpdateReputationInput,
   UpsertNpcOpinionInput,
+  UpsertDmNpcOpinionInput,
   WorldFact
 } from './types.js'
 
@@ -64,6 +67,8 @@ export function buildEndpoints(): EngineEndpoint[] {
     endpoint('upsertNpcOpinion', 'Upsert an NPC opinion of a subject', opinionUpsertEndpoint),
     endpoint('listNpcOpinionsHeldBy', 'List subjects an NPC holds opinions of', opinionsHeldByEndpoint),
     endpoint('listNpcOpinionsAbout', 'List holders with opinions of a subject', opinionsAboutEndpoint),
+    endpoint('getNpcDossier', 'Read a campaign-scoped NPC dossier for UI', dossierEndpoint),
+    endpoint('upsertDmNpcOpinion', 'Persist DM notes for an NPC dossier', dmOpinionEndpoint),
     endpoint('updateNpcSpeakingStyle', 'Update an NPC speaking style sample', speakingStyleEndpoint),
     endpoint('selectSocialResponders', 'Select deterministic Social turn responders', respondersEndpoint),
     endpoint('requestNpcPortrait', 'Queue an NPC portrait generation request', npcPortraitEndpoint),
@@ -140,6 +145,14 @@ function opinionsHeldByEndpoint(payload: unknown) {
 function opinionsAboutEndpoint(payload: unknown) {
   const input = asPayload<ListNpcOpinionsAboutInput>(payload, 'listNpcOpinionsAbout')
   return listNpcOpinionsAbout(input.subjectId)
+}
+
+function dossierEndpoint(payload: unknown) {
+  return getNpcDossier(asPayload<GetNpcDossierInput>(payload, 'getNpcDossier'))
+}
+
+function dmOpinionEndpoint(payload: unknown) {
+  return upsertDmNpcOpinion(asPayload<UpsertDmNpcOpinionInput>(payload, 'upsertDmNpcOpinion'))
 }
 
 function speakingStyleEndpoint(payload: unknown) {
