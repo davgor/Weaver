@@ -32,5 +32,8 @@ describe('80% coverage CI gate', () => {
     const workflow = read('.github/workflows/pr-checks.yml')
     expect(workflow).toMatch(/^\s+coverage:/m)
     expect(workflow).toContain('npm run test:coverage')
+    expect(workflow).toMatch(
+      /coverage:[\s\S]*?Build engine packages[\s\S]*?npm run test:coverage/
+    )
   })
 })
