@@ -181,9 +181,6 @@ function rollInitiative(
     return {
       ...combatant,
       conditions: [...(combatant.conditions ?? [])],
-      characterConditions: [...(combatant.characterConditions ?? [])],
-      damageResistances: [...(combatant.damageResistances ?? [])],
-      damageVulnerabilities: [...(combatant.damageVulnerabilities ?? [])],
       initiative: { roll, modifier, total: roll + modifier },
       inputOrder
     }
@@ -255,13 +252,9 @@ function stripInputOrder(row: InitiativeRow): EncounterCombatant {
     abilityScores: { ...row.abilityScores },
     initiative: { ...row.initiative },
     conditions: [...row.conditions],
-    characterConditions: [...row.characterConditions],
-    damageResistances: [...row.damageResistances],
-    damageVulnerabilities: [...row.damageVulnerabilities],
     ...(row.displayName === undefined ? {} : { displayName: row.displayName }),
     ...(row.hp === undefined ? {} : { hp: { ...row.hp } }),
-    ...(row.armorClass === undefined ? {} : { armorClass: row.armorClass }),
-    ...(row.dying === undefined ? {} : { dying: row.dying === null ? null : { ...row.dying } })
+    ...(row.armorClass === undefined ? {} : { armorClass: row.armorClass })
   }
 }
 

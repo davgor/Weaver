@@ -88,47 +88,6 @@ export type {
   QuestTransitionInput
 } from './quests/types.js'
 
-// Guided character-creation orchestration (epic 061).
-export {
-  buildCharacterFacts,
-  confirmOpeningScene,
-  exportGuidedCreationStates,
-  generateOpeningScene,
-  getGuidedCreationState,
-  importGuidedCreationStates,
-  resetGuidedCreationStateStore,
-  startGuidedIdentity,
-  submitGuidedIdentityMessage
-} from './guidedCreation/index.js'
-export type {
-  CharacterIdentityGroundingApi,
-  CharacterIdentitySelection,
-  CharacterStartingLoadoutFact,
-  CompanionFact,
-  ConfirmOpeningSceneInput,
-  GenerateOpeningSceneInput,
-  GuidedCreationNarrationApi,
-  GuidedCreationPhase,
-  GuidedCreationState,
-  GuidedCreationTranscriptEntry,
-  GuidedIdentitySubmitResult,
-  GuidedTranscriptSpeaker,
-  IdentityCreationPhase,
-  OpeningSceneResult,
-  StartGuidedIdentityInput,
-  SubmitGuidedIdentityInput
-} from './guidedCreation/index.js'
-
-export { runCampaignGeneration } from './campaignGen/pipeline.js'
-export { CAMPAIGN_GENERATION_STAGES } from './campaignGen/types.js'
-export type {
-  CampaignGenerationDeps,
-  CampaignGenerationInput,
-  CampaignGenerationResult,
-  CampaignGenerationStageId,
-  StageOutput
-} from './campaignGen/types.js'
-
 export type DmEngineDeps = {
   combat: CombatEngineApi
   world: WorldEngineApi

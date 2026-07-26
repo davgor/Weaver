@@ -24,7 +24,6 @@ interface CharacterSheetOverlayProps {
   open: boolean
   request?: LoadCharacterSheetRequest
   onClose: () => void
-  onOpenNpc?: (npcId: string) => void
 }
 
 export function CharacterSheetOverlay(props: CharacterSheetOverlayProps): JSX.Element | null {
@@ -41,7 +40,7 @@ export function CharacterSheetOverlay(props: CharacterSheetOverlayProps): JSX.El
           onClose={props.onClose}
         />
         <SheetTabs tab={sheetState.tab} onSelect={sheetState.setTab} />
-        <SheetBody sheetState={sheetState} onOpenNpc={props.onOpenNpc} />
+        <SheetBody sheetState={sheetState} />
       </div>
     </div>
   )
@@ -90,7 +89,6 @@ function SheetTabs(props: {
 
 function SheetBody(props: {
   sheetState: ReturnType<typeof useCharacterSheet>
-  onOpenNpc: ((npcId: string) => void) | undefined
 }): JSX.Element {
   const { sheetState } = props
   return (
@@ -103,7 +101,6 @@ function SheetBody(props: {
           busy={sheetState.busy}
           onEquip={sheetState.equip}
           onUnequip={sheetState.unequip}
-          onOpenNpc={props.onOpenNpc}
         />
       ) : (
         <p className="character-sheet-muted">Loading sheet…</p>
@@ -118,7 +115,6 @@ function SheetTabBody(props: {
   busy: boolean
   onEquip: (instanceId: string, slot: EquipmentSlot) => void
   onUnequip: (target: string) => void
-  onOpenNpc: ((npcId: string) => void) | undefined
 }): JSX.Element {
   switch (props.tab) {
     case 'stats':
@@ -133,7 +129,7 @@ function SheetTabBody(props: {
         />
       )
     case 'journal':
-      return <JournalPanel entries={props.sheet.journal} onOpenNpc={props.onOpenNpc} />
+      return <JournalPanel entries={props.sheet.journal} />
     case 'logBook':
       return <LogBookPanel entries={props.sheet.logBook} />
     case 'quests':

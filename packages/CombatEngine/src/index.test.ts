@@ -39,7 +39,6 @@ describe('@weaver/combat-engine', () => {
       expect.arrayContaining([
         'encounter.start',
         'encounter.startAdHoc',
-        'encounter.attack',
         'encounter.flee',
         'encounter.execute'
       ])

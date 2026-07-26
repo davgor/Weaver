@@ -6,7 +6,6 @@ import type {
 
 interface JournalPanelProps {
   entries: SheetJournalEntry[]
-  onOpenNpc: ((npcId: string) => void) | undefined
 }
 
 export function JournalPanel(props: JournalPanelProps): JSX.Element {
@@ -18,10 +17,8 @@ export function JournalPanel(props: JournalPanelProps): JSX.Element {
         items={props.entries.map((entry) => ({
           id: entry.id,
           title: entry.createdAt,
-          body: entry.text,
-          ...(entry.linkedNpcId === undefined ? {} : { linkedNpcId: entry.linkedNpcId })
+          body: entry.text
         }))}
-        onOpenNpc={props.onOpenNpc}
       />
     </div>
   )
@@ -105,8 +102,7 @@ function QuestList(props: { quests: SheetQuestEntry[]; empty: string }): JSX.Ele
 
 function RecordList(props: {
   empty: string
-  items: Array<{ id: string; title: string; body: string; linkedNpcId?: string }>
-  onOpenNpc?: ((npcId: string) => void) | undefined
+  items: Array<{ id: string; title: string; body: string }>
 }): JSX.Element {
   if (props.items.length === 0) {
     return <p className="character-sheet-empty">{props.empty}</p>
@@ -117,27 +113,8 @@ function RecordList(props: {
         <li key={item.id}>
           <div className="character-sheet-record-title">{item.title}</div>
           <div className="character-sheet-record-body">{item.body}</div>
-          <NpcJournalLink linkedNpcId={item.linkedNpcId} onOpenNpc={props.onOpenNpc} />
         </li>
       ))}
     </ul>
-  )
-}
-
-function NpcJournalLink(props: {
-  linkedNpcId: string | undefined
-  onOpenNpc: ((npcId: string) => void) | undefined
-}): JSX.Element | null {
-  const linkedNpcId = props.linkedNpcId
-  const onOpenNpc = props.onOpenNpc
-  if (linkedNpcId === undefined || onOpenNpc === undefined) return null
-  return (
-    <button
-      type="button"
-      className="character-sheet-npc-link"
-      onClick={() => onOpenNpc(linkedNpcId)}
-    >
-      Open NPC dossier
-    </button>
   )
 }

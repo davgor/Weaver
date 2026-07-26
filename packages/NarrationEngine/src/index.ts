@@ -86,14 +86,6 @@ export type {
   TextCompletionRequest,
   TextCompletionResponse
 } from './peers.js'
-export { fillAndValidate, fillSkeleton, parseLabeledBlocks } from './skeletonFill.js'
-export type { FillAndValidateInput, FillAndValidateResult } from './skeletonFill.js'
-export { generateGuidedIdentityReply } from './guidedIdentity.js'
-export type {
-  GuidedIdentityInput,
-  GuidedIdentityPhase,
-  GuidedIdentityResult
-} from './guidedIdentity.js'
 export { extractClaims, stripClaimBlock } from './claimExtract.js'
 export { validateClaims } from './claimValidate.js'
 export { applyTerminologyGuards, findForbiddenTerminology } from './terminologyGuards.js'
@@ -147,12 +139,7 @@ export type {
   RetrieveRelevantChunksResult
 } from './rag/ragIndex.js'
 
-import {
-  generateGuidedIdentityReply,
-  type GuidedIdentityInput,
-  type GuidedIdentityPhase
-} from './guidedIdentity.js'
-import type { NarrationPeers, TextCompleter } from './peers.js'
+import type { NarrationPeers } from './peers.js'
 import { buildProseEndpoints } from './proseEndpoints.js'
 import { buildRagEndpoints } from './rag/ragEndpoints.js'
 import {
@@ -164,7 +151,6 @@ import {
   streamSocial
 } from './proseApi.js'
 import { decideSilentResolve } from './silentResolve.js'
-import { fillAndValidate, type FillAndValidateInput } from './skeletonFill.js'
 
 export type GeneratePortraitDeps = {
   providers?: Partial<Record<ImageProviderId, ImageProvider>>
@@ -217,8 +203,6 @@ export type NarrationEngineApi = {
   generateScene: typeof generateScene
   streamSocial: typeof streamSocial
   decideSilentResolve: typeof decideSilentResolve
-  fillAndValidate: typeof fillAndValidate
-  generateGuidedIdentityReply: typeof generateGuidedIdentityReply
   clearNarrationStore: typeof clearNarrationStore
   setPeers: (peers: NarrationPeers | undefined) => void
   listEndpoints: () => EngineEndpoint[]
@@ -344,18 +328,6 @@ function buildEndpoints(): EngineEndpoint[] {
         return await setManualPortrait(request.characterId, request.imagePath)
       }
     },
-    {
-      name: 'fillAndValidate',
-      description: 'Fill a labeled skeleton and validate output against supplied facts',
-      invoke: async (payload) =>
-        await fillAndValidate(assertFillAndValidatePayload(payload), requireTextCompleter())
-    },
-    {
-      name: 'guidedIdentity.reply',
-      description: 'Generate a fact-grounded guided character identity reply',
-      invoke: async (payload) =>
-        await generateGuidedIdentityReply(assertGuidedIdentityPayload(payload), requireTextCompleter())
-    },
     ...buildProseEndpoints(() => injectedPeers),
     ...buildRagEndpoints()
   ]
@@ -379,8 +351,6 @@ export const narrationEngine: NarrationEngineApi = {
   generateScene,
   streamSocial,
   decideSilentResolve,
-  fillAndValidate,
-  generateGuidedIdentityReply,
   clearNarrationStore,
   setPeers(peers) {
     injectedPeers = peers
@@ -473,88 +443,6 @@ function assertManualPortraitPayload(payload: unknown): ManualPortraitResult {
     throw new Error('setManualPortrait endpoint requires characterId and imagePath.')
   }
   return { characterId, imagePath }
-}
-
-function assertFillAndValidatePayload(payload: unknown): FillAndValidateInput {
-  const record = assertEndpointRecord(payload, 'fillAndValidate')
-  const seed = optionalPayloadString(record, 'seed')
-  const input = {
-    skeleton: requiredPayloadString(record, 'skeleton', 'fillAndValidate'),
-    facts: readStringMap(record, 'facts', 'fillAndValidate'),
-    stage: requiredPayloadString(record, 'stage', 'fillAndValidate')
-  }
-  return seed === undefined ? input : { ...input, seed }
-}
-
-function assertGuidedIdentityPayload(payload: unknown): GuidedIdentityInput {
-  const record = assertEndpointRecord(payload, 'guidedIdentity.reply')
-  const seed = optionalPayloadString(record, 'seed')
-  const input = {
-    phase: readGuidedIdentityPhase(record.phase),
-    transcript: readTranscript(record.transcript),
-    characterFacts: readStringMap(record, 'characterFacts', 'guidedIdentity.reply')
-  }
-  return seed === undefined ? input : { ...input, seed }
-}
-
-function requireTextCompleter(): TextCompleter {
-  if (injectedPeers === undefined) {
-    throw new Error('Narration skeleton endpoints require injected peers')
-  }
-  return injectedPeers.llm
-}
-
-function assertEndpointRecord(payload: unknown, label: string): UnknownRecord {
-  if (!isRecord(payload)) {
-    throw new Error(`${label} endpoint requires an object payload.`)
-  }
-  return payload
-}
-
-function requiredPayloadString(record: UnknownRecord, key: string, label: string): string {
-  const value = readString(record, key)
-  if (!hasText(value)) {
-    throw new Error(`${label} endpoint requires string ${key}.`)
-  }
-  return value
-}
-
-function optionalPayloadString(record: UnknownRecord, key: string): string | undefined {
-  const value = readString(record, key)
-  return hasText(value) ? value : undefined
-}
-
-function readStringMap(record: UnknownRecord, key: string, label: string): Record<string, string> {
-  const value = record[key]
-  if (!isRecord(value)) {
-    throw new Error(`${label} endpoint requires string map ${key}.`)
-  }
-
-  const result: Record<string, string> = {}
-  for (const [mapKey, mapValue] of Object.entries(value)) {
-    if (typeof mapValue !== 'string') {
-      throw new Error(`${label} endpoint requires string map ${key}.`)
-    }
-    result[mapKey] = mapValue
-  }
-  return result
-}
-
-function readGuidedIdentityPhase(value: unknown): GuidedIdentityPhase {
-  if (value === 'who' || value === 'why' || value === 'where' || value === 'what') {
-    return value
-  }
-  throw new Error('guidedIdentity.reply endpoint requires phase who|why|where|what.')
-}
-
-function readTranscript(value: unknown): string | readonly string[] {
-  if (typeof value === 'string' && hasText(value)) {
-    return value
-  }
-  if (Array.isArray(value) && value.every((item) => typeof item === 'string')) {
-    return value
-  }
-  throw new Error('guidedIdentity.reply endpoint requires transcript string or string array.')
 }
 
 function isImageGenerateRequest(payload: unknown): payload is ImageGenerateRequest {

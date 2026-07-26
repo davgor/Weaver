@@ -196,15 +196,6 @@
   color: var(--text-dim);
 }
 
-.app-root button.character-sheet-npc-link.character-sheet-npc-link {
-  border: 0;
-  background: transparent;
-  color: var(--text-accent);
-  padding: 0;
-  text-decoration: underline;
-  cursor: pointer;
-}
-
 .character-sheet-equip-actions {
   display: flex;
   flex-wrap: wrap;

@@ -17,21 +17,9 @@ function TitlebarBrand(): JSX.Element {
   )
 }
 
-type TitlebarProps = {
-  onOpenSettings: () => void
-}
-
-function TitlebarWindowControls({ onOpenSettings }: TitlebarProps): JSX.Element {
+function TitlebarWindowControls(): JSX.Element {
   return (
     <div className="titlebar-controls">
-      <button
-        type="button"
-        aria-label="Open settings"
-        className="titlebar-button titlebar-settings-button"
-        onClick={onOpenSettings}
-      >
-        Settings
-      </button>
       <button
         type="button"
         aria-label="Minimize"
@@ -60,11 +48,11 @@ function TitlebarWindowControls({ onOpenSettings }: TitlebarProps): JSX.Element 
   )
 }
 
-export function Titlebar({ onOpenSettings }: TitlebarProps): JSX.Element {
+export function Titlebar(): JSX.Element {
   return (
     <div className="titlebar">
       <TitlebarBrand />
-      <TitlebarWindowControls onOpenSettings={onOpenSettings} />
+      <TitlebarWindowControls />
     </div>
   )
 }

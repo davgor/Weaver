@@ -4,9 +4,6 @@ import {
   createCloudImageProvider,
   createLocalImageProvider,
   createPlayer2ImageProvider,
-  fillAndValidate,
-  fillSkeleton,
-  generateGuidedIdentityReply,
   generatePortrait,
   narrationEngine,
   setManualPortrait,
@@ -15,8 +12,7 @@ import {
   type ImageGenerateRequest,
   type ImageProvider,
   type ImageProviderId,
-  type PortraitSubjectKind,
-  type TextCompleter
+  type PortraitSubjectKind
 } from './index.js'
 
 describe('@weaver/narration-engine', () => {
@@ -45,9 +41,7 @@ describe('@weaver/narration-engine', () => {
   it('rejects unknown endpoints', async () => {
     await expect(narrationEngine.call('does-not-exist')).rejects.toThrow(/Unknown endpoint/)
   })
-})
 
-describe('@weaver/narration-engine role endpoints', () => {
   it('describes prose and visual token responsibilities', async () => {
     const role = await narrationEngine.call('describeRole')
     expect(role).toMatchObject({
@@ -66,55 +60,11 @@ describe('@weaver/narration-engine role endpoints', () => {
         'streamSocial',
         'generateScene',
         'decideSilentResolve',
-        'fillAndValidate',
-        'guidedIdentity.reply',
         'validateProseClaims',
         'retrieveRelevantChunks',
         'indexCampaignFact'
       ])
     )
-  })
-})
-
-describe('skeleton fill public API', () => {
-  it('exports skeleton fill and guided identity helpers', async () => {
-    expect(fillSkeleton('{{TITLE}}', { TITLE: 'Ready' })).toBe('Ready')
-    const filled = await fillAndValidate(
-      { skeleton: '{{TITLE}}', facts: {}, stage: 'index-test' },
-      scriptedTextCompleter('<<<TITLE>>>Ready<<</TITLE>>>')
-    )
-    const reply = await generateGuidedIdentityReply(
-      {
-        phase: 'where',
-        transcript: ['Guide: Where are you from?'],
-        characterFacts: { race: 'elf', background: 'outlander', archetype: 'ranger' }
-      },
-      scriptedTextCompleter(
-        '<<<REPLY>>>This elf outlander ranger comes from misted borderlands.<<</REPLY>>>'
-      )
-    )
-
-    expect(filled.ok).toBe(true)
-    expect(reply.ok).toBe(true)
-  })
-
-  it('routes fillAndValidate through call() using injected peers', async () => {
-    narrationEngine.setPeers({
-      llm: scriptedTextCompleter('<<<TITLE>>>Ready<<</TITLE>>>'),
-      npcs: { getNpc: () => undefined }
-    })
-
-    try {
-      await expect(
-        narrationEngine.call('fillAndValidate', {
-          skeleton: '{{TITLE}}',
-          facts: {},
-          stage: 'index-test'
-        })
-      ).resolves.toMatchObject({ ok: true, filledText: 'Ready' })
-    } finally {
-      narrationEngine.setPeers(undefined)
-    }
   })
 })
 
@@ -373,11 +323,5 @@ function jsonResponse(body: unknown) {
   return {
     ok: true,
     json: async () => body
-  }
-}
-
-function scriptedTextCompleter(text: string): TextCompleter {
-  return {
-    completeText: async () => ({ text, backend: 'scripted' })
   }
 }
