@@ -1,8 +1,7 @@
-import type { Aabb } from '@weaver/world-engine'
+import { assertLandType, type Aabb } from '@weaver/world-engine'
 import type { EngineEndpoint } from './typesApi.js'
 import { applyWeatherField, clearWeatherField, getWeatherAt } from './weatherField.js'
 import { sampleWeather } from './sampleWeather.js'
-import type { LandType } from '@weaver/world-engine'
 
 const PACKAGE_NAME = '@weaver/weather-engine'
 const VERSION = '0.1.0'
@@ -52,7 +51,7 @@ function weatherEndpoints(): EngineEndpoint[] {
           day: requireNumber(body, 'day'),
           x: requireNumber(body, 'x'),
           y: requireNumber(body, 'y'),
-          landType: requireString(body, 'landType') as LandType
+          landType: assertLandType(requireString(body, 'landType'))
         })
       }
     },
