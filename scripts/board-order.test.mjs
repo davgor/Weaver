@@ -1,5 +1,15 @@
-import { describe, expect, it } from 'vitest'
-import { computeWaves, findNumericOrderViolations, parseDependsOn } from './board-order.mjs'
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { describe, expect, it, vi } from 'vitest'
+import {
+  computeWaves,
+  discoverEpics,
+  findNumericOrderViolations,
+  formatDoc,
+  main,
+  parseDependsOn
+} from './board-order.mjs'
 
 describe('parseDependsOn', () => {
   it('extracts 3-digit ids referenced after **Depends on:** up to **Feeds:**', () => {
@@ -93,5 +103,55 @@ describe('computeWaves', () => {
       { id: '002', base: '002-B', state: 'backlog', dependsOn: ['001'] }
     ]
     expect(() => computeWaves(epics)).toThrow(/circular/i)
+  })
+})
+
+describe('discoverEpics / formatDoc', () => {
+  it('discovers epics, skips sub-tickets, and formats in-progress tags', () => {
+    const board = mkdtempSync(join(tmpdir(), 'weaver-board-'))
+    try {
+      mkdirSync(join(board, 'backlog'))
+      mkdirSync(join(board, 'in-progress'))
+      mkdirSync(join(board, 'done'))
+      writeFileSync(join(board, 'backlog', '010-Repo-Foo.md'), '# EPIC\n\n**Depends on:** none.\n')
+      writeFileSync(
+        join(board, 'in-progress', '011-Repo-Bar.md'),
+        '# EPIC\n\n**Depends on:** `010-Repo-Foo`.\n'
+      )
+      writeFileSync(
+        join(board, 'backlog', '011.1-Subticket.md'),
+        '# sub\n\n**Depends on:** `010-Repo-Foo`.\n'
+      )
+      writeFileSync(join(board, 'done', 'README.md'), 'ignore')
+
+      const epics = discoverEpics(board)
+      expect(epics.map((e) => e.id).sort()).toEqual(['010', '011'])
+      expect(epics.find((e) => e.id === '011')?.state).toBe('in-progress')
+
+      const doc = formatDoc(epics, computeWaves(epics))
+      expect(doc).toContain('011-Repo-Bar` _(in-progress)_')
+      expect(doc).toContain('Wave 1')
+    } finally {
+      rmSync(board, { recursive: true, force: true })
+    }
+  })
+})
+
+describe('main', () => {
+  it('supports --check and write modes via main()', () => {
+    const board = mkdtempSync(join(tmpdir(), 'weaver-board-main-'))
+    const outPath = join(board, 'IMPLEMENTATION-ORDER.md')
+    try {
+      mkdirSync(join(board, 'backlog'))
+      writeFileSync(join(board, 'backlog', '001-Repo-Solo.md'), '# EPIC\n\n**Depends on:** none.\n')
+      const log = vi.spyOn(console, 'log').mockImplementation(() => {})
+      expect(main(['--check'], { boardRoot: board, outPath })).toBe(0)
+      expect(log.mock.calls[0]?.[0]).toMatch(/1 waves/)
+      expect(main([], { boardRoot: board, outPath })).toBe(0)
+      expect(readFileSync(outPath, 'utf8')).toContain('001-Repo-Solo')
+      log.mockRestore()
+    } finally {
+      rmSync(board, { recursive: true, force: true })
+    }
   })
 })

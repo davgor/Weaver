@@ -65,37 +65,88 @@ export function isDockerAvailable(runCommand = defaultRunCommand) {
   return runCommand('docker', ['info']).status === 0
 }
 
-export async function main(argv = process.argv.slice(2)) {
+/**
+ * @param {{
+ *   dockerAvailable?: () => boolean
+ *   resolveAct?: () => string | null
+ *   runAct?: (bin: string, args: string[]) => { status: number | null }
+ *   log?: (msg: string) => void
+ *   error?: (msg: string) => void
+ *   workflows?: Array<{ file: string, platform: string }>
+ * }} [deps]
+ */
+function resolveMainDeps(deps = {}) {
+  return {
+    log: deps.log ?? console.log,
+    error: deps.error ?? console.error,
+    dockerAvailable: deps.dockerAvailable ?? isDockerAvailable,
+    resolveAct: deps.resolveAct ?? resolveActBinary,
+    runAct: deps.runAct ?? ((bin, args) => spawnSync(bin, args, { stdio: 'inherit' })),
+    workflows: deps.workflows ?? DEFAULT_WORKFLOWS
+  }
+}
+
+/** @param {(msg: string) => void} log */
+function printHelp(log) {
+  log('Usage: npm run ci:act')
+  log('Runs pr-checks.yml and deadcode.yml locally via act. Requires Docker running.')
+  log('Override the act binary with ACT_BIN=/path/to/act if it is not on PATH.')
+}
+
+/**
+ * @param {{
+ *   actBin: string
+ *   workflows: Array<{ file: string, platform: string }>
+ *   runAct: (bin: string, args: string[]) => { status: number | null }
+ *   log: (msg: string) => void
+ *   error: (msg: string) => void
+ * }} opts
+ */
+function runWorkflows({ actBin, workflows, runAct, log, error }) {
+  for (const workflow of workflows) {
+    log(`\n> Running ${workflow.file} via act...`)
+    const result = runAct(actBin, buildActArgs(workflow))
+    if (result.status !== 0) {
+      error(`\nFAILED: ${workflow.file} did not succeed under act (exit ${result.status}).`)
+      return 1
+    }
+    log(`PASSED: ${workflow.file}`)
+  }
+  return 0
+}
+
+/**
+ * @param {string[]} [argv]
+ * @param {{
+ *   dockerAvailable?: () => boolean
+ *   resolveAct?: () => string | null
+ *   runAct?: (bin: string, args: string[]) => { status: number | null }
+ *   log?: (msg: string) => void
+ *   error?: (msg: string) => void
+ *   workflows?: Array<{ file: string, platform: string }>
+ * }} [deps]
+ */
+export async function main(argv = process.argv.slice(2), deps = {}) {
+  const { log, error, dockerAvailable, resolveAct, runAct, workflows } = resolveMainDeps(deps)
+
   if (argv.includes('--help') || argv.includes('-h')) {
-    console.log('Usage: npm run ci:act')
-    console.log('Runs pr-checks.yml and deadcode.yml locally via act. Requires Docker running.')
-    console.log('Override the act binary with ACT_BIN=/path/to/act if it is not on PATH.')
+    printHelp(log)
     return 0
   }
 
-  if (!isDockerAvailable()) {
-    console.error('Docker is not running or unreachable.')
-    console.error('Start Docker Desktop, then retry: npm run ci:act')
+  if (!dockerAvailable()) {
+    error('Docker is not running or unreachable.')
+    error('Start Docker Desktop, then retry: npm run ci:act')
     return 1
   }
 
-  const actBin = resolveActBinary()
+  const actBin = resolveAct()
   if (!actBin) {
-    console.error('Could not find `act`. Install it (e.g. `winget install nektos.act`) or set ACT_BIN.')
+    error('Could not find `act`. Install it (e.g. `winget install nektos.act`) or set ACT_BIN.')
     return 1
   }
 
-  for (const workflow of DEFAULT_WORKFLOWS) {
-    console.log(`\n> Running ${workflow.file} via act...`)
-    const result = spawnSync(actBin, buildActArgs(workflow), { stdio: 'inherit' })
-    if (result.status !== 0) {
-      console.error(`\nFAILED: ${workflow.file} did not succeed under act (exit ${result.status}).`)
-      return 1
-    }
-    console.log(`PASSED: ${workflow.file}`)
-  }
-
-  return 0
+  return runWorkflows({ actBin, workflows, runAct, log, error })
 }
 
 const isDirectRun =

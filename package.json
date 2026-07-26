@@ -21,6 +21,7 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "oxlint packages scripts",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
     "deadcode": "node scripts/deadcode-check.mjs",
     "deadcode:refresh": "node scripts/deadcode-refresh.mjs",
@@ -32,6 +33,7 @@
   },
   "devDependencies": {
     "@types/node": "^20.14.0",
+    "@vitest/coverage-v8": "^4.1.10",
     "oxlint": "^1.71.0",
     "ts-prune": "^0.10.3",
     "typescript": "^5.5.2",

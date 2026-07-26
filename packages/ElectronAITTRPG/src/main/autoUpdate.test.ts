@@ -3,6 +3,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 const checkForUpdates = vi.fn()
 const quitAndInstall = vi.fn()
 const on = vi.fn()
+const ipcHandle = vi.fn()
+const send = vi.fn()
+const loggerInfo = vi.fn()
+const loggerError = vi.fn()
 
 vi.mock('electron', () => ({
   app: {
@@ -10,10 +14,13 @@ vi.mock('electron', () => ({
     getVersion: () => '1.2.3'
   },
   BrowserWindow: {
-    getAllWindows: () => []
+    getAllWindows: () => [
+      { isDestroyed: () => false, webContents: { send } },
+      { isDestroyed: () => true, webContents: { send } }
+    ]
   },
   ipcMain: {
-    handle: vi.fn()
+    handle: (...args: unknown[]) => ipcHandle(...args)
   }
 }))
 
@@ -34,8 +41,8 @@ vi.mock('electron-updater', () => {
 
 vi.mock('./logger.js', () => ({
   logger: {
-    info: vi.fn(),
-    error: vi.fn()
+    info: (...args: unknown[]) => loggerInfo(...args),
+    error: (...args: unknown[]) => loggerError(...args)
   }
 }))
 
@@ -54,6 +61,14 @@ function resetAutoUpdateTest(): void {
 function restoreAutoUpdateTest(): void {
   vi.useRealTimers()
   delete process.env['DISABLE_AUTO_UPDATE']
+}
+
+function captureUpdaterHandlers(): Map<string, (...args: never[]) => void> {
+  const handlers = new Map<string, (...args: never[]) => void>()
+  on.mockImplementation((event: string, fn: (...args: never[]) => void) => {
+    handlers.set(event, fn)
+  })
+  return handlers
 }
 
 describe('canStartUpdateCheck', () => {
@@ -104,5 +119,109 @@ describe('initAutoUpdate scheduling', () => {
     initAutoUpdate()
     await vi.advanceTimersByTimeAsync(60_000)
     expect(checkForUpdates).not.toHaveBeenCalled()
+  })
+})
+
+describe('checkForUpdatesNow', () => {
+  beforeEach(resetAutoUpdateTest)
+  afterEach(restoreAutoUpdateTest)
+
+  it('returns disabled when auto-update is off', async () => {
+    process.env['DISABLE_AUTO_UPDATE'] = '1'
+    const { checkForUpdatesNow } = await loadModule()
+    expect(await checkForUpdatesNow()).toEqual({ outcome: 'disabled' })
+  })
+
+  it('maps null / available / up-to-date / thrown provider results', async () => {
+    const mod = await loadModule()
+    checkForUpdates.mockResolvedValueOnce(null)
+    expect(await mod.checkForUpdatesNow()).toEqual({
+      outcome: 'error',
+      message: 'No update response from provider'
+    })
+
+    checkForUpdates.mockResolvedValueOnce({
+      isUpdateAvailable: true,
+      updateInfo: { version: '2.0.0' }
+    })
+    expect(await mod.checkForUpdatesNow()).toEqual({
+      outcome: 'update-available',
+      version: '2.0.0'
+    })
+
+    checkForUpdates.mockResolvedValueOnce({
+      isUpdateAvailable: false,
+      updateInfo: { version: '1.2.3' }
+    })
+    expect(await mod.checkForUpdatesNow()).toEqual({ outcome: 'up-to-date' })
+
+    checkForUpdates.mockRejectedValueOnce(new Error('network down'))
+    expect(await mod.checkForUpdatesNow()).toEqual({
+      outcome: 'error',
+      message: 'network down'
+    })
+    expect(mod.getAutoUpdateState().phase).toBe('error')
+  })
+})
+
+describe('updater events', () => {
+  beforeEach(resetAutoUpdateTest)
+  afterEach(restoreAutoUpdateTest)
+
+  it('returns busy messages after updater events advance phase', async () => {
+    const handlers = captureUpdaterHandlers()
+    const mod = await loadModule()
+    mod.initAutoUpdate()
+
+    handlers.get('update-downloaded')?.({ version: '9.0.0' } as never)
+    expect(await mod.checkForUpdatesNow()).toEqual({
+      outcome: 'busy',
+      message: 'An update is ready to install.'
+    })
+
+    handlers.get('update-available')?.({ version: '9.1.0' } as never)
+    expect(await mod.checkForUpdatesNow()).toEqual({
+      outcome: 'busy',
+      message: 'An update is already downloading.'
+    })
+
+    handlers.get('checking-for-update')?.(undefined as never)
+    expect(await mod.checkForUpdatesNow()).toEqual({ outcome: 'busy' })
+  })
+
+  it('wires remaining updater events and broadcasts to live windows', async () => {
+    const handlers = captureUpdaterHandlers()
+    const mod = await loadModule()
+    mod.initAutoUpdate()
+
+    handlers.get('download-progress')?.({ percent: 41.2 } as never)
+    expect(mod.getAutoUpdateState()).toMatchObject({
+      phase: 'downloading',
+      downloadPercent: 41
+    })
+
+    handlers.get('update-not-available')?.(undefined as never)
+    expect(mod.getAutoUpdateState().phase).toBe('idle')
+
+    handlers.get('error')?.({ message: 'boom' } as never)
+    expect(mod.getAutoUpdateState()).toMatchObject({ phase: 'error', message: 'boom' })
+    expect(send).toHaveBeenCalled()
+    expect(loggerError).toHaveBeenCalled()
+  })
+})
+
+describe('IPC helpers', () => {
+  beforeEach(resetAutoUpdateTest)
+  afterEach(restoreAutoUpdateTest)
+
+  it('registers IPC handlers and quitAndInstallUpdate', async () => {
+    const mod = await loadModule()
+    mod.registerAutoUpdateHandlers()
+    expect(ipcHandle).toHaveBeenCalledWith('autoUpdate:getState', expect.any(Function))
+    expect(ipcHandle).toHaveBeenCalledWith('autoUpdate:quitAndInstall', expect.any(Function))
+    expect(ipcHandle).toHaveBeenCalledWith('autoUpdate:checkForUpdates', expect.any(Function))
+
+    mod.quitAndInstallUpdate()
+    expect(quitAndInstall).toHaveBeenCalledWith(true, true)
   })
 })

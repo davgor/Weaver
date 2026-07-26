@@ -68,7 +68,7 @@ export function computeWaves(epics) {
 }
 
 /** @param {string} boardRoot */
-function discoverEpics(boardRoot) {
+export function discoverEpics(boardRoot) {
   const epics = []
   for (const state of ['backlog', 'in-progress', 'done']) {
     const dir = join(boardRoot, state)
@@ -86,7 +86,7 @@ function discoverEpics(boardRoot) {
 }
 
 /** @param {Epic[]} epics @param {string[][]} waves */
-function formatDoc(epics, waves) {
+export function formatDoc(epics, waves) {
   const byId = new Map(epics.map((e) => [e.id, e]))
   const pendingCount = epics.filter((e) => e.state !== 'done').length
   const lines = [
@@ -116,8 +116,14 @@ function formatDoc(epics, waves) {
   return lines.join('\n')
 }
 
-export function main(argv = process.argv.slice(2)) {
-  const epics = discoverEpics(BOARD)
+/**
+ * @param {string[]} [argv]
+ * @param {{ boardRoot?: string, outPath?: string }} [opts]
+ */
+export function main(argv = process.argv.slice(2), opts = {}) {
+  const boardRoot = opts.boardRoot ?? BOARD
+  const outPath = opts.outPath ?? OUT_PATH
+  const epics = discoverEpics(boardRoot)
   const violations = findNumericOrderViolations(epics)
   const waves = computeWaves(epics)
 
@@ -129,8 +135,8 @@ export function main(argv = process.argv.slice(2)) {
     return 0
   }
 
-  fs.writeFileSync(OUT_PATH, formatDoc(epics, waves))
-  console.log(`Wrote ${OUT_PATH} (${waves.length} waves, ${violations.length} numeric-order violations noted).`)
+  fs.writeFileSync(outPath, formatDoc(epics, waves))
+  console.log(`Wrote ${outPath} (${waves.length} waves, ${violations.length} numeric-order violations noted).`)
   return 0
 }
 

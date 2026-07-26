@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildActArgs, isDockerAvailable, resolveActBinary } from './run-act.mjs'
+import { buildActArgs, isDockerAvailable, main, resolveActBinary } from './run-act.mjs'
 
 describe('resolveActBinary', () => {
   it('prefers an ACT_BIN env override over everything else', () => {
@@ -53,5 +53,77 @@ describe('isDockerAvailable', () => {
 
   it('returns false when `docker info` exits non-zero or errors', () => {
     expect(isDockerAvailable(() => ({ status: 1 }))).toBe(false)
+  })
+})
+
+const sampleWorkflow = {
+  file: '.github/workflows/pr-checks.yml',
+  platform: 'windows-latest=catthehacker/ubuntu:act-latest'
+}
+
+describe('main help and prerequisites', () => {
+  it('prints help and exits 0', async () => {
+    const logs = []
+    const code = await main(['--help'], {
+      log: (msg) => logs.push(msg),
+      error: () => {}
+    })
+    expect(code).toBe(0)
+    expect(logs.some((line) => line.includes('Usage: npm run ci:act'))).toBe(true)
+  })
+
+  it('fails when Docker is unavailable or act is missing', async () => {
+    expect(
+      await main([], {
+        dockerAvailable: () => false,
+        error: () => {},
+        log: () => {}
+      })
+    ).toBe(1)
+
+    expect(
+      await main([], {
+        dockerAvailable: () => true,
+        resolveAct: () => null,
+        error: () => {},
+        log: () => {}
+      })
+    ).toBe(1)
+  })
+})
+
+describe('main workflow runs', () => {
+  it('runs workflows and stops on the first failure', async () => {
+    const runs = []
+    expect(
+      await main([], {
+        dockerAvailable: () => true,
+        resolveAct: () => '/bin/act',
+        workflows: [sampleWorkflow, { ...sampleWorkflow, file: 'second.yml' }],
+        runAct: (bin, args) => {
+          runs.push({ bin, args })
+          return { status: runs.length === 1 ? 0 : 2 }
+        },
+        log: () => {},
+        error: () => {}
+      })
+    ).toBe(1)
+    expect(runs).toHaveLength(2)
+
+    runs.length = 0
+    expect(
+      await main([], {
+        dockerAvailable: () => true,
+        resolveAct: () => '/bin/act',
+        workflows: [sampleWorkflow],
+        runAct: (bin, args) => {
+          runs.push({ bin, args })
+          return { status: 0 }
+        },
+        log: () => {},
+        error: () => {}
+      })
+    ).toBe(0)
+    expect(runs[0]?.bin).toBe('/bin/act')
   })
 })
