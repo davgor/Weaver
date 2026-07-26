@@ -21,6 +21,12 @@ describe('parseDependsOn', () => {
     const content = '**Depends on:** `021-Foo`.\n\nSome unrelated paragraph mentioning `999-Bar`.'
     expect(parseDependsOn(content)).toEqual(['021'])
   })
+
+  it('treats a Depends span that starts with none as empty even if other epic ids are mentioned', () => {
+    const content =
+      '**Depends on:** none (foundation epic, parallel to `012-WorldEngine-Chunked-Map-Store`). **Feeds:** `013-RegionalEngine-Map-Segmentation`.'
+    expect(parseDependsOn(content)).toEqual([])
+  })
 })
 
 describe('findNumericOrderViolations', () => {

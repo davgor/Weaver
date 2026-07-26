@@ -8,6 +8,15 @@ Give `@weaver/item-engine` its core domain model: item definitions, character-he
 
 **LLM boundary:** deterministic only — no Electron, no invented item stats. NarrationEngine may describe an item in prose but must query this package for the facts first.
 
+## Sub-tickets
+
+| Id | Summary |
+|----|---------|
+| `032.1` | Item template vs instance types + equipment slot enum |
+| `032.2` | Create / query inventory APIs for a character, unit-tested |
+| `032.3` | Equip / unequip APIs with slot rules, unit-tested |
+| `032.4` | Confirm scaffold/README/`build:engines` wiring; LLM-free boundary docs |
+
 ## Acceptance criteria
 
 - [ ] Item template (definition) and item instance are distinct types — instances reference a template plus instance-specific state (durability, charges, custom name, enchantment refs)
@@ -15,3 +24,4 @@ Give `@weaver/item-engine` its core domain model: item definitions, character-he
 - [ ] Create / equip / unequip / query APIs for a character's inventory, all unit-tested
 - [ ] Package scaffolded matching sibling engines, added to root README package table and `build:engines`
 - [ ] Explicit: no invented loot stats in prose-only paths — NarrationEngine and DMEngine must read item facts from this package
+- [ ] Sub-tickets listed above exist as `board/backlog/032.*` files; none implemented until separately completed

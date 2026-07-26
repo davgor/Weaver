@@ -68,4 +68,4 @@ Add `packages/RegionalEngine` (`@weaver/regional-engine`): deterministic, LLM-fr
 - [ ] Region stats include LLM-ready core fields and an extension path as WorldEngine grows
 - [ ] Explicit: deterministic, LLM-free naming; Electron apps call the engine
 - [ ] Package wiring called out (workspaces, `build:engines`, Electron catalogs, `REQUIRED_ENGINE_IDS`)
-- [ ] Sub-tickets listed above; none implemented until separately completed
+- [ ] Sub-tickets listed above exist as `board/backlog/013.*` files (`013.1` in `done/`); none implemented until separately completed

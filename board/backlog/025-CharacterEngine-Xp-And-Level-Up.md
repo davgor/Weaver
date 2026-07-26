@@ -12,4 +12,4 @@ Port difficulty-rated XP and the level-up perk ceremony, including the engine fa
 - [ ] Level-up produces perk choices from `computeFeatureFromTemplate`-equivalent templates; mechanical numbers never come from free-text LLM output
 - [ ] If the proposing agent call fails, an engine-only fallback perk still completes the level-up ceremony (no stuck character)
 - [ ] Emergent-direction detection (repeated tagged play patterns outside the archetype kit, past a count threshold) is available as an input to level-up, producing at most a fiction-flavored `custom_feature`/`passive_feature` whose numbers still come from the template engine
-- [ ] Known spells gained on level-up are recorded in the character's spell-known list (feeds `028-CharacterEngine-Journal-Logbook-Quests-Spellbook`)
+- [ ] Known actions gained on level-up are recorded as ActionEngine `actionId`s on the character (feeds `028-CharacterEngine-Journal-Logbook-Quests-Spellbook` known-actions surface; definitions stay in `083-ActionEngine-Catalog-And-Known-Actions`)

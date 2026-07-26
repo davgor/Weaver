@@ -4,7 +4,7 @@ Port AI party-member companions (prompt-generated, optional) and the inactive-ch
 
 **Ported from:** `board/done/129-prompt-generated-ai-party-companions.md` and the inactive-player-proxy portion of `board/done/038-campaign-hub-multi-character-shared-world.md`.
 
-**Depends on:** `026-CharacterEngine-Archetypes-And-Starting-Loadouts` (companions get a loadout too), `029-CharacterEngine-Race-And-Background-Selection`.
+**Depends on:** `026-CharacterEngine-Archetypes-And-Starting-Loadouts` (companions get a loadout too), `029-CharacterEngine-Race-And-Background-Selection`, `044-NPCEngine-Face-Token-Hook` (companions reuse the NPC face-token generation hook).
 
 ## Acceptance criteria
 
