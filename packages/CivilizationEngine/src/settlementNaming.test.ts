@@ -87,64 +87,59 @@ function candidate(): CivilizationCandidate {
   }
 }
 
-describe('realizeSettlementNaming', () => {
+describe('realizeSettlementNaming persist', () => {
   it('persists display name and history without changing settlement stats', () => {
-    const dataRoot = tempRoot()
-    const regional = makeRegional(dataRoot)
-    const service = createCivilizationService({ dataRoot, regional, world: makeWorld() })
+    const service = makeService()
     const created = service.createCivilization('w1', candidate())
     const before = service.getCivilization('w1', created.civilizationId)
     expect(before).not.toBeNull()
-
-    const updated = realizeSettlementNaming(service, { worldId: 'w1', civilizationId: created.civilizationId }, {
-      displayName: 'Millbrook',
-      history: 'Farmers gather grain beside a quiet brook.'
-    })
-
+    const updated = realizeSettlementNaming(
+      service,
+      { worldId: 'w1', civilizationId: created.civilizationId },
+      {
+        displayName: 'Millbrook',
+        history: 'Farmers gather grain beside a quiet brook.'
+      }
+    )
     expect(updated.displayName).toBe('Millbrook')
     expect(updated.history).toContain('brook')
     expect(updated.namingRealizedAt).toBeTruthy()
     expect(updated.population).toBe(before?.population)
     expect(updated.kind).toBe(before?.kind)
   })
+})
 
-  it(
-    'realizes naming only once unless regenerate is true',
-    () => {
-      const dataRoot = tempRoot()
-      const regional = makeRegional(dataRoot)
-      const service = createCivilizationService({ dataRoot, regional, world: makeWorld() })
-      const created = service.createCivilization('w1', candidate())
-
+describe('realizeSettlementNaming once', () => {
+  it('realizes naming only once unless regenerate is true', () => {
+    const service = makeService()
+    const created = service.createCivilization('w1', candidate())
+    realizeSettlementNaming(
+      service,
+      { worldId: 'w1', civilizationId: created.civilizationId },
+      { displayName: 'First Hamlet', history: 'An old story.' }
+    )
+    expect(() =>
       realizeSettlementNaming(
         service,
         { worldId: 'w1', civilizationId: created.civilizationId },
-        {
-          displayName: 'First Hamlet',
-          history: 'An old story.'
-        }
+        { displayName: 'Second Hamlet', history: 'Another story.' }
       )
-
-      expect(() =>
-        realizeSettlementNaming(
-          service,
-          { worldId: 'w1', civilizationId: created.civilizationId },
-          {
-            displayName: 'Second Hamlet',
-            history: 'Another story.'
-          }
-        )
-      ).toThrow(/already realized/i)
-
-      const regenerated = realizeSettlementNaming(
-        service,
-        { worldId: 'w1', civilizationId: created.civilizationId },
-        { displayName: 'New Hamlet', history: 'A refreshed story.' },
-        { regenerate: true }
-      )
-
-      expect(regenerated.displayName).toBe('New Hamlet')
-    },
-    15_000
-  )
+    ).toThrow(/already realized/i)
+    const regenerated = realizeSettlementNaming(
+      service,
+      { worldId: 'w1', civilizationId: created.civilizationId },
+      { displayName: 'New Hamlet', history: 'A refreshed story.' },
+      { regenerate: true }
+    )
+    expect(regenerated.displayName).toBe('New Hamlet')
+  }, 15_000)
 })
+
+function makeService() {
+  const dataRoot = tempRoot()
+  return createCivilizationService({
+    dataRoot,
+    regional: makeRegional(dataRoot),
+    world: makeWorld()
+  })
+}
