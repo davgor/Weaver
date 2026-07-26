@@ -8,7 +8,7 @@ Port the campaign social graph: factions, their relations to each other, and a c
 
 ## Acceptance criteria
 
-- [ ] Faction record with membership links to NPCs
-- [ ] Faction-to-faction relations (allied/neutral/hostile, or a pressure-band model) queryable for a given pair
-- [ ] Per-character faction reputation score, mutated only through this package's API
-- [ ] Query API returns a character's full reputation standing across all factions in one call, for DM/Narration grounding
+- [x] Faction record with membership links to NPCs
+- [x] Faction-to-faction relations (allied/neutral/hostile, or a pressure-band model) queryable for a given pair
+- [x] Per-character faction reputation score, mutated only through this package's API
+- [x] Query API returns a character's full reputation standing across all factions in one call, for DM/Narration grounding

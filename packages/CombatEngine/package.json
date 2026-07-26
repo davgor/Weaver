@@ -18,8 +18,13 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run --config ../../vitest.config.ts"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@weaver/character-engine": "*",
+    "@weaver/enemy-engine": "*",
+    "@weaver/npc-engine": "*"
+  },
   "devDependencies": {
+    "@weaver/civilization-engine": "*",
     "typescript": "^5.5.2"
   }
 }

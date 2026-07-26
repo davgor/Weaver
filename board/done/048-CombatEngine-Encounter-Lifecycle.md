@@ -10,9 +10,9 @@ Give `@weaver/combat-engine` its first real behavior: starting an encounter, rol
 
 ## Acceptance criteria
 
-- [ ] `startEncounter` rolls initiative once (`d20 + Agility mod` per combatant) and produces a stable turn order
-- [ ] Each combatant's turn allows one Action + Movement; the engine rejects a second Action in the same turn
-- [ ] Encounter state (active combatants, turn order, current turn, round count) is durable and queryable mid-encounter, not held only in memory
-- [ ] Package scaffolded matching sibling engines, added to root README package table and `build:engines`
-- [ ] Combat actions share the same "typed free-text" input contract DMEngine already routes exploration actions through — no separate combat-only input mode required at this layer
-- [ ] This package's consumption of CharacterEngine's ability-modifier API (`021`) and combatant hydration from NPCEngine (`037`) / EnemyEngine (`045`) is each covered by a `*.contract.test.ts` here against their real published APIs
+- [x] `startEncounter` rolls initiative once (`d20 + Agility mod` per combatant) and produces a stable turn order
+- [x] Each combatant's turn allows one Action + Movement; the engine rejects a second Action in the same turn
+- [x] Encounter state (active combatants, turn order, current turn, round count) is durable and queryable mid-encounter, not held only in memory
+- [x] Package scaffolded matching sibling engines, added to root README package table and `build:engines`
+- [x] Combat actions share the same "typed free-text" input contract DMEngine already routes exploration actions through — no separate combat-only input mode required at this layer
+- [x] This package's consumption of CharacterEngine's ability-modifier API (`021`) and combatant hydration from NPCEngine (`037`) / EnemyEngine (`045`) is each covered by a `*.contract.test.ts` here against their real published APIs
