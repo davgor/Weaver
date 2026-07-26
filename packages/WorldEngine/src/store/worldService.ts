@@ -268,18 +268,20 @@ function landTypeOverrideMap(
   return map
 }
 
-function getCellAt(
-  dataRoot: string,
-  meta: WorldMeta,
-  x: number,
-  y: number,
+type CellLookup = {
+  dataRoot: string
+  meta: WorldMeta
+  x: number
+  y: number
   overrides?: Map<string, string>
-): Cell | null {
+}
+
+function getCellAt(lookup: CellLookup): Cell | null {
+  const { dataRoot, meta, x, y, overrides } = lookup
   if (!aabbContainsPoint(meta.bounds, x, y)) return null
   const base = readChunkCell({ dataRoot, worldId: meta.worldId, x, y })
   if (!base) return null
-  const value = overrides?.get(overlayKey(x, y))
-  return applyLandTypeOverride(base, value)
+  return applyLandTypeOverride(base, overrides?.get(overlayKey(x, y)))
 }
 
 function getSpecific(dataRoot: string, args: { worldId: string; bounds: Aabb }): Cell[] {
@@ -290,7 +292,7 @@ function getSpecific(dataRoot: string, args: { worldId: string; bounds: Aabb }):
   const cells: Cell[] = []
   for (let y = bounds.minY; y <= bounds.maxY; y++) {
     for (let x = bounds.minX; x <= bounds.maxX; x++) {
-      const cell = getCellAt(dataRoot, meta, x, y, overrides)
+      const cell = getCellAt({ dataRoot, meta, x, y, overrides })
       if (cell) cells.push(cell)
     }
   }
@@ -302,7 +304,7 @@ function* iterateWorld(dataRoot: string, worldId: string): Iterable<Cell> {
   const overrides = landTypeOverrideMap(dataRoot, worldId, meta.bounds)
   for (let y = meta.bounds.minY; y <= meta.bounds.maxY; y++) {
     for (let x = meta.bounds.minX; x <= meta.bounds.maxX; x++) {
-      const cell = getCellAt(dataRoot, meta, x, y, overrides)
+      const cell = getCellAt({ dataRoot, meta, x, y, overrides })
       if (cell) yield cell
     }
   }
@@ -319,7 +321,7 @@ function getEffectiveCell(
     maxX: args.x,
     maxY: args.y
   })
-  return getCellAt(dataRoot, meta, args.x, args.y, overrides)
+  return getCellAt({ dataRoot, meta, x: args.x, y: args.y, overrides })
 }
 
 export function createWorldService(dataRoot: string): WorldService {

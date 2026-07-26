@@ -14,31 +14,13 @@ function withTempService(run: (svc: ReturnType<typeof createWorldService>) => vo
   }
 }
 
-describe('world sparse overlays', () => {
+describe('sparse overlay CRUD', () => {
   it('sets, gets, lists, and clears overlays by key prefix and bounds', () => {
     withTempService((svc) => {
       svc.createWorld({ worldId: 'w1', seed: 1, bounds: { minX: 0, minY: 0, maxX: 3, maxY: 3 } })
-      svc.setSparseOverlay({
-        worldId: 'w1',
-        x: 1,
-        y: 1,
-        key: 'weather.condition',
-        value: 'rain'
-      })
-      svc.setSparseOverlay({
-        worldId: 'w1',
-        x: 2,
-        y: 2,
-        key: 'weather.condition',
-        value: 'storm'
-      })
-      svc.setSparseOverlay({
-        worldId: 'w1',
-        x: 1,
-        y: 1,
-        key: 'other.marker',
-        value: 'keep'
-      })
+      svc.setSparseOverlay({ worldId: 'w1', x: 1, y: 1, key: 'weather.condition', value: 'rain' })
+      svc.setSparseOverlay({ worldId: 'w1', x: 2, y: 2, key: 'weather.condition', value: 'storm' })
+      svc.setSparseOverlay({ worldId: 'w1', x: 1, y: 1, key: 'other.marker', value: 'keep' })
 
       expect(svc.getSparseOverlay({ worldId: 'w1', x: 1, y: 1, key: 'weather.condition' })).toEqual({
         worldId: 'w1',
@@ -47,16 +29,14 @@ describe('world sparse overlays', () => {
         key: 'weather.condition',
         value: 'rain'
       })
-
-      const weatherOnly = svc.listSparseOverlays({ worldId: 'w1', keyPrefix: 'weather.' })
-      expect(weatherOnly).toHaveLength(2)
-
-      const cleared = svc.clearSparseOverlays({
-        worldId: 'w1',
-        keyPrefix: 'weather.',
-        bounds: { minX: 1, minY: 1, maxX: 1, maxY: 1 }
-      })
-      expect(cleared).toBe(1)
+      expect(svc.listSparseOverlays({ worldId: 'w1', keyPrefix: 'weather.' })).toHaveLength(2)
+      expect(
+        svc.clearSparseOverlays({
+          worldId: 'w1',
+          keyPrefix: 'weather.',
+          bounds: { minX: 1, minY: 1, maxX: 1, maxY: 1 }
+        })
+      ).toBe(1)
       expect(svc.getSparseOverlay({ worldId: 'w1', x: 1, y: 1, key: 'weather.condition' })).toBeNull()
       expect(svc.getSparseOverlay({ worldId: 'w1', x: 2, y: 2, key: 'weather.condition' })?.value).toBe(
         'storm'
@@ -64,7 +44,9 @@ describe('world sparse overlays', () => {
       expect(svc.getSparseOverlay({ worldId: 'w1', x: 1, y: 1, key: 'other.marker' })?.value).toBe('keep')
     })
   })
+})
 
+describe('landTypeOverride effective reads', () => {
   it('merges landTypeOverride into cell reads without rewriting base chunks', () => {
     withTempService((svc) => {
       svc.createWorld({ worldId: 'w1', seed: 42, bounds: { minX: 0, minY: 0, maxX: 2, maxY: 2 } })
@@ -79,12 +61,10 @@ describe('world sparse overlays', () => {
         key: LAND_TYPE_OVERRIDE_KEY,
         value: 'swamp'
       })
-
       expect(svc.getCell({ worldId: 'w1', x: 1, y: 1 })).toEqual({ ...base, landType: 'swamp' })
       expect(svc.getWorldSpecific({ worldId: 'w1', bounds: { minX: 1, minY: 1, maxX: 1, maxY: 1 } })).toEqual([
         { ...base, landType: 'swamp' }
       ])
-
       svc.clearSparseOverlays({ worldId: 'w1', keyPrefix: LAND_TYPE_OVERRIDE_KEY })
       expect(svc.getCell({ worldId: 'w1', x: 1, y: 1 })).toEqual(base)
     })

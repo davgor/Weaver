@@ -225,68 +225,77 @@ function optionalBounds(body: Record<string, unknown>): Aabb | undefined {
   return parseBoundsValue(body.bounds)
 }
 
-function overlayEndpoints(): EngineEndpoint[] {
-  return [
-    {
-      name: 'setSparseOverlay',
-      description: 'Upsert a sparse overlay (landTypeOverride mutates effective cell reads)',
-      invoke: (payload) => {
-        const body = asRecord(payload)
-        return createWorldService(requireDataRoot(body)).setSparseOverlay({
-          worldId: requireString(body, 'worldId'),
-          x: requireNumber(body, 'x'),
-          y: requireNumber(body, 'y'),
-          key: requireString(body, 'key'),
-          value: requireString(body, 'value')
-        })
-      }
-    },
-    {
-      name: 'getSparseOverlay',
-      description: 'Read one sparse overlay by coordinates and key',
-      invoke: (payload) => {
-        const body = asRecord(payload)
-        return createWorldService(requireDataRoot(body)).getSparseOverlay({
-          worldId: requireString(body, 'worldId'),
-          x: requireNumber(body, 'x'),
-          y: requireNumber(body, 'y'),
-          key: requireString(body, 'key')
-        })
-      }
-    },
-    {
-      name: 'listSparseOverlays',
-      description: 'List sparse overlays filtered by optional keyPrefix and bounds',
-      invoke: (payload) => {
-        const body = asRecord(payload)
-        const filter: {
-          worldId: string
-          keyPrefix?: string
-          bounds?: Aabb
-        } = { worldId: requireString(body, 'worldId') }
-        if (typeof body.keyPrefix === 'string') filter.keyPrefix = body.keyPrefix
-        const bounds = optionalBounds(body)
-        if (bounds) filter.bounds = bounds
-        return createWorldService(requireDataRoot(body)).listSparseOverlays(filter)
-      }
-    },
-    {
-      name: 'clearSparseOverlays',
-      description: 'Clear sparse overlays filtered by optional keyPrefix and bounds',
-      invoke: (payload) => {
-        const body = asRecord(payload)
-        const filter: {
-          worldId: string
-          keyPrefix?: string
-          bounds?: Aabb
-        } = { worldId: requireString(body, 'worldId') }
-        if (typeof body.keyPrefix === 'string') filter.keyPrefix = body.keyPrefix
-        const bounds = optionalBounds(body)
-        if (bounds) filter.bounds = bounds
-        return createWorldService(requireDataRoot(body)).clearSparseOverlays(filter)
-      }
+type OverlayFilter = {
+  worldId: string
+  keyPrefix?: string
+  bounds?: Aabb
+}
+
+function parseOverlayFilter(body: Record<string, unknown>): OverlayFilter {
+  const filter: OverlayFilter = { worldId: requireString(body, 'worldId') }
+  if (typeof body.keyPrefix === 'string') filter.keyPrefix = body.keyPrefix
+  const bounds = optionalBounds(body)
+  if (bounds) filter.bounds = bounds
+  return filter
+}
+
+function setOverlayEndpoint(): EngineEndpoint {
+  return {
+    name: 'setSparseOverlay',
+    description: 'Upsert a sparse overlay (landTypeOverride mutates effective cell reads)',
+    invoke: (payload) => {
+      const body = asRecord(payload)
+      return createWorldService(requireDataRoot(body)).setSparseOverlay({
+        worldId: requireString(body, 'worldId'),
+        x: requireNumber(body, 'x'),
+        y: requireNumber(body, 'y'),
+        key: requireString(body, 'key'),
+        value: requireString(body, 'value')
+      })
     }
-  ]
+  }
+}
+
+function getOverlayEndpoint(): EngineEndpoint {
+  return {
+    name: 'getSparseOverlay',
+    description: 'Read one sparse overlay by coordinates and key',
+    invoke: (payload) => {
+      const body = asRecord(payload)
+      return createWorldService(requireDataRoot(body)).getSparseOverlay({
+        worldId: requireString(body, 'worldId'),
+        x: requireNumber(body, 'x'),
+        y: requireNumber(body, 'y'),
+        key: requireString(body, 'key')
+      })
+    }
+  }
+}
+
+function listOverlayEndpoint(): EngineEndpoint {
+  return {
+    name: 'listSparseOverlays',
+    description: 'List sparse overlays filtered by optional keyPrefix and bounds',
+    invoke: (payload) => {
+      const body = asRecord(payload)
+      return createWorldService(requireDataRoot(body)).listSparseOverlays(parseOverlayFilter(body))
+    }
+  }
+}
+
+function clearOverlayEndpoint(): EngineEndpoint {
+  return {
+    name: 'clearSparseOverlays',
+    description: 'Clear sparse overlays filtered by optional keyPrefix and bounds',
+    invoke: (payload) => {
+      const body = asRecord(payload)
+      return createWorldService(requireDataRoot(body)).clearSparseOverlays(parseOverlayFilter(body))
+    }
+  }
+}
+
+function overlayEndpoints(): EngineEndpoint[] {
+  return [setOverlayEndpoint(), getOverlayEndpoint(), listOverlayEndpoint(), clearOverlayEndpoint()]
 }
 
 export function buildEndpoints(): EngineEndpoint[] {

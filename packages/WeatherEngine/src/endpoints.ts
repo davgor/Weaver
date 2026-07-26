@@ -39,61 +39,68 @@ function parseBounds(payload: Record<string, unknown>): Aabb {
   }
 }
 
-function weatherEndpoints(): EngineEndpoint[] {
-  return [
-    {
-      name: 'sampleWeather',
-      description: 'Pure deterministic weather sample for a cell',
-      invoke: (payload) => {
-        const body = asRecord(payload)
-        return sampleWeather({
-          seed: requireNumber(body, 'seed'),
-          day: requireNumber(body, 'day'),
-          x: requireNumber(body, 'x'),
-          y: requireNumber(body, 'y'),
-          landType: assertLandType(requireString(body, 'landType'))
-        })
-      }
-    },
-    {
-      name: 'applyWeatherField',
-      description: 'Apply weather overlays that mutate WorldEngine cell results',
-      invoke: (payload) => {
-        const body = asRecord(payload)
-        return applyWeatherField({
-          dataRoot: requireDataRoot(body),
-          worldId: requireString(body, 'worldId'),
-          day: requireNumber(body, 'day'),
-          bounds: parseBounds(body)
-        })
-      }
-    },
-    {
-      name: 'clearWeatherField',
-      description: 'Clear weather-owned overlays so WorldEngine reads revert',
-      invoke: (payload) => {
-        const body = asRecord(payload)
-        return clearWeatherField({
-          dataRoot: requireDataRoot(body),
-          worldId: requireString(body, 'worldId'),
-          bounds: parseBounds(body)
-        })
-      }
-    },
-    {
-      name: 'getWeatherAt',
-      description: 'Read current weather overlays for one cell',
-      invoke: (payload) => {
-        const body = asRecord(payload)
-        return getWeatherAt({
-          dataRoot: requireDataRoot(body),
-          worldId: requireString(body, 'worldId'),
-          x: requireNumber(body, 'x'),
-          y: requireNumber(body, 'y')
-        })
-      }
+function sampleEndpoint(): EngineEndpoint {
+  return {
+    name: 'sampleWeather',
+    description: 'Pure deterministic weather sample for a cell',
+    invoke: (payload) => {
+      const body = asRecord(payload)
+      return sampleWeather({
+        seed: requireNumber(body, 'seed'),
+        day: requireNumber(body, 'day'),
+        x: requireNumber(body, 'x'),
+        y: requireNumber(body, 'y'),
+        landType: assertLandType(requireString(body, 'landType'))
+      })
     }
-  ]
+  }
+}
+
+function applyEndpoint(): EngineEndpoint {
+  return {
+    name: 'applyWeatherField',
+    description: 'Apply weather overlays that mutate WorldEngine cell results',
+    invoke: (payload) => {
+      const body = asRecord(payload)
+      return applyWeatherField({
+        dataRoot: requireDataRoot(body),
+        worldId: requireString(body, 'worldId'),
+        day: requireNumber(body, 'day'),
+        bounds: parseBounds(body)
+      })
+    }
+  }
+}
+
+function clearEndpoint(): EngineEndpoint {
+  return {
+    name: 'clearWeatherField',
+    description: 'Clear weather-owned overlays so WorldEngine reads revert',
+    invoke: (payload) => {
+      const body = asRecord(payload)
+      return clearWeatherField({
+        dataRoot: requireDataRoot(body),
+        worldId: requireString(body, 'worldId'),
+        bounds: parseBounds(body)
+      })
+    }
+  }
+}
+
+function getAtEndpoint(): EngineEndpoint {
+  return {
+    name: 'getWeatherAt',
+    description: 'Read current weather overlays for one cell',
+    invoke: (payload) => {
+      const body = asRecord(payload)
+      return getWeatherAt({
+        dataRoot: requireDataRoot(body),
+        worldId: requireString(body, 'worldId'),
+        x: requireNumber(body, 'x'),
+        y: requireNumber(body, 'y')
+      })
+    }
+  }
 }
 
 export function buildEndpoints(): EngineEndpoint[] {
@@ -103,6 +110,9 @@ export function buildEndpoints(): EngineEndpoint[] {
       description: 'Return package health metadata',
       invoke: () => ({ ok: true as const, package: PACKAGE_NAME, version: VERSION })
     },
-    ...weatherEndpoints()
+    sampleEndpoint(),
+    applyEndpoint(),
+    clearEndpoint(),
+    getAtEndpoint()
   ]
 }
