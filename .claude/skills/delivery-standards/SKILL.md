@@ -119,7 +119,10 @@ Also run `npm run typecheck` when types/TS config changed or build errors are am
 
 **Deadcode (`npm run deadcode`):** compares `ts-prune` output to `.tsprune-ignore` (also CI via `.github/workflows/deadcode.yml`). After intentional export moves/deletes, prefer unexporting truly unused symbols; if the ignore baseline drifts on known intentional exports, refresh with `npm run deadcode:refresh` and keep the diff reviewable. Do not skip this gate.
 
-**Act CI (required after local gates, no exceptions):** a ticket is not done until the real workflows have run green under `act` — not just the equivalent local commands. Run `npm run ci:act`, which wraps both `.github/workflows/pr-checks.yml` and `.github/workflows/deadcode.yml` with the correct flags (see `scripts/run-act.mjs`; the manual two-command form is documented in [complete-ticket](../complete-ticket/SKILL.md) if you need to run one workflow in isolation). Confirm every job ends with `🏁 Job succeeded`. `npm run ci:act` checks Docker itself and fails fast with a clear message if it's not reachable — if that happens, **pause and ask the user to start Docker Desktop**, then retry. Do not fall back to local-only commands and claim CI passed, and do not move a ticket to `done/` with this step skipped.
+**Remote CI gate (required after local gates):** a ticket is not done until the real GitHub Actions workflows (`pr-checks` + `deadcode`) have passed — not just the equivalent local commands.
+
+- **Cloud agents / Cursor Cloud (this account's standing preference):** do **not** run `act` / `npm run ci:act`. Push a draft PR, wait until GitHub PR checks are green, then **mark the PR ready for review** (`gh pr ready`). See `.cursor/rules/act-ci-after-local-tasks.mdc`.
+- **Desktop/local with Docker:** run `npm run ci:act`, which wraps both `.github/workflows/pr-checks.yml` and `.github/workflows/deadcode.yml` (see `scripts/run-act.mjs`; manual two-command form in [complete-ticket](../complete-ticket/SKILL.md)). Confirm every job ends with `🏁 Job succeeded`. If Docker is unreachable on desktop, pause and ask the user to start Docker Desktop — do not silently skip. Cloud sessions must use the PR-check path above instead of asking for Docker.
 
 **Targeted tests during iteration** are fine (`npx vitest run path/to/foo.test.ts`), but **finish with full `npm test`** unless the user scoped a subset.
 
@@ -163,6 +166,6 @@ Delivery:
 - [ ] npm run lint — pass
 - [ ] npm run build — pass
 - [ ] npm run deadcode — pass
-- [ ] npm run ci:act (pr-checks.yml + deadcode.yml) — pass (pause if Docker off)
+- [ ] Remote CI: cloud → GitHub PR checks green + PR marked ready; desktop → npm run ci:act
 - [ ] Acceptance criteria checked off only when verified
 ```
