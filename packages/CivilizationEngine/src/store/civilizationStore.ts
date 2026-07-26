@@ -11,6 +11,7 @@ import type {
 } from '../types.js'
 
 type SqliteDb = Database.Database
+type SqlValue = string | number | null
 
 type CivRow = {
   civilizationId: string
