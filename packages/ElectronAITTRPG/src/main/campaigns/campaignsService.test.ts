@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createCampaignsService } from './campaignsService.js'
 import type { CampaignPortablePackage } from '@weaver/dm-engine'
+import type { CampaignCharacterLandingRecord } from '../../shared/campaigns/types.js'
 
 const portablePackage = {
   version: 1,
@@ -12,7 +13,7 @@ const portablePackage = {
 function stubPorts(overrides: Partial<Parameters<typeof createCampaignsService>[0]> = {}) {
   return {
     getReview: async () => null,
-    listCharacters: () => [] as Array<{ characterId: string; phase: string }>,
+    listCharacters: (_campaignId: string): CampaignCharacterLandingRecord[] => [],
     listDiskCampaigns: async () => [],
     campaignExistsOnDisk: () => false,
     exportCampaign: async () => portablePackage,
