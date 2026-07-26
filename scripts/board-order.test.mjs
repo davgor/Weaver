@@ -22,6 +22,12 @@ describe('parseDependsOn', () => {
     expect(parseDependsOn(content)).toEqual(['021'])
   })
 
+  it('stops at a CRLF blank line the same way as LF', () => {
+    const content =
+      '**Depends on:** `021-Foo`.\r\n\r\nSome unrelated paragraph mentioning `057-Bar` and `053-Baz`.'
+    expect(parseDependsOn(content)).toEqual(['021'])
+  })
+
   it('treats a Depends span that starts with none as empty even if other epic ids are mentioned', () => {
     const content =
       '**Depends on:** none (foundation epic, parallel to `012-WorldEngine-Chunked-Map-Store`). **Feeds:** `013-RegionalEngine-Map-Segmentation`.'

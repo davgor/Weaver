@@ -16,7 +16,9 @@ const OUT_PATH = join(BOARD, 'IMPLEMENTATION-ORDER.md')
 
 /** @param {string} content */
 export function parseDependsOn(content) {
-  const match = content.match(/\*\*Depends on:\*\*([\s\S]*?)(?:\*\*Feeds:\*\*|\n\n|$)/)
+  // Stop at Feeds or a blank line. Use \r?\n so Windows CRLF board files
+  // do not swallow the rest of the epic (which falsely pulls AC ticket refs).
+  const match = content.match(/\*\*Depends on:\*\*([\s\S]*?)(?:\*\*Feeds:\*\*|\r?\n\r?\n|$)/)
   if (!match) return []
   const span = match[1].trim()
   // Authors write "none (… parallel to `012-…`)" for foundation epics; those

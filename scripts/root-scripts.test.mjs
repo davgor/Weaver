@@ -3,9 +3,14 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 
-const rootPackage = JSON.parse(
-  readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'package.json'), 'utf8')
-)
+const rootDir = join(dirname(fileURLToPath(import.meta.url)), '..')
+const rootPackage = JSON.parse(readFileSync(join(rootDir, 'package.json'), 'utf8'))
+
+const EXACT_SEMVER = /^\d+\.\d+\.\d+$/
+
+function readWorkspacePackage(relativePath) {
+  return JSON.parse(readFileSync(join(rootDir, relativePath, 'package.json'), 'utf8'))
+}
 
 describe('root admin / game boot scripts', () => {
   it('boots Weaver Admin via npm run admin (ensure-dev then electron-admin)', () => {
@@ -33,5 +38,18 @@ describe('root admin / game boot scripts', () => {
     expect(rootPackage.scripts['package:mac']).toContain('@weaver/electron-admin')
     expect(rootPackage.scripts.package).toContain('@weaver/electron-aittrpg')
     expect(rootPackage.scripts.package).toContain('@weaver/electron-admin')
+  })
+})
+
+describe('Electron app electron pins for electron-builder', () => {
+  it.each([
+    ['packages/ElectronAITTRPG'],
+    ['packages/ElectronAdmin'],
+  ])('%s pins electron to an exact version (no range)', (relativePath) => {
+    const pkg = readWorkspacePackage(relativePath)
+    const electronVersion = pkg.devDependencies?.electron
+    expect(electronVersion, `${relativePath} must declare electron`).toEqual(
+      expect.stringMatching(EXACT_SEMVER)
+    )
   })
 })

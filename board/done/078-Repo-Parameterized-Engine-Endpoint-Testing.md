@@ -23,5 +23,5 @@ Every `*Engine` package exposes `listEndpoints()` / `call(endpoint)` for AI ADMI
 - [x] `EndpointPanel.tsx` gains a per-endpoint JSON payload input; invalid JSON is caught and shown inline without calling the endpoint; empty input sends `undefined` (implemented via an extracted `EndpointRow` component to stay under the oxlint 50-line/function limit)
 - [x] `useAdminState.ts` / `AdminReadyView.tsx` thread the new `onRun(endpoint, payload?)` signature through without changing unrelated behavior
 - [x] `npm test` (110/110), `npm run lint`, `npm run typecheck`, `npm run build`, `npm run deadcode` all pass
-- [ ] `act` CI (`pr-checks.yml` + `deadcode.yml`) — **not run**: Docker was not running in this environment. Local gates above are all green; re-run `act` before treating this as fully CI-verified.
-- [ ] Note for whoever implements `021` (CharacterEngine scaffold): once that package exists, it must be added to AI ADMIN's `engines` array (`main/index.ts`) and to `REQUIRED_ENGINE_IDS` in `ElectronAITTRPG/src/shared/engineHealth.ts` — both are hardcoded lists this ticket does not touch since the package doesn't exist yet
+- [x] `act` CI (`pr-checks.yml` + `deadcode.yml`) — verified via `npm run ci:act` (both workflows `🏁 Job succeeded`)
+- [x] Note for whoever implements `021` (CharacterEngine scaffold): once that package exists, it must be added to AI ADMIN's `engines` array (`main/index.ts`) and to `REQUIRED_ENGINE_IDS` in `ElectronAITTRPG/src/shared/engineHealth.ts` — both are hardcoded lists this ticket does not touch since the package doesn't exist yet
