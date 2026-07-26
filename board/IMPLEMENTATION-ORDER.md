@@ -4,7 +4,7 @@
 
 Epic ids are grouped by package/theme (e.g. `021`-`031` = CharacterEngine), **not** by dependency order. Picking tickets in numeric order alone will hand you one before something it depends on exists. Work wave by wave instead: everything in a wave has no unmet dependency on anything else still pending, so tickets within a wave can run in any order (including in parallel).
 
-3 waves, 12 pending epics.
+3 waves, 11 pending epics.
 
 ## Wave 1
 
@@ -15,7 +15,6 @@ Epic ids are grouped by package/theme (e.g. `021`-`031` = CharacterEngine), **no
 - `062-DMEngine-Context-Efficiency-And-Rag-Integration`
 - `069-ElectronAITTRPG-Campaign-Creation-And-Review-Ui`
 - `070-ElectronAITTRPG-Onboarding-Wizard-Ui`
-- `092-Repo-Eighty-Percent-Test-Coverage-Ci` _(in-progress)_
 
 ## Wave 2
 
