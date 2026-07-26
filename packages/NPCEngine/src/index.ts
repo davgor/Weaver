@@ -16,6 +16,12 @@ export {
   setFactionRelation,
   updateReputation
 } from './factions.js'
+export {
+  clearOpinionStore,
+  listNpcOpinionsAbout,
+  listNpcOpinionsHeldBy,
+  upsertNpcOpinion
+} from './opinions.js'
 export { requestCompanionPortrait, requestNpcPortrait } from './portraitHook.js'
 export { selectSocialResponders, updateNpcSpeakingStyle } from './speakingStyle.js'
 

@@ -20,6 +20,8 @@
   },
   "dependencies": {},
   "devDependencies": {
+    "@weaver/character-engine": "*",
+    "@weaver/combat-engine": "*",
     "typescript": "^5.5.2"
   }
 }

@@ -6,6 +6,7 @@ import {
 } from './providerConfig.js'
 import type { RetryOptions } from './retry.js'
 import type { LlmRuntime } from './types.js'
+import type { UsageMeter } from './usageTypes.js'
 
 export type CreateTextCompletionClientOptions = {
   settings?: ProviderSettings
@@ -13,6 +14,7 @@ export type CreateTextCompletionClientOptions = {
   fetch?: ProviderFetch
   localRuntime?: LlmRuntime
   retry?: RetryOptions
+  meter?: UsageMeter
 }
 
 export function createTextCompletionClient(
@@ -22,6 +24,7 @@ export function createTextCompletionClient(
   return createProviderRuntime(config, {
     ...(options.fetch === undefined ? {} : { fetch: options.fetch }),
     ...(options.localRuntime === undefined ? {} : { localRuntime: options.localRuntime }),
-    ...(options.retry === undefined ? {} : { retry: options.retry })
+    ...(options.retry === undefined ? {} : { retry: options.retry }),
+    ...(options.meter === undefined ? {} : { meter: options.meter })
   })
 }

@@ -5,6 +5,8 @@ import { Sidebar } from './sidebar/Sidebar'
 import { LoadingScreen } from './startup/LoadingScreen'
 import { EmptyMainPanel } from './mainPanel/EmptyMainPanel'
 import { UpdateBanner } from './autoUpdate/UpdateBanner'
+import { CharacterSheetOverlay } from './characterSheet/CharacterSheetOverlay'
+import { PlayViewShell } from './characterSheet/PlayViewShell'
 
 const BOOTING: StartupBootSnapshot = {
   phase: 'booting',
@@ -18,6 +20,7 @@ const BOOTING: StartupBootSnapshot = {
 export function App(): JSX.Element {
   const [boot, setBoot] = useState<StartupBootSnapshot>(BOOTING)
   const [campaigns, setCampaigns] = useState<CampaignSummary[]>([])
+  const [sheetOpen, setSheetOpen] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -43,9 +46,12 @@ export function App(): JSX.Element {
       ) : (
         <div className="app-body">
           <Sidebar campaigns={campaigns} />
-          <EmptyMainPanel />
+          <PlayViewShell onOpenCharacterSheet={() => setSheetOpen(true)}>
+            <EmptyMainPanel />
+          </PlayViewShell>
         </div>
       )}
+      <CharacterSheetOverlay open={sheetOpen} onClose={() => setSheetOpen(false)} />
       <UpdateBanner />
     </div>
   )

@@ -19,12 +19,38 @@ import {
   type RolledAbilityScoreDraft
 } from './abilityScoreGeneration.js'
 import {
+  getArchetype,
+  isArchetypeId,
+  listArchetypes,
+  type ArchetypeId
+} from './archetypes.js'
+import {
+  getConditionEffect,
+  isCondition,
+  listConditions,
+  mergeConditionEffects,
+  type Condition
+} from './conditions.js'
+import {
   applyDamageModifiers,
   isDamageType,
   listDamageTypes,
   type DamageType
 } from './damageTypes.js'
-import { computeMaxHp, getCharacterStats, persistCharacterMaxHp } from './hp.js'
+import {
+  applyHitPointDamage,
+  computeMaxHp,
+  getCharacterStats,
+  healHitPoints,
+  persistCharacterMaxHp,
+  resolveCharacterDyingSave
+} from './hp.js'
+import {
+  getCharacterArchetype,
+  getCharacterStartingLoadout,
+  resolveDefaultStartingLoadout,
+  selectStartingLoadout
+} from './startingLoadout.js'
 import {
   addJournalEntry,
   learnKnownAction,
@@ -80,6 +106,8 @@ export function buildEndpoints(): EngineEndpoint[] {
     ...abilityGenerationEndpoints(),
     ...hpEndpoints(),
     ...damageTypeEndpoints(),
+    ...conditionEndpoints(),
+    ...archetypeEndpoints(),
     ...recordEndpoints(),
     ...raceBackgroundEndpoints(),
     ...timeRestEndpoints()
@@ -179,6 +207,92 @@ function hpEndpoints(): EngineEndpoint[] {
       name: 'getCharacterStats',
       description: 'Read persisted character stats',
       invoke: (payload) => getCharacterStats(readCharacterIdPayload(payload, 'getCharacterStats'))
+    },
+    {
+      name: 'applyHitPointDamage',
+      description: 'Apply HP damage; at 0 HP enter Unconscious and dying saves',
+      invoke: (payload) => {
+        const record = readRecord(payload, 'applyHitPointDamage')
+        return applyHitPointDamage(readString(record, 'characterId'), readNumber(record, 'amount'))
+      }
+    },
+    {
+      name: 'healHitPoints',
+      description: 'Heal HP and clear dying/Unconscious when above 0',
+      invoke: (payload) => {
+        const record = readRecord(payload, 'healHitPoints')
+        return healHitPoints(readString(record, 'characterId'), readNumber(record, 'amount'))
+      }
+    },
+    {
+      name: 'resolveCharacterDyingSave',
+      description: 'Resolve one dying-save roll for a character at 0 HP',
+      invoke: (payload) =>
+        resolveCharacterDyingSave(readCharacterIdPayload(payload, 'resolveCharacterDyingSave'))
+    }
+  ]
+}
+
+function conditionEndpoints(): EngineEndpoint[] {
+  return [
+    {
+      name: 'listConditions',
+      description: 'List canonical conditions',
+      invoke: () => listConditions()
+    },
+    {
+      name: 'getConditionEffect',
+      description: 'Read CONDITION_EFFECTS for one condition',
+      invoke: (payload) => getConditionEffect(readConditionPayload(payload, 'getConditionEffect'))
+    },
+    {
+      name: 'mergeConditionEffects',
+      description: 'Merge stacked CONDITION_EFFECTS into one effect',
+      invoke: (payload) => mergeConditionEffects(readConditionListPayload(payload))
+    }
+  ]
+}
+
+function archetypeEndpoints(): EngineEndpoint[] {
+  return [
+    {
+      name: 'listArchetypes',
+      description: 'List seed archetypes (levels 1–20)',
+      invoke: () => listArchetypes()
+    },
+    {
+      name: 'getArchetype',
+      description: 'Read one archetype definition by stable key',
+      invoke: (payload) => getArchetype(readArchetypePayload(payload, 'getArchetype'))
+    },
+    {
+      name: 'resolveDefaultStartingLoadout',
+      description: 'Resolve ItemEngine default starting loadout for an archetype',
+      invoke: (payload) =>
+        resolveDefaultStartingLoadout(readArchetypePayload(payload, 'resolveDefaultStartingLoadout'))
+    },
+    {
+      name: 'selectStartingLoadout',
+      description: 'Persist starting gear and known action ids on a character',
+      invoke: (payload) => {
+        const record = readRecord(payload, 'selectStartingLoadout')
+        return selectStartingLoadout(
+          readString(record, 'characterId'),
+          readArchetypeValue(record['archetype'])
+        )
+      }
+    },
+    {
+      name: 'getCharacterStartingLoadout',
+      description: 'Read persisted starting loadout for a character',
+      invoke: (payload) =>
+        getCharacterStartingLoadout(readCharacterIdPayload(payload, 'getCharacterStartingLoadout'))
+    },
+    {
+      name: 'getCharacterArchetype',
+      description: 'Read persisted archetype key for a character',
+      invoke: (payload) =>
+        getCharacterArchetype(readCharacterIdPayload(payload, 'getCharacterArchetype'))
     }
   ]
 }
@@ -322,6 +436,38 @@ function readDamageTypeList(record: Record<string, unknown>, key: string): Damag
     throw new Error(`Expected ${key} to be an array of damage types`)
   }
   return [...value]
+}
+
+function readConditionPayload(payload: unknown, label: string): Condition {
+  const record = readRecord(payload, label)
+  return readConditionValue(record['condition'])
+}
+
+function readConditionListPayload(payload: unknown): Condition[] {
+  const record = readRecord(payload, 'mergeConditionEffects')
+  const value = record['conditions']
+  if (!Array.isArray(value) || !value.every(isCondition)) {
+    throw new Error('Expected conditions to be an array of known conditions')
+  }
+  return [...value]
+}
+
+function readConditionValue(value: unknown): Condition {
+  if (!isCondition(value)) {
+    throw new Error('Expected condition to be a known condition')
+  }
+  return value
+}
+
+function readArchetypePayload(payload: unknown, label: string): ArchetypeId {
+  return readArchetypeValue(readRecord(payload, label)['archetype'])
+}
+
+function readArchetypeValue(value: unknown): ArchetypeId {
+  if (!isArchetypeId(value)) {
+    throw new Error('Expected archetype to be Fighter, Rogue, Mage, Cleric, or Ranger')
+  }
+  return value
 }
 
 function parseResolutionPayload(payload: unknown): AbilityResolutionInput {

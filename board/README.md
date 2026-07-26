@@ -46,6 +46,6 @@ If a ticket’s stated dependency isn’t actually done yet (stale `IMPLEMENTATI
 - **Always** create/update a ticket for implementation work (never ask whether to skip).
 - Use the `complete-ticket` skill when the user names an id.
 - Use `collapse-epic` when an epic’s last sub-ticket lands in `done/`.
-- Delivery standards (TDD, operational separation, cross-package contract tests, lint/test/build/deadcode, `act` CI via `npm run ci:act`) live in `.cursor/skills/delivery-standards/` and `.claude/skills/delivery-standards/` — keep both in sync.
+- Delivery standards (TDD, operational separation, cross-package contract tests, lint/test/build/deadcode, remote CI: cloud → GitHub PR checks + mark ready; desktop → `npm run ci:act`) live in `.cursor/skills/delivery-standards/` and `.claude/skills/delivery-standards/` — keep both in sync.
 
 Next free id: highest `XXXX` under `board/` + 1 (zero-padded to 3 digits).

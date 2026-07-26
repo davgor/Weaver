@@ -8,6 +8,9 @@ const EXPECTED_ENDPOINTS = [
   'appendNpcMemory',
   'queryNpcGroundingContext',
   'createFaction',
+  'upsertNpcOpinion',
+  'listNpcOpinionsHeldBy',
+  'listNpcOpinionsAbout',
   'selectSocialResponders',
   'requestNpcPortrait'
 ] as const

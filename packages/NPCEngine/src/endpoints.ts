@@ -10,6 +10,11 @@ import {
   setFactionRelation,
   updateReputation
 } from './factions.js'
+import {
+  listNpcOpinionsAbout,
+  listNpcOpinionsHeldBy,
+  upsertNpcOpinion
+} from './opinions.js'
 import { requestCompanionPortrait, requestNpcPortrait } from './portraitHook.js'
 import { selectSocialResponders, updateNpcSpeakingStyle } from './speakingStyle.js'
 import type { EngineEndpoint } from './typesApi.js'
@@ -19,6 +24,8 @@ import type {
   ConstructNpcInput,
   CreateFactionInput,
   HydrateNpcCombatTierInput,
+  ListNpcOpinionsAboutInput,
+  ListNpcOpinionsHeldByInput,
   NpcMemory,
   PortraitHookRequest,
   QueryNpcGroundingContextInput,
@@ -27,6 +34,7 @@ import type {
   SetNpcDefeatDispositionInput,
   UpdateNpcSpeakingStyleInput,
   UpdateReputationInput,
+  UpsertNpcOpinionInput,
   WorldFact
 } from './types.js'
 
@@ -53,6 +61,9 @@ export function buildEndpoints(): EngineEndpoint[] {
     endpoint('getFactionRelation', 'Read a faction-to-faction relation', getRelationEndpoint),
     endpoint('updateReputation', 'Mutate character reputation with a faction', reputationEndpoint),
     endpoint('listCharacterReputationStandings', 'List character reputation standings', standingsEndpoint),
+    endpoint('upsertNpcOpinion', 'Upsert an NPC opinion of a subject', opinionUpsertEndpoint),
+    endpoint('listNpcOpinionsHeldBy', 'List subjects an NPC holds opinions of', opinionsHeldByEndpoint),
+    endpoint('listNpcOpinionsAbout', 'List holders with opinions of a subject', opinionsAboutEndpoint),
     endpoint('updateNpcSpeakingStyle', 'Update an NPC speaking style sample', speakingStyleEndpoint),
     endpoint('selectSocialResponders', 'Select deterministic Social turn responders', respondersEndpoint),
     endpoint('requestNpcPortrait', 'Queue an NPC portrait generation request', npcPortraitEndpoint),
@@ -115,6 +126,20 @@ function reputationEndpoint(payload: unknown) {
 
 function standingsEndpoint(payload: unknown) {
   return listCharacterReputationStandings(readString(asRecord(payload, 'standings'), 'characterId'))
+}
+
+function opinionUpsertEndpoint(payload: unknown) {
+  return upsertNpcOpinion(asPayload<UpsertNpcOpinionInput>(payload, 'upsertNpcOpinion'))
+}
+
+function opinionsHeldByEndpoint(payload: unknown) {
+  const input = asPayload<ListNpcOpinionsHeldByInput>(payload, 'listNpcOpinionsHeldBy')
+  return listNpcOpinionsHeldBy(input.holderNpcId)
+}
+
+function opinionsAboutEndpoint(payload: unknown) {
+  const input = asPayload<ListNpcOpinionsAboutInput>(payload, 'listNpcOpinionsAbout')
+  return listNpcOpinionsAbout(input.subjectId)
 }
 
 function speakingStyleEndpoint(payload: unknown) {

@@ -1,4 +1,5 @@
 
+import type { CharacterEngineApi } from '@weaver/character-engine'
 import type { CombatEngineApi } from '@weaver/combat-engine'
 import type { WorldEngineApi } from '@weaver/world-engine'
 import type { NarrationEngineApi } from '@weaver/narration-engine'
@@ -31,6 +32,41 @@ export type {
   CatalogSeedWriter
 } from './persistence/campaignPersistence.js'
 
+export { DmIntentError } from './intents/errors.js'
+export { classifyPlayerIntent } from './intents/classifyIntent.js'
+export { resolveBuyIntent, resolveSellIntent } from './intents/commerceHandler.js'
+export { resolveTravelIntent } from './intents/travelHandler.js'
+export { resolvePlayerIntent } from './intents/resolvePlayerIntent.js'
+export type { ResolvePlayerIntentInput } from './intents/resolvePlayerIntent.js'
+export type {
+  BuyIntentRequest,
+  CharacterTravelApi,
+  CommerceSuccess,
+  ItemCurrencyApi,
+  NarrationIntentResult,
+  PlayerIntentKind,
+  ResolvedPlayerIntent,
+  SellIntentRequest,
+  TravelDestinationLookup,
+  TravelIntentRequest,
+  TravelSuccess
+} from './intents/types.js'
+
+export { DmQuestError } from './quests/errors.js'
+export {
+  completeQuest,
+  failQuest,
+  proposeQuest,
+  updateQuestProgress
+} from './quests/questOrchestration.js'
+export type {
+  CharacterQuestApi,
+  QuestProgressInput,
+  QuestProposalInput,
+  QuestReferenceLookup,
+  QuestTransitionInput
+} from './quests/types.js'
+
 export type DmEngineDeps = {
   combat: CombatEngineApi
   world: WorldEngineApi
@@ -38,6 +74,7 @@ export type DmEngineDeps = {
   items: ItemEngineApi
   npcs: NpcEngineApi
   enemies: EnemyEngineApi
+  characters: CharacterEngineApi
 }
 export type EngineEndpoint = {
   name: string
@@ -74,6 +111,7 @@ function buildEndpoints(): EngineEndpoint[] {
       invoke: () => ({
         invents: false,
         pullsFrom: [
+          'character-engine',
           'combat-engine',
           'world-engine',
           'narration-engine',

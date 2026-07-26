@@ -1,3 +1,6 @@
+import { createActionLockoutStore } from './lockout.js'
+import { useAction, validateUse, type UseActionDeps } from './useAction.js'
+
 export type EngineEndpoint = {
   name: string
   description: string
@@ -66,6 +69,23 @@ export type KnownActionStore = {
   knowsAction: (characterId: string, actionId: string) => boolean
   snapshot: () => KnownActionStoreSnapshot
 }
+
+export type { ActionLockoutStore } from './lockout.js'
+export { createActionLockoutStore }
+export type {
+  AppliedEffect,
+  UseActionDeps,
+  UseActionFailure,
+  UseActionInput,
+  UseActionResult,
+  UseActionSuccess,
+  UseRangeInputs,
+  ValidateUseFailure,
+  ValidateUseInput,
+  ValidateUseResult,
+  ValidateUseSuccess
+} from './useAction.js'
+export { useAction, validateUse }
 
 const PACKAGE_NAME = '@weaver/action-engine'
 const VERSION = '0.1.0'
@@ -178,6 +198,8 @@ export function createKnownActionStore(catalog: SeedCatalog = createSeedCatalog(
 }
 
 const defaultKnownActionStore = createKnownActionStore()
+const defaultLockoutStore = createActionLockoutStore()
+const defaultCatalog = createSeedCatalog()
 
 export function grantKnownAction(characterId: string, actionId: string): void {
   defaultKnownActionStore.grantKnownAction(characterId, actionId)
@@ -193,6 +215,14 @@ export function listKnownActions(characterId: string): string[] {
 
 export function knowsAction(characterId: string, actionId: string): boolean {
   return defaultKnownActionStore.knowsAction(characterId, actionId)
+}
+
+export function defaultUseActionDeps(): UseActionDeps {
+  return {
+    catalog: defaultCatalog,
+    knownActions: defaultKnownActionStore,
+    lockout: defaultLockoutStore
+  }
 }
 
 export function isValidRange(value: unknown): value is ActionRange {
@@ -423,6 +453,16 @@ function buildEndpoints(): EngineEndpoint[] {
       name: 'revokeKnownAction',
       description: 'Revoke a known catalog action id from a character',
       invoke: (payload) => invokeRevokeKnownAction(payload)
+    },
+    {
+      name: 'useAction',
+      description: 'Validate and apply a known action: effects + catalog Action-turn lockout',
+      invoke: (payload) => invokeUseAction(payload)
+    },
+    {
+      name: 'validateUse',
+      description: 'Validate known-action gate and range without applying effects',
+      invoke: (payload) => invokeValidateUse(payload)
     }
   ]
   return endpoints.sort((left, right) => left.name.localeCompare(right.name))
@@ -448,6 +488,54 @@ function invokeListKnownActions(payload: unknown): string[] {
 function invokeKnowsAction(payload: unknown): boolean {
   const { characterId, actionId } = readKnownActionPayload(payload)
   return knowsAction(characterId, actionId)
+}
+
+function invokeValidateUse(payload: unknown) {
+  return validateUse(readUsePayload(payload), defaultUseActionDeps())
+}
+
+function invokeUseAction(payload: unknown) {
+  return useAction(readUseActionPayload(payload), defaultUseActionDeps())
+}
+
+function readUsePayload(payload: unknown): {
+  characterId: string
+  actionId: string
+  distanceFeet: number
+  weaponReachFeet?: number
+} {
+  if (!isRecord(payload)) {
+    throw new Error('Expected use payload with characterId, actionId, and distanceFeet')
+  }
+  if (!isNonEmptyString(payload.characterId) || !isNonEmptyString(payload.actionId)) {
+    throw new Error('Expected use payload with characterId, actionId, and distanceFeet')
+  }
+  if (typeof payload.distanceFeet !== 'number' || !Number.isFinite(payload.distanceFeet)) {
+    throw new Error('Expected use payload with characterId, actionId, and distanceFeet')
+  }
+  const base = {
+    characterId: payload.characterId,
+    actionId: payload.actionId,
+    distanceFeet: payload.distanceFeet
+  }
+  if (payload.weaponReachFeet === undefined) {
+    return base
+  }
+  if (typeof payload.weaponReachFeet !== 'number' || !Number.isFinite(payload.weaponReachFeet)) {
+    throw new Error('Expected finite weaponReachFeet when provided')
+  }
+  return { ...base, weaponReachFeet: payload.weaponReachFeet }
+}
+
+function readUseActionPayload(payload: unknown) {
+  const base = readUsePayload(payload)
+  if (!isRecord(payload) || !Array.isArray(payload.targetIds)) {
+    throw new Error('Expected useAction payload with targetIds')
+  }
+  if (!payload.targetIds.every(isNonEmptyString)) {
+    throw new Error('Expected useAction payload with targetIds')
+  }
+  return { ...base, targetIds: payload.targetIds as string[] }
 }
 
 function readKnownActionPayload(payload: unknown): { characterId: string; actionId: string } {

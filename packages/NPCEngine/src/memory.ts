@@ -1,3 +1,4 @@
+import { listNpcOpinionsHeldBy } from './opinions.js'
 import { appendMemory, listMemories, listWorldFacts, requireNpc, saveWorldFact } from './store.js'
 import type {
   GroundingContext,
@@ -19,7 +20,8 @@ export function queryNpcGroundingContext(input: QueryNpcGroundingContextInput): 
   return {
     npcId: npc.npcId,
     privateMemories: listMemories(npc.npcId),
-    worldFacts: listWorldFacts().filter((fact) => factAppliesToNpc(fact, npc.regionId, npc.factionIds))
+    worldFacts: listWorldFacts().filter((fact) => factAppliesToNpc(fact, npc.regionId, npc.factionIds)),
+    opinions: listNpcOpinionsHeldBy(npc.npcId)
   }
 }
 

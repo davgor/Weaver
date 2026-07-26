@@ -8,48 +8,45 @@ The **only** package allowed to invent narrative prose or generated portrait tok
 
 ## Boundaries
 
-- May use **LLMEngine** for generation (via orchestration paths owned with DMEngine)
+- May use **LLMEngine** for generation (via injected `completeText` peers)
 - Owns provider-agnostic NPC/enemy/companion/PC portrait generation rails
+- Owns Social (player/NPC dialogue, streaming) vs Scene (DM exposition) projections
 - Must **not** invent durable game facts — peers own those
 - Must **not** contain Electron UI
 - Consumers need `*.contract.test.ts` against the real API
 
 ## Status
 
-Exposes `health`, `describeRole`, `generatePortrait`, and `setManualPortrait`. Portrait generation is provider-agnostic (`cloud`, `player2`, `local`), asynchronous, campaign-flag gated, and degrades to `imagePath: null` on disabled generation, invalid subject facts, missing providers, or provider failure.
+Exposes health, role description, portrait rails, and prose APIs: `projectSocial` / `projectScene`, `recordPlayerSocial`, `streamSocial`, `generateScene`, `decideSilentResolve`, plus claim extract/validate. Prose is accepted only after peer claim checks; contradicted drafts are rewritten once or rejected. Low-stakes quiet turns resolve silently.
 
 ## Public API
 
 ```ts
-import { createLocalImageProvider, narrationEngine } from '@weaver/narration-engine'
+import { generateScene, narrationEngine, streamSocial } from '@weaver/narration-engine'
 
 narrationEngine.health()
 await narrationEngine.call('describeRole')
-// → { inventsStories: true, inventsVisualTokens: true, validatesAgainst: [...], ... }
 
-await narrationEngine.generatePortrait(
-  {
-    subjectKind: 'npc',
-    subjectId: 'npc-1',
-    prompt: 'heroic face token',
-    settings: { provider: 'local', generativeTokensEnabled: true },
-    subjectFacts: { race: 'elf', description: 'silver-haired scout' }
-  },
-  { providers: { local: createLocalImageProvider({ runtime }) } }
-)
+for await (const event of streamSocial(
+  { prompt: 'Mira replies.', speakerId: 'npc-mira', kind: 'npc', interest },
+  peers
+)) {
+  // incremental Social chunks, or { type: 'silent' }
+}
 
-await narrationEngine.setManualPortrait('pc-1', '/uploads/pc-1.png')
+await generateScene({ prompt: 'Describe the courtyard.' }, peers)
 ```
 
 | Export | Notes |
 |--------|--------|
 | `narrationEngine` | Singleton `NarrationEngineApi` |
-| `generatePortrait` | Shared NPC/enemy/companion/PC generation path |
-| `setManualPortrait` | Upload/replace PC portrait alternative to generation |
-| `createCloudImageProvider` / `createPlayer2ImageProvider` | Remote-provider adapters with injectable `fetch` |
-| `createLocalImageProvider` | Local-runtime adapter with injectable image runtime |
-| `buildPortraitPrompt` / `validatePortraitSubject` | Fact-grounded prompt building and lightweight validation hooks |
-| `NarrationEngineApi` / `EngineEndpoint` / image types | Types |
+| `projectSocial` / `projectScene` | Independent persisted projections |
+| `streamSocial` / `generateScene` | Invent + validate + persist (or silent/reject) |
+| `recordPlayerSocial` | Player lines into Social without LLM |
+| `decideSilentResolve` | Low-stakes quiet-turn gate |
+| `extractClaims` / `validateClaims` | Labeled-block claim extract + peer checks |
+| `generatePortrait` / `setManualPortrait` | Visual token rails |
+| Peer types (`NarrationPeers`, …) | Injected LLM/NPC/item/location lookups |
 
 No combat damage or item creation happens here except by proposing changes that other engines apply after validating them.
 

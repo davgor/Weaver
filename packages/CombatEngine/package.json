@@ -21,6 +21,7 @@
   "dependencies": {
     "@weaver/character-engine": "*",
     "@weaver/enemy-engine": "*",
+    "@weaver/item-engine": "*",
     "@weaver/npc-engine": "*"
   },
   "devDependencies": {

@@ -18,6 +18,8 @@ export type NpcPlaceholderSlot = {
   roleHint: NpcRoleHint
   status: NpcPlaceholderStatus
   assignedNpcId?: string
+  priority?: number
+  districtTag?: string
 }
 
 export type EnsureNpcPlaceholdersInput = {
@@ -39,6 +41,67 @@ export function clearNpcPlaceholderStore(): void {
   slotsByWorld.clear()
 }
 
+export function assertRoleHint(value: string): asserts value is NpcRoleHint {
+  if (!NPC_ROLE_HINTS.some((hint) => hint === value)) {
+    throw new Error(`Unknown NPC role hint: ${value}`)
+  }
+}
+
+export function copySlot(slot: NpcPlaceholderSlot): NpcPlaceholderSlot {
+  return { ...slot }
+}
+
+export function matchesUnassignedFilter(
+  slot: NpcPlaceholderSlot,
+  filter: ListUnassignedFilter
+): boolean {
+  if (filter.regionId !== undefined && slot.regionId !== filter.regionId) return false
+  if (filter.roleHint !== undefined && slot.roleHint !== filter.roleHint) return false
+  if (filter.civilizationId !== undefined && slot.civilizationId !== filter.civilizationId) {
+    return false
+  }
+  return true
+}
+
+export function applyClaim(slot: NpcPlaceholderSlot, npcId: string): NpcPlaceholderSlot {
+  if (slot.status === 'assigned') {
+    throw new Error(`NPC placeholder ${slot.slotId} is already assigned`)
+  }
+  if (npcId.trim().length === 0) {
+    throw new Error('npcId is required to claim an NPC placeholder')
+  }
+  return { ...slot, status: 'assigned', assignedNpcId: npcId }
+}
+
+export function applyRelease(slot: NpcPlaceholderSlot): NpcPlaceholderSlot {
+  const next = { ...slot, status: 'unassigned' as const }
+  delete next.assignedNpcId
+  return next
+}
+
+export function buildSlotId(
+  civilizationId: string,
+  roleHint: NpcRoleHint,
+  sequence: number
+): string {
+  return `${civilizationId}:${roleHint}:${sequence}`
+}
+
+function readWorldSlots(worldId: string): Map<string, NpcPlaceholderSlot> {
+  const existing = slotsByWorld.get(worldId)
+  if (existing !== undefined) return existing
+  const created = new Map<string, NpcPlaceholderSlot>()
+  slotsByWorld.set(worldId, created)
+  return created
+}
+
+function requireSlot(worldId: string, slotId: string): NpcPlaceholderSlot {
+  const slot = readWorldSlots(worldId).get(slotId)
+  if (slot === undefined) throw new Error(`NPC placeholder not found: ${slotId}`)
+  return slot
+}
+
+/** In-memory helper retained for peer packages; service APIs persist via SQLite. */
 export function ensureNpcPlaceholders(
   input: EnsureNpcPlaceholdersInput
 ): NpcPlaceholderSlot[] {
@@ -46,7 +109,7 @@ export function ensureNpcPlaceholders(
   const created: NpcPlaceholderSlot[] = []
   for (const roleHint of input.roleHints) {
     assertRoleHint(roleHint)
-    const slotId = `${input.civilizationId}:${roleHint}:${worldSlots.size + 1}`
+    const slotId = buildSlotId(input.civilizationId, roleHint, worldSlots.size + 1)
     const slot: NpcPlaceholderSlot = {
       slotId,
       civilizationId: input.civilizationId,
@@ -76,7 +139,7 @@ export function listUnassignedNpcPlaceholders(
 ): NpcPlaceholderSlot[] {
   return [...readWorldSlots(worldId).values()]
     .filter((slot) => slot.status === 'unassigned')
-    .filter((slot) => matchesFilter(slot, filter))
+    .filter((slot) => matchesUnassignedFilter(slot, filter))
     .map(copySlot)
 }
 
@@ -86,65 +149,18 @@ export function claimNpcPlaceholder(
   npcId: string
 ): NpcPlaceholderSlot {
   const slot = requireSlot(worldId, slotId)
-  if (slot.status === 'assigned') {
-    throw new Error(`NPC placeholder ${slotId} is already assigned`)
-  }
-  if (!hasText(npcId)) {
-    throw new Error('npcId is required to claim an NPC placeholder')
-  }
-  slot.status = 'assigned'
-  slot.assignedNpcId = npcId
-  return copySlot(slot)
+  const claimed = applyClaim(slot, npcId)
+  worldSlotsSet(worldId, claimed)
+  return copySlot(claimed)
 }
 
 export function releaseNpcPlaceholder(worldId: string, slotId: string): NpcPlaceholderSlot {
   const slot = requireSlot(worldId, slotId)
-  slot.status = 'unassigned'
-  delete slot.assignedNpcId
-  return copySlot(slot)
+  const released = applyRelease(slot)
+  worldSlotsSet(worldId, released)
+  return copySlot(released)
 }
 
-function matchesFilter(slot: NpcPlaceholderSlot, filter: ListUnassignedFilter): boolean {
-  if (filter.regionId !== undefined && slot.regionId !== filter.regionId) {
-    return false
-  }
-  if (filter.roleHint !== undefined && slot.roleHint !== filter.roleHint) {
-    return false
-  }
-  if (filter.civilizationId !== undefined && slot.civilizationId !== filter.civilizationId) {
-    return false
-  }
-  return true
-}
-
-function requireSlot(worldId: string, slotId: string): NpcPlaceholderSlot {
-  const slot = readWorldSlots(worldId).get(slotId)
-  if (slot === undefined) {
-    throw new Error(`NPC placeholder not found: ${slotId}`)
-  }
-  return slot
-}
-
-function readWorldSlots(worldId: string): Map<string, NpcPlaceholderSlot> {
-  const existing = slotsByWorld.get(worldId)
-  if (existing !== undefined) {
-    return existing
-  }
-  const created = new Map<string, NpcPlaceholderSlot>()
-  slotsByWorld.set(worldId, created)
-  return created
-}
-
-function assertRoleHint(value: string): asserts value is NpcRoleHint {
-  if (!NPC_ROLE_HINTS.some((hint) => hint === value)) {
-    throw new Error(`Unknown NPC role hint: ${value}`)
-  }
-}
-
-function copySlot(slot: NpcPlaceholderSlot): NpcPlaceholderSlot {
-  return { ...slot }
-}
-
-function hasText(value: string): boolean {
-  return value.trim().length > 0
+function worldSlotsSet(worldId: string, slot: NpcPlaceholderSlot): void {
+  readWorldSlots(worldId).set(slot.slotId, slot)
 }

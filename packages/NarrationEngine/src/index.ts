@@ -63,6 +63,53 @@ export type LocalImageRuntime = {
   generateImage: (request: ProviderImageRequest) => Promise<string | null>
 }
 
+export type {
+  ClaimValidationResult,
+  FactualClaim,
+  PersistOutcome,
+  SceneBlock,
+  SceneGenerateInput,
+  SilentResolveDecision,
+  SocialGenerateInput,
+  SocialLine,
+  SocialSpeakerKind,
+  SocialStreamEvent,
+  TurnInterestInput
+} from './proseTypes.js'
+export type {
+  ItemPresenceLookup,
+  LocationLookup,
+  NarrationPeers,
+  NpcPresenceLookup,
+  NpcPresenceRecord,
+  TextCompleter,
+  TextCompletionRequest,
+  TextCompletionResponse
+} from './peers.js'
+export { extractClaims, stripClaimBlock } from './claimExtract.js'
+export { validateClaims } from './claimValidate.js'
+export { decideSilentResolve } from './silentResolve.js'
+export {
+  clearNarrationStore,
+  generateScene,
+  projectScene,
+  projectSocial,
+  recordPlayerSocial,
+  streamSocial
+} from './proseApi.js'
+
+import type { NarrationPeers } from './peers.js'
+import { buildProseEndpoints } from './proseEndpoints.js'
+import {
+  clearNarrationStore,
+  generateScene,
+  projectScene,
+  projectSocial,
+  recordPlayerSocial,
+  streamSocial
+} from './proseApi.js'
+import { decideSilentResolve } from './silentResolve.js'
+
 export type GeneratePortraitDeps = {
   providers?: Partial<Record<ImageProviderId, ImageProvider>>
 }
@@ -108,6 +155,14 @@ export type NarrationEngineApi = {
     imagePath: string,
     deps?: SetManualPortraitDeps
   ) => Promise<ManualPortraitResult>
+  projectSocial: typeof projectSocial
+  projectScene: typeof projectScene
+  recordPlayerSocial: typeof recordPlayerSocial
+  generateScene: typeof generateScene
+  streamSocial: typeof streamSocial
+  decideSilentResolve: typeof decideSilentResolve
+  clearNarrationStore: typeof clearNarrationStore
+  setPeers: (peers: NarrationPeers | undefined) => void
   listEndpoints: () => EngineEndpoint[]
   call: (endpoint: string, payload?: unknown) => Promise<unknown>
 }
@@ -231,8 +286,11 @@ function buildEndpoints(): EngineEndpoint[] {
         return await setManualPortrait(request.characterId, request.imagePath)
       }
     },
+    ...buildProseEndpoints(() => injectedPeers)
   ]
 }
+
+let injectedPeers: NarrationPeers | undefined
 
 export const narrationEngine: NarrationEngineApi = {
   id: 'NarrationEngine',
@@ -244,6 +302,16 @@ export const narrationEngine: NarrationEngineApi = {
   describeRole,
   generatePortrait,
   setManualPortrait,
+  projectSocial,
+  projectScene,
+  recordPlayerSocial,
+  generateScene,
+  streamSocial,
+  decideSilentResolve,
+  clearNarrationStore,
+  setPeers(peers) {
+    injectedPeers = peers
+  },
   listEndpoints() {
     return buildEndpoints()
   },
