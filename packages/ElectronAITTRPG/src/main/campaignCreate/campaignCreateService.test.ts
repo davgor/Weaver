@@ -254,6 +254,7 @@ function fakeGenerationResult(
       npc('npc-2', campaignId, 'region-2', 'Orren Vale')
     ],
     foes: [],
+    quests: [],
     bestiaryFlavor: 'Bestiary: goblins fear the road bells.',
     storyPremise: 'Story: recover the first lantern.',
     campaign: {

@@ -9,6 +9,7 @@ import {
   ensureNpcPlaceholders
 } from '@weaver/civilization-engine'
 import { clearEnemyStore, generateEncounterFoes, listBestiary } from '@weaver/enemy-engine'
+import { getItemTemplateCatalog } from '@weaver/item-engine'
 import { fillAndValidate, type TextCompleter } from '@weaver/narration-engine'
 import {
   addNpcToFaction,
@@ -17,6 +18,7 @@ import {
   constructNpc,
   createFaction
 } from '@weaver/npc-engine'
+import { seedWorldQuests } from '@weaver/quest-engine'
 import { regionalEngine } from '@weaver/regional-engine'
 import { worldEngine } from '@weaver/world-engine'
 import { createCampaign } from '../../persistence/campaignPersistence.js'
@@ -86,7 +88,11 @@ function realDeps(completer: TextCompleter): CampaignGenerationDeps {
     civilization: { fillCivilizations: civilizationEngine.fillCivilizations, ensureNpcPlaceholders },
     npc: { constructNpc, createFaction, addNpcToFaction },
     enemy: { listBestiary, generateEncounterFoes },
-    campaign: { createCampaign }
+    campaign: { createCampaign },
+    quest: {
+      seedWorldQuests,
+      listSeedItemIds: () => getItemTemplateCatalog().map((template) => template.id)
+    }
   }
 }
 

@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { advanceTravelDays, clampTravelDays, getCampaignDay } from '@weaver/character-engine'
+import {
+  advanceTravelDays,
+  clampTravelDays,
+  getCampaignDay,
+  setCharacterLocation
+} from '@weaver/character-engine'
 import { resolveTravelIntent } from '../intents/travelHandler.js'
 
 describe('DMEngine -> CharacterEngine travel-time contract (031)', () => {
@@ -8,9 +13,17 @@ describe('DMEngine -> CharacterEngine travel-time contract (031)', () => {
     const before = getCampaignDay(campaignId)
 
     const result = resolveTravelIntent(
-      { advanceTravelDays },
-      { isGenerated: () => true },
+      { advanceTravelDays, setCharacterLocation },
       {
+        isGenerated: () => true,
+        resolvePlacement: () => ({
+          regionId: 'opaque-region-riverford',
+          placeId: 'place.contract-riverford',
+          locationKind: 'settlement'
+        })
+      },
+      {
+        characterId: 'pc-dm-travel-contract',
         campaignId,
         destinationId: 'place.contract-riverford',
         proposedDays: 99

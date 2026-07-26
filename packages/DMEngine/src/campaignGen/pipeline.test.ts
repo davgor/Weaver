@@ -74,6 +74,34 @@ describe('campaign generation pipeline persistence gating', () => {
   })
 })
 
+describe('campaign generation pipeline quest seed hook', () => {
+  it('seeds world quests after peers with pools from earlier stages', async () => {
+    const deps = fakeDeps()
+
+    const result = await runCampaignGeneration(baseInput(), deps)
+
+    expect(deps.quest.seedCalls).toHaveLength(1)
+    const call = deps.quest.seedCalls[0]!
+    expect(call.campaignId).toBe('campaign-test')
+    expect(call.worldId).toBe(result.worldId)
+    expect(call.seed).toBe(result.seed)
+    expect(call.pools.regionIds).toEqual(result.regions.map((region) => region.regionId))
+    expect(call.pools.placeIds).toEqual(
+      result.civilizations.map((civ) => civ.civilizationId)
+    )
+    expect(call.pools.npcIds).toEqual(result.npcs.map((npc) => npc.npcId))
+    expect(call.pools.itemIds).toEqual(['item.seed-a', 'item.seed-b'])
+    expect(result.quests).toEqual([
+      expect.objectContaining({
+        questId: 'campaign-test:main:1',
+        campaignId: 'campaign-test',
+        worldId: result.worldId,
+        kind: 'main'
+      })
+    ])
+  })
+})
+
 function baseInput(): CampaignGenerationInput {
   return {
     campaignId: 'campaign-test',
@@ -98,9 +126,12 @@ type TrackingDeps = CampaignGenerationDeps & {
     placeholderRequests: PlaceholderRequest[]
   }
   campaign: CampaignGenerationDeps['campaign'] & { created: string[] }
+  quest: CampaignGenerationDeps['quest'] & { seedCalls: SeedCall[] }
 }
 
 type PlaceholderRequest = { regionId: string; count: number }
+
+type SeedCall = Parameters<CampaignGenerationDeps['quest']['seedWorldQuests']>[0]
 
 function fakeDeps(options: FakeOptions = {}): TrackingDeps {
   const placeholderRequests: PlaceholderRequest[] = []
@@ -121,10 +152,32 @@ function fakeDeps(options: FakeOptions = {}): TrackingDeps {
       listBestiary: () => [],
       generateEncounterFoes: () => []
     },
-    campaign: fakeCampaign()
+    campaign: fakeCampaign(),
+    quest: fakeQuest()
   }
 }
 
+function fakeQuest(): TrackingDeps['quest'] {
+  const seedCalls: SeedCall[] = []
+  return {
+    seedCalls,
+    listSeedItemIds: () => ['item.seed-a', 'item.seed-b'],
+    seedWorldQuests: (input) => {
+      seedCalls.push(input)
+      return [
+        {
+          questId: `${input.campaignId}:main:1`,
+          campaignId: input.campaignId,
+          worldId: input.worldId,
+          templateId: 'template:main',
+          kind: 'main',
+          status: 'seeded',
+          objectives: []
+        }
+      ]
+    }
+  }
+}
 function fakeWorld(): TrackingDeps['world'] {
   const calls: string[] = []
   return {

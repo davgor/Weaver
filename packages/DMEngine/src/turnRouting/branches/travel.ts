@@ -4,6 +4,7 @@ import type { BranchResolution, TravelBranchInput } from '../types.js'
 
 export function resolveTravelBranch(input: TravelBranchInput): BranchResolution {
   return resolveTravelIntent(input.travel, input.destinations, {
+    characterId: requireText(input.characterId, 'characterId'),
     campaignId: input.campaignId,
     destinationId: requireText(input.destinationId, 'destinationId'),
     proposedDays: requireNumber(input.proposedDays, 'proposedDays')

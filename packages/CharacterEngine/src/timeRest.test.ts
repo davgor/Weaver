@@ -36,7 +36,7 @@ describe('pure time and rest helpers', () => {
 describe('campaign day store', () => {
   it('keeps day counters campaign-scoped for rests and travel', () => {
     expect(getCampaignDay('campaign-time-a')).toBe(0)
-    expect(longRest('campaign-time-a')).toEqual({ campaignId: 'campaign-time-a', day: 1 })
+    expect(longRest('campaign-time-a')).toMatchObject({ campaignId: 'campaign-time-a', day: 1 })
     expect(advanceTravelDays('campaign-time-a', 3)).toEqual({
       campaignId: 'campaign-time-a',
       advancedDays: 3,

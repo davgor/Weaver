@@ -40,6 +40,7 @@ export { resolvePlayerIntent } from './intents/resolvePlayerIntent.js'
 export type { ResolvePlayerIntentInput } from './intents/resolvePlayerIntent.js'
 export type {
   BuyIntentRequest,
+  CharacterLocationSnapshot,
   CharacterTravelApi,
   CommerceSuccess,
   ItemCurrencyApi,
@@ -47,8 +48,11 @@ export type {
   PlayerIntentKind,
   ResolvedPlayerIntent,
   SellIntentRequest,
+  SetTravelCharacterLocationInput,
   TravelDestinationLookup,
+  TravelDestinationPlacement,
   TravelIntentRequest,
+  TravelLocationKind,
   TravelSuccess
 } from './intents/types.js'
 

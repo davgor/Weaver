@@ -1,4 +1,5 @@
 import { buildStageSkeleton } from './skeletons.js'
+import { seedCampaignQuests } from './questSeed.js'
 import { persistStage } from './stages.js'
 import {
   assertInput,
@@ -53,6 +54,7 @@ async function runSeedAttempt(
     state.stages.push(output)
     await persistStage(stage, state, deps, output)
   }
+  seedCampaignQuests(state, deps)
   return state
 }
 
@@ -90,6 +92,7 @@ function initialState(input: CampaignGenerationInput, seedAttempt: number): Gene
     placeholders: [],
     npcs: [],
     foes: [],
+    quests: [],
     catalogEntries: []
   }
 }
@@ -118,6 +121,7 @@ function finalize(state: GenerationState): CampaignGenerationResult {
     foes: state.foes,
     bestiaryFlavor: requireValue(state.bestiaryFlavor, 'bestiaryFlavor'),
     storyPremise: requireValue(state.storyPremise, 'storyPremise'),
+    quests: state.quests,
     campaign: requireValue(state.campaign, 'campaign'),
     catalogEntries: state.catalogEntries
   }

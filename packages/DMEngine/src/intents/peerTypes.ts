@@ -15,3 +15,29 @@ export type CampaignTravelDayAdvance = {
   advancedDays: number
   day: number
 }
+
+export type TravelLocationKind = 'overworld' | 'settlement' | 'dungeon'
+
+export type TravelDestinationPlacement = {
+  regionId: string
+  placeId?: string
+  locationKind: TravelLocationKind
+}
+
+export type SetTravelCharacterLocationInput = {
+  characterId: string
+  campaignId: string
+  regionId: string
+  placeId?: string
+  locationKind: TravelLocationKind
+  updatedDay?: number
+}
+
+export type CharacterLocationSnapshot = {
+  characterId: string
+  campaignId: string
+  regionId: string
+  placeId?: string
+  locationKind: TravelLocationKind
+  updatedDay?: number
+}

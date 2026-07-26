@@ -221,6 +221,7 @@ export type TravelBranchInput = {
   travel: CharacterTravelApi
   destinations: TravelDestinationLookup
   campaignId: string
+  characterId: string
   destinationId?: string
   proposedDays?: number
 }

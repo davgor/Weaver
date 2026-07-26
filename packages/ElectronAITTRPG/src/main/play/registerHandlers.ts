@@ -1,9 +1,11 @@
 import { ipcMain } from 'electron'
 import {
+  advanceTravelDays,
   getCharacterProgression,
   getCharacterStats,
   recordAutosaveSnapshot,
-  resolveCharacterDeath
+  resolveCharacterDeath,
+  setCharacterLocation
 } from '@weaver/character-engine'
 import { createCurrencyService, clampProposedPrice } from '@weaver/item-engine'
 import { createMemoryEncounterStore } from '@weaver/combat-engine'
@@ -59,8 +61,15 @@ function createLiveResolveTurnDeps(): ResolveTurnDeps {
       getBalance: (characterId) => currency.getBalance(characterId),
       clampProposedPrice
     },
-    travel: { advanceTravelDays: (campaignId, days) => ({ campaignId, advancedDays: days, day: days }) },
-    destinations: { isGenerated: () => true },
+    travel: { advanceTravelDays, setCharacterLocation },
+    destinations: {
+      isGenerated: () => true,
+      resolvePlacement: (destinationId) => ({
+        regionId: destinationId,
+        placeId: destinationId,
+        locationKind: 'settlement'
+      })
+    },
     narration: {
       llm: scriptedCompleter('The scene shifts around your choice.\n<<<CLAIMS\n>>>'),
       npcs: { getNpc: () => undefined },

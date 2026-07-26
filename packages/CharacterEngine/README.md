@@ -30,10 +30,14 @@ import {
   getCampaignDay,
   getAbilityModifier,
   listKnownActions,
+  listRestClearableConditions,
   longRest,
   persistCharacterMaxHp,
   pointBuyAbilityScores,
-  resolveAbilityCheck
+  previewLongRest,
+  resolveAbilityCheck,
+  setCharacterLocation,
+  getCharacterLocation
 } from '@weaver/character-engine'
 
 const modifier = getAbilityModifier(12) // 1
@@ -58,6 +62,11 @@ characterEngine.health()
 characterEngine.listEndpoints()
 await characterEngine.call('health')
 await characterEngine.call('advanceTravelDays', { campaignId: 'campaign-1', proposedDays: 4 })
+await characterEngine.call('longRest', {
+  campaignId: 'campaign-1',
+  characterIds: ['pc-1']
+})
+await characterEngine.call('previewLongRest', { campaignId: 'campaign-1', characterIds: ['pc-1'] })
 ```
 
 | Export | Notes |
@@ -73,7 +82,11 @@ await characterEngine.call('advanceTravelDays', { campaignId: 'campaign-1', prop
 | `persistCharacterMaxHp` / `getCharacterStats` | In-memory `stats.maxHp` snapshot helpers for characters |
 | Journal/log/quest/known-action helpers | Character-scoped in-memory records; known actions store action ids only |
 | Race/background helpers | Campaign-scoped rosters plus persisted character selections; race lore is realized once per campaign |
-| Time/rest helpers | Campaign-scoped day counter; long rest adds 1 day, travel clamps to 1-30 days |
+| Time/rest helpers | Campaign-scoped day counter; travel clamps to 1-30 days |
+| `longRest` / `previewLongRest` | **Only** full-recovery source: advances campaign day by exactly 1; optional `characterIds` restore `currentHp → maxHp`, clear dying, and clear rest-clearable conditions. Omit/empty ids = day advance only (backward compatible). |
+| `REST_CLEARABLE_CONDITIONS` / `listRestClearableConditions` | Cleared on long rest: Prone, Stunned, Poisoned, Unconscious. Sticky (not cleared): Restrained. |
+| ActionEngine lockouts | Not cleared here — callers/peers invoke ActionEngine `clearLockout` if needed. CharacterEngine does not import ActionEngine. |
+| `setCharacterLocation` / `getCharacterLocation` / `clearCharacterLocation` / `listCharacterLocations` | Sole owner of per-character placement: opaque `regionId` (+ optional `placeId`), `locationKind` (`overworld` \| `settlement` \| `dungeon`), optional `updatedDay`. Geography generation stays in World/Regional/Civilization/Dungeon engines — CharacterEngine does **not** import those packages (satisfies REBUILD_SPEC `currentRegionId` as `regionId`). |
 | `characterEngine` | Singleton `CharacterEngineApi` with health/listEndpoints/call |
 | `CharacterEngineApi` / `EngineEndpoint` | Admin-compatible endpoint types |
 
@@ -89,21 +102,27 @@ await characterEngine.call('advanceTravelDays', { campaignId: 'campaign-1', prop
   owned by ActionEngine and are not copied into CharacterEngine records.
 - Race lore can be supplied by an orchestrating caller on first selection; CharacterEngine stores and
   reuses it for the campaign without calling an LLM.
+- Intended DM travel hook: after `resolveTravelIntent` validates a destination, call
+  `setCharacterLocation({ characterId, campaignId, regionId, placeId?, locationKind })`.
+  That DM wiring is a follow-up — this package only owns the placement facts.
+- Character campaign portability slice version **2** includes `locations[]` alongside companions/day.
 
 ## Planned direction
 
 | Epic | Intent |
 |------|--------|
-| [022](../../board/in-progress/022-CharacterEngine-Ability-Score-Generation.md) | Ability score generation and assignment flows |
-| [023](../../board/in-progress/023-CharacterEngine-Hp-Model.md) | HP model shared by PCs, NPCs, and enemies |
-| [024](../../board/backlog/024-CharacterEngine-Damage-Conditions-Dying.md) | Damage types, conditions, dying state |
-| [025](../../board/backlog/025-CharacterEngine-Xp-And-Level-Up.md) | XP and level-up progression |
-| [026](../../board/backlog/026-CharacterEngine-Archetypes-And-Starting-Loadouts.md) | Archetypes and starting loadout selection |
-| [027](../../board/backlog/027-CharacterEngine-Death-Modes-And-Obituary.md) | Death modes and obituary flow |
-| [028](../../board/in-progress/028-CharacterEngine-Journal-Logbook-Quests-Spellbook.md) | Journal, log book, quest log, and known-action list |
-| [029](../../board/in-progress/029-CharacterEngine-Race-And-Background-Selection.md) | Race and background selection |
-| [030](../../board/backlog/030-CharacterEngine-Companions-And-Inactive-Proxy.md) | Companions and inactive PC proxying |
-| [031](../../board/in-progress/031-CharacterEngine-Time-And-Rest.md) | Time and rest state |
+| [022](../../board/done/022-CharacterEngine-Ability-Score-Generation.md) | Ability score generation and assignment flows |
+| [023](../../board/done/023-CharacterEngine-Hp-Model.md) | HP model shared by PCs, NPCs, and enemies |
+| [024](../../board/done/024-CharacterEngine-Damage-Conditions-Dying.md) | Damage types, conditions, dying state |
+| [025](../../board/done/025-CharacterEngine-Xp-And-Level-Up.md) | XP and level-up progression |
+| [026](../../board/done/026-CharacterEngine-Archetypes-And-Starting-Loadouts.md) | Archetypes and starting loadout selection |
+| [027](../../board/done/027-CharacterEngine-Death-Modes-And-Obituary.md) | Death modes and obituary flow |
+| [028](../../board/done/028-CharacterEngine-Journal-Logbook-Quests-Spellbook.md) | Journal, log book, quest log, and known-action list |
+| [029](../../board/done/029-CharacterEngine-Race-And-Background-Selection.md) | Race and background selection |
+| [030](../../board/done/030-CharacterEngine-Companions-And-Inactive-Proxy.md) | Companions and inactive PC proxying |
+| [031](../../board/done/031-CharacterEngine-Time-And-Rest.md) | Time and rest day counter |
+| [095](../../board/done/095-CharacterEngine-Rest-Recovery-Api.md) | Long-rest full recovery (HP, dying, rest-clearable conditions) |
+| [096](../../board/done/096-CharacterEngine-Location-Ownership.md) | Per-character location ownership (opaque region/place ids) |
 
 ## Scripts
 

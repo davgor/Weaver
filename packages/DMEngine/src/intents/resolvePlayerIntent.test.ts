@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { advanceTravelDays } from '@weaver/character-engine'
+import { advanceTravelDays, setCharacterLocation } from '@weaver/character-engine'
 import { clampProposedPrice, createCurrencyService } from '@weaver/item-engine'
 import { resolvePlayerIntent } from './resolvePlayerIntent.js'
 import type { ItemCurrencyApi, TravelDestinationLookup } from './types.js'
+
+const travelApi = { advanceTravelDays, setCharacterLocation }
 
 describe('resolvePlayerIntent commerce routing', () => {
   it('routes buy text through currency debit instead of pure narration', () => {
@@ -15,7 +17,7 @@ describe('resolvePlayerIntent commerce routing', () => {
       itemId: 'item.iron-sword',
       proposedPrice: 25,
       currency,
-      travel: { advanceTravelDays },
+      travel: travelApi,
       destinations: alwaysGenerated()
     })
 
@@ -36,7 +38,7 @@ describe('resolvePlayerIntent commerce routing', () => {
       itemId: 'item.rusty-dagger',
       proposedPrice: 8,
       currency,
-      travel: { advanceTravelDays },
+      travel: travelApi,
       destinations: alwaysGenerated()
     })
 
@@ -49,11 +51,12 @@ describe('resolvePlayerIntent travel and narration', () => {
   it('routes travel text through day advance instead of pure narration', () => {
     const result = resolvePlayerIntent({
       text: 'I travel to Riverford',
+      characterId: 'pc-route-travel',
       campaignId: 'campaign-route-travel',
       destinationId: 'place.riverford',
       proposedDays: 4,
       currency: createCurrencyApi(),
-      travel: { advanceTravelDays },
+      travel: travelApi,
       destinations: alwaysGenerated()
     })
 
@@ -72,7 +75,7 @@ describe('resolvePlayerIntent travel and narration', () => {
       text: 'I look around the tavern',
       characterId: 'pc-route-narration',
       currency,
-      travel: { advanceTravelDays },
+      travel: travelApi,
       destinations: alwaysGenerated()
     })
 
@@ -92,5 +95,12 @@ function createCurrencyApi(): ItemCurrencyApi {
 }
 
 function alwaysGenerated(): TravelDestinationLookup {
-  return { isGenerated: () => true }
+  return {
+    isGenerated: () => true,
+    resolvePlacement: () => ({
+      regionId: 'opaque-region-route',
+      placeId: 'opaque-place-route',
+      locationKind: 'settlement'
+    })
+  }
 }
