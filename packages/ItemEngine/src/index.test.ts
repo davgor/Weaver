@@ -5,12 +5,19 @@ const EXPECTED_ENDPOINTS = [
   'health',
   'defineTemplate',
   'getTemplate',
+  'seedItemTemplateCatalog',
   'createInventory',
   'addItem',
   'listInventory',
   'getEquipped',
   'equip',
-  'unequip'
+  'unequip',
+  'credit',
+  'debit',
+  'getBalance',
+  'clampProposedPrice',
+  'generateLoot',
+  'getStartingLoadout'
 ]
 
 function requireInstanceId(result: unknown): string {
@@ -69,6 +76,16 @@ describe('@weaver/item-engine typed singleton API', () => {
     expect(itemEngine.getTemplate(templateId).name).toBe('Typed Test Spear')
     expect(itemEngine.getEquipped(characterId).mainHand?.instance.durability).toBe(6)
   })
+
+  it('exposes typed economy, loot, and starting gear methods on the singleton', () => {
+    itemEngine.seedItemTemplateCatalog()
+    itemEngine.credit('character.singleton.economy', 10)
+
+    expect(itemEngine.getBalance('character.singleton.economy')).toBe(10)
+    expect(itemEngine.clampProposedPrice(50_000)).toBe(10_000)
+    expect(itemEngine.generateLoot({ difficulty: 'easy', seed: 'singleton.loot' }).length).toBeGreaterThan(0)
+    expect(itemEngine.getStartingLoadout('Mage').actionIds).toContain('ice_bolt')
+  })
 })
 
 describe('@weaver/item-engine admin endpoints', () => {
@@ -95,6 +112,21 @@ describe('@weaver/item-engine admin endpoints', () => {
         template: { name: 'Endpoint Test Shield' },
         instance: { customName: 'The Door' }
       }
+    })
+  })
+
+  it('invokes economy, loot, and starting gear endpoints for admin callers', async () => {
+    await itemEngine.call('seedItemTemplateCatalog')
+    await itemEngine.call('credit', { characterId: 'character.endpoint.economy', amount: 12 })
+
+    await expect(itemEngine.call('getBalance', { characterId: 'character.endpoint.economy' })).resolves.toBe(12)
+    await expect(itemEngine.call('clampProposedPrice', { proposed: 50_000 })).resolves.toBe(10_000)
+    await expect(itemEngine.call('generateLoot', { difficulty: 'easy', seed: 'endpoint.loot' })).resolves.toEqual(
+      expect.arrayContaining([expect.objectContaining({ templateId: expect.any(String), quantity: expect.any(Number) })])
+    )
+    await expect(itemEngine.call('getStartingLoadout', { archetype: 'Fighter' })).resolves.toMatchObject({
+      archetype: 'Fighter',
+      actionIds: expect.arrayContaining(['hamstring_strike'])
     })
   })
 })

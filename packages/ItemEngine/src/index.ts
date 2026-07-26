@@ -1,11 +1,43 @@
 export type { EngineEndpoint } from './typesApi.js'
 export {
+  CurrencyError,
+  InsufficientFundsError,
+  InvalidCurrencyAmountError,
+  InvalidPriceBoundsError,
+  clampProposedPrice,
+  createCurrencyService
+} from './currencyService.js'
+export {
+  DEFAULT_LOOT_TABLE_ID,
+  LOOT_TABLES,
+  generateLoot
+} from './lootService.js'
+export {
+  EXPECTED_ACTION_ENGINE_ACTION_IDS,
+  STARTING_GEAR_ARCHETYPES,
+  STARTING_GEAR_CATALOG_VERSION,
+  getStartingLoadout,
+  isStartingGearArchetype
+} from './startingGear.js'
+export {
+  ITEM_TEMPLATE_CATALOG_VERSION,
+  TEMPLATE_IDS,
+  getItemTemplateCatalog,
+  seedItemTemplateCatalog
+} from './templateCatalog.js'
+export {
   EQUIPMENT_SLOTS,
   FIXED_EQUIPMENT_SLOTS,
   createEmptyEquippedItems,
   isEquipmentSlot,
   isFixedEquipmentSlot
 } from './types.js'
+export type {
+  CurrencyBalanceSnapshot,
+  CurrencyErrorCode,
+  CurrencyService,
+  PriceClampOptions
+} from './currencyService.js'
 export type {
   EquipmentSlot,
   EquippedItems,
@@ -17,6 +49,19 @@ export type {
   ItemTemplate,
   ItemView
 } from './types.js'
+export type {
+  GenerateLootRequest,
+  LootDifficulty,
+  LootDrop,
+  LootTable
+} from './lootService.js'
+export type {
+  StarterActionId,
+  StartingGearArchetype,
+  StartingLoadout,
+  StartingLoadoutItem
+} from './startingGear.js'
+export type { StarterItemTemplateId } from './templateCatalog.js'
 export { createItemService } from './itemService.js'
 export type { ItemService } from './itemService.js'
 export { itemEngine } from './engineApi.js'

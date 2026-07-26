@@ -1,4 +1,4 @@
-import type { LlmBackend } from './backend.js'
+import type { LocalLlmBackend } from './backend.js'
 import type { CreateRuntime, LlmRuntime, TextRequest } from './types.js'
 
 type LlamaModule = {
@@ -43,7 +43,7 @@ export async function probeVulkanWithNodeLlama(): Promise<boolean> {
   }
 }
 
-function gpuOption(backend: LlmBackend): 'vulkan' | false {
+function gpuOption(backend: LocalLlmBackend): 'vulkan' | false {
   return backend === 'vulkan' ? 'vulkan' : false
 }
 
@@ -52,7 +52,7 @@ function buildRuntime(parts: {
   llama: Awaited<ReturnType<LlamaModule['getLlama']>>
   model: LlamaModel
   context: Awaited<ReturnType<LlamaModel['createContext']>>
-  backend: LlmBackend
+  backend: LocalLlmBackend
 }): LlmRuntime {
   const { llamaCpp, llama, model, context, backend } = parts
   return {
@@ -68,9 +68,9 @@ function buildRuntime(parts: {
 async function completeWithSession(
   llamaCpp: LlamaModule,
   context: Awaited<ReturnType<LlamaModel['createContext']>>,
-  backend: LlmBackend,
+  backend: LocalLlmBackend,
   request: TextRequest
-): Promise<{ text: string; backend: LlmBackend }> {
+): Promise<{ text: string; backend: LocalLlmBackend }> {
   const session = createSession(llamaCpp, context, request.context)
   const text = await promptSession(session, request.prompt, request.maxTokens)
   return { text, backend }

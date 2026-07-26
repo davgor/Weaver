@@ -11,7 +11,18 @@ describe('ElectronAdmin ActionEngine contract', () => {
         id: 'ActionEngine',
         title: 'Action Engine',
         description: 'Deterministic abilities, effects, ranges, and Action-turn costs',
-        endpoints: [{ name: 'health', description: 'Return package health metadata' }]
+        endpoints: expect.arrayContaining([
+          { name: 'health', description: 'Return package health metadata' },
+          { name: 'getCatalog', description: 'Return a deterministic fresh seed catalog' },
+          {
+            name: 'listCatalogActions',
+            description: 'List deterministic seed catalog actions'
+          },
+          {
+            name: 'grantKnownAction',
+            description: 'Grant a known catalog action id to a character'
+          }
+        ])
       }
     ])
   })

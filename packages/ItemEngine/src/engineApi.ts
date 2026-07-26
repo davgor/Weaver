@@ -1,5 +1,19 @@
 import { buildEndpoints } from './endpoints.js'
+import {
+  clampProposedPrice,
+  createCurrencyService,
+  type CurrencyBalanceSnapshot,
+  type CurrencyService,
+  type PriceClampOptions
+} from './currencyService.js'
 import { createItemService, type ItemService } from './itemService.js'
+import { generateLoot, type GenerateLootRequest, type LootDrop } from './lootService.js'
+import {
+  getStartingLoadout,
+  type StartingGearArchetype,
+  type StartingLoadout
+} from './startingGear.js'
+import { seedItemTemplateCatalog } from './templateCatalog.js'
 import type {
   EquipmentSlot,
   EquippedItemViews,
@@ -18,17 +32,25 @@ export type ItemEngineApi = {
   call: (endpoint: string, payload?: unknown) => Promise<unknown>
   defineTemplate: (template: ItemTemplate) => ItemTemplate
   getTemplate: (templateId: string) => ItemTemplate
+  seedItemTemplateCatalog: () => ItemTemplate[]
   createInventory: (characterId: string) => InventorySnapshot
   addItem: (characterId: string, templateId: string, state?: ItemInstanceState) => ItemInstance
   listInventory: (characterId: string) => InventorySnapshot
   getEquipped: (characterId: string) => EquippedItemViews
   equip: (characterId: string, instanceId: string, slot: EquipmentSlot) => InventorySnapshot
   unequip: (characterId: string, target: string) => InventorySnapshot
+  credit: (characterId: string, amount: number) => CurrencyBalanceSnapshot
+  debit: (characterId: string, amount: number) => CurrencyBalanceSnapshot
+  getBalance: (characterId: string) => number
+  clampProposedPrice: (proposed: number, opts?: PriceClampOptions) => number
+  generateLoot: (request: GenerateLootRequest) => LootDrop[]
+  getStartingLoadout: (archetype: StartingGearArchetype) => StartingLoadout
 }
 
 const PACKAGE_NAME = '@weaver/item-engine'
 const VERSION = '0.1.0'
 const singletonService: ItemService = createItemService()
+const singletonCurrency: CurrencyService = createCurrencyService()
 
 export const itemEngine: ItemEngineApi = {
   id: 'ItemEngine',
@@ -38,10 +60,10 @@ export const itemEngine: ItemEngineApi = {
     return { ok: true, package: PACKAGE_NAME, version: VERSION }
   },
   listEndpoints() {
-    return buildEndpoints(singletonService)
+    return buildEndpoints(singletonService, singletonCurrency)
   },
   async call(endpoint: string, payload?: unknown) {
-    const match = buildEndpoints(singletonService).find((entry) => entry.name === endpoint)
+    const match = buildEndpoints(singletonService, singletonCurrency).find((entry) => entry.name === endpoint)
     if (!match) throw new Error(`Unknown endpoint: ${endpoint}`)
     return await match.invoke(payload)
   },
@@ -50,6 +72,9 @@ export const itemEngine: ItemEngineApi = {
   },
   getTemplate(templateId) {
     return singletonService.getTemplate(templateId)
+  },
+  seedItemTemplateCatalog() {
+    return seedItemTemplateCatalog(singletonService)
   },
   createInventory(characterId) {
     return singletonService.createInventory(characterId)
@@ -68,5 +93,23 @@ export const itemEngine: ItemEngineApi = {
   },
   unequip(characterId, target) {
     return singletonService.unequip(characterId, target)
+  },
+  credit(characterId, amount) {
+    return singletonCurrency.credit(characterId, amount)
+  },
+  debit(characterId, amount) {
+    return singletonCurrency.debit(characterId, amount)
+  },
+  getBalance(characterId) {
+    return singletonCurrency.getBalance(characterId)
+  },
+  clampProposedPrice(proposed, opts) {
+    return clampProposedPrice(proposed, opts)
+  },
+  generateLoot(request) {
+    return generateLoot(request)
+  },
+  getStartingLoadout(archetype) {
+    return getStartingLoadout(archetype)
   }
 }

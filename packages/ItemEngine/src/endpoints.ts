@@ -1,5 +1,9 @@
 import type { EngineEndpoint } from './typesApi.js'
+import { clampProposedPrice, type CurrencyService, type PriceClampOptions } from './currencyService.js'
 import { type ItemService } from './itemService.js'
+import { generateLoot, type GenerateLootRequest } from './lootService.js'
+import { getStartingLoadout, isStartingGearArchetype } from './startingGear.js'
+import { seedItemTemplateCatalog } from './templateCatalog.js'
 import {
   isEquipmentSlot,
   type EquipmentSlot,
@@ -31,6 +35,12 @@ function optionalString(payload: Record<string, unknown>, key: string): string |
 function optionalNumber(payload: Record<string, unknown>, key: string): number | undefined {
   const value = payload[key]
   if (value === undefined) return undefined
+  if (typeof value !== 'number' || !Number.isFinite(value)) throw new Error(`${key} must be a number`)
+  return value
+}
+
+function requireNumber(payload: Record<string, unknown>, key: string): number {
+  const value = payload[key]
   if (typeof value !== 'number' || !Number.isFinite(value)) throw new Error(`${key} must be a number`)
   return value
 }
@@ -98,6 +108,34 @@ function requireTarget(payload: Record<string, unknown>): string {
   return target
 }
 
+function parsePriceClampOptions(payload: Record<string, unknown>): PriceClampOptions | undefined {
+  const min = optionalNumber(payload, 'min')
+  const max = optionalNumber(payload, 'max')
+  if (min === undefined && max === undefined) return undefined
+  const opts: PriceClampOptions = {}
+  if (min !== undefined) opts.min = min
+  if (max !== undefined) opts.max = max
+  return opts
+}
+
+function parseLootRequest(payload: unknown): GenerateLootRequest {
+  const body = asRecord(payload)
+  const request: GenerateLootRequest = { seed: requireString(body, 'seed') }
+  const difficulty = optionalString(body, 'difficulty')
+  if (difficulty !== undefined) request.difficulty = difficulty
+  const tag = optionalString(body, 'tag')
+  if (tag !== undefined) request.tag = tag
+  const tableId = optionalString(body, 'tableId')
+  if (tableId !== undefined) request.tableId = tableId
+  return request
+}
+
+function requireArchetype(payload: Record<string, unknown>) {
+  const archetype = payload.archetype
+  if (!isStartingGearArchetype(archetype)) throw new Error('Known starting gear archetype required')
+  return archetype
+}
+
 function templateEndpoints(service: ItemService): EngineEndpoint[] {
   return [
     {
@@ -109,6 +147,11 @@ function templateEndpoints(service: ItemService): EngineEndpoint[] {
       name: 'getTemplate',
       description: 'Return one item template definition',
       invoke: (payload) => service.getTemplate(requireString(asRecord(payload), 'templateId'))
+    },
+    {
+      name: 'seedItemTemplateCatalog',
+      description: 'Register ItemEngine starter and loot template definitions',
+      invoke: () => seedItemTemplateCatalog(service)
     }
   ]
 }
@@ -166,7 +209,56 @@ function mutationEndpoints(service: ItemService): EngineEndpoint[] {
   ]
 }
 
-export function buildEndpoints(service: ItemService): EngineEndpoint[] {
+function currencyEndpoints(currency: CurrencyService): EngineEndpoint[] {
+  return [
+    {
+      name: 'credit',
+      description: 'Credit currency to a character balance',
+      invoke: (payload) => {
+        const body = asRecord(payload)
+        return currency.credit(requireString(body, 'characterId'), requireNumber(body, 'amount'))
+      }
+    },
+    {
+      name: 'debit',
+      description: 'Debit currency from a character balance',
+      invoke: (payload) => {
+        const body = asRecord(payload)
+        return currency.debit(requireString(body, 'characterId'), requireNumber(body, 'amount'))
+      }
+    },
+    {
+      name: 'getBalance',
+      description: 'Return a character currency balance',
+      invoke: (payload) => currency.getBalance(requireString(asRecord(payload), 'characterId'))
+    },
+    {
+      name: 'clampProposedPrice',
+      description: 'Clamp a DM-proposed price into supported bounds',
+      invoke: (payload) => {
+        const body = asRecord(payload)
+        return clampProposedPrice(requireNumber(body, 'proposed'), parsePriceClampOptions(body))
+      }
+    }
+  ]
+}
+
+function catalogEndpoints(): EngineEndpoint[] {
+  return [
+    {
+      name: 'generateLoot',
+      description: 'Generate deterministic loot drops from seeded tables',
+      invoke: (payload) => generateLoot(parseLootRequest(payload))
+    },
+    {
+      name: 'getStartingLoadout',
+      description: 'Return a versioned archetype starting gear loadout',
+      invoke: (payload) => getStartingLoadout(requireArchetype(asRecord(payload)))
+    }
+  ]
+}
+
+export function buildEndpoints(service: ItemService, currency: CurrencyService): EngineEndpoint[] {
   return [
     {
       name: 'health',
@@ -175,6 +267,8 @@ export function buildEndpoints(service: ItemService): EngineEndpoint[] {
     },
     ...templateEndpoints(service),
     ...inventoryEndpoints(service),
-    ...mutationEndpoints(service)
+    ...mutationEndpoints(service),
+    ...currencyEndpoints(currency),
+    ...catalogEndpoints()
   ]
 }

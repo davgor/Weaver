@@ -28,7 +28,7 @@ function sequenceRoller(rolls: readonly number[]): D20Roller {
   }
 }
 
-describe('@weaver/character-engine scaffold', () => {
+describe('@weaver/character-engine scaffold metadata', () => {
   it('reports healthy', () => {
     const health = characterEngine.health()
     expect(health.ok).toBe(true)
@@ -39,8 +39,28 @@ describe('@weaver/character-engine scaffold', () => {
     const endpoints = characterEngine.listEndpoints()
     expect(endpoints.length).toBeGreaterThan(0)
     expect(endpoints.some((endpoint) => endpoint.name === 'health')).toBe(true)
+    expect(endpoints.map((endpoint) => endpoint.name)).toEqual(
+      expect.arrayContaining([
+        'pointBuyAbilityScores',
+        'standardArrayAbilityScores',
+        'rollAbilityScoreDraft',
+        'computeMaxHp',
+        'persistCharacterMaxHp',
+        'addJournalEntry',
+        'writeLogBookEvent',
+        'upsertQuest',
+        'learnKnownAction',
+        'setCampaignRaceRoster',
+        'selectRace',
+        'selectBackground',
+        'longRest',
+        'advanceTravelDays'
+      ])
+    )
   })
+})
 
+describe('@weaver/character-engine scaffold endpoint calls', () => {
   it('invokes the health endpoint', async () => {
     const result = await characterEngine.call('health')
     expect(result).toMatchObject({ ok: true, package: '@weaver/character-engine' })
@@ -53,6 +73,23 @@ describe('@weaver/character-engine scaffold', () => {
 
   it('rejects unknown endpoints', async () => {
     await expect(characterEngine.call('does-not-exist')).rejects.toThrow(/Unknown endpoint/)
+  })
+
+  it('invokes newly exposed deterministic endpoints', async () => {
+    await expect(
+      characterEngine.call('pointBuyAbilityScores', {
+        scores: { Body: 11, Agility: 11, Mind: 11, Presence: 11 }
+      })
+    ).resolves.toEqual({ Body: 11, Agility: 11, Mind: 11, Presence: 11 })
+
+    await expect(
+      characterEngine.call('computeMaxHp', {
+        hitDie: 8,
+        level: 2,
+        bodyMod: 1,
+        rolls: [7, 5]
+      })
+    ).resolves.toBe(13)
   })
 })
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { regionalEngine } from './index.js'
+import { createRegionalService, regionalEngine } from './index.js'
 
 describe('@weaver/regional-engine', () => {
   it('reports healthy', () => {
@@ -12,6 +12,23 @@ describe('@weaver/regional-engine', () => {
     const endpoints = regionalEngine.listEndpoints()
     expect(endpoints.length).toBeGreaterThan(0)
     expect(endpoints.some((e) => e.name === 'health')).toBe(true)
+    expect(endpoints.map((entry) => entry.name)).toEqual(
+      expect.arrayContaining([
+        'findNewRegion',
+        'createRegion',
+        'fillRegions',
+        'getRegion',
+        'listRegions',
+        'getRegionAt',
+        'getRegionsInBounds',
+        'getRegionCells',
+        'getRegionSummary',
+        'clearRegions',
+        'deleteRegion',
+        'hasRegions',
+        'countRegions'
+      ])
+    )
   })
 
   it('invokes the health endpoint', async () => {
@@ -26,5 +43,9 @@ describe('@weaver/regional-engine', () => {
 
   it('rejects unknown endpoints', async () => {
     await expect(regionalEngine.call('does-not-exist')).rejects.toThrow(/Unknown endpoint/)
+  })
+
+  it('exports a dependency-injected RegionalService factory', () => {
+    expect(createRegionalService).toBeTypeOf('function')
   })
 })
