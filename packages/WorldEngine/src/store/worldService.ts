@@ -1,20 +1,32 @@
-import type { Aabb, Cell, ExpansionRecord, NoiseParams, WorldMeta } from '../types.js'
-import { aabbCellCount, aabbContainsPoint, assertAabb, unionAabb } from '../types.js'
+import type { Aabb, Cell, ExpansionRecord, NoiseParams, SparseOverlay, WorldMeta } from '../types.js'
+import {
+  aabbCellCount,
+  aabbContainsPoint,
+  applyLandTypeOverride,
+  assertAabb,
+  LAND_TYPE_OVERRIDE_KEY,
+  unionAabb
+} from '../types.js'
 import { DEFAULT_NOISE, createWorldCell } from '../noise/perlin.js'
 import { readChunkCell, writeCells } from './chunks.js'
 import {
+  clearSparseOverlays,
   getExpansion,
   getLatestExpansion,
+  getSparseOverlay,
   hasMeta,
   initializeWorld,
   insertExpansion,
   listExpansions,
+  listSparseOverlays,
   listWorldIds,
   nextExpansionSequence,
   readMeta,
   removeWorldDir,
+  setSparseOverlay,
   updateMeta,
-  upsertChunkManifest
+  upsertChunkManifest,
+  type ListOverlaysFilter
 } from './metaStore.js'
 
 export type CreateWorldOptions = {
@@ -33,6 +45,21 @@ export type ExpandWorldOptions = {
   bounds: Aabb
 }
 
+export type SetOverlayInput = {
+  worldId: string
+  x: number
+  y: number
+  key: string
+  value: string
+}
+
+export type GetOverlayInput = {
+  worldId: string
+  x: number
+  y: number
+  key: string
+}
+
 export type WorldService = {
   createWorld: (opts?: CreateWorldOptions) => { meta: WorldMeta; expansion0: ExpansionRecord }
   expandWorld: (opts: ExpandWorldOptions) => ExpansionRecord
@@ -47,6 +74,10 @@ export type WorldService = {
   getCell: (args: { worldId: string; x: number; y: number }) => Cell | null
   getWorldSpecific: (args: { worldId: string; bounds: Aabb }) => Cell[]
   getWorldWhole: (worldId: string) => Iterable<Cell>
+  setSparseOverlay: (overlay: SetOverlayInput) => SparseOverlay
+  getSparseOverlay: (args: GetOverlayInput) => SparseOverlay | null
+  listSparseOverlays: (filter: Omit<ListOverlaysFilter, 'worldId'> & { worldId: string }) => SparseOverlay[]
+  clearSparseOverlays: (filter: Omit<ListOverlaysFilter, 'worldId'> & { worldId: string }) => number
 }
 
 type AddedCells = {
@@ -215,19 +246,53 @@ function expandWorldAt(dataRoot: string, opts: ExpandWorldOptions): ExpansionRec
   return expansion
 }
 
-function getCellAt(dataRoot: string, meta: WorldMeta, x: number, y: number): Cell | null {
+function overlayKey(x: number, y: number): string {
+  return `${x},${y}`
+}
+
+function landTypeOverrideMap(
+  dataRoot: string,
+  worldId: string,
+  bounds?: Aabb
+): Map<string, string> {
+  const filter: ListOverlaysFilter = {
+    worldId,
+    keyPrefix: LAND_TYPE_OVERRIDE_KEY
+  }
+  if (bounds) filter.bounds = bounds
+  const overlays = listSparseOverlays(dataRoot, filter)
+  const map = new Map<string, string>()
+  for (const overlay of overlays) {
+    if (overlay.key === LAND_TYPE_OVERRIDE_KEY) map.set(overlayKey(overlay.x, overlay.y), overlay.value)
+  }
+  return map
+}
+
+type CellLookup = {
+  dataRoot: string
+  meta: WorldMeta
+  x: number
+  y: number
+  overrides?: Map<string, string>
+}
+
+function getCellAt(lookup: CellLookup): Cell | null {
+  const { dataRoot, meta, x, y, overrides } = lookup
   if (!aabbContainsPoint(meta.bounds, x, y)) return null
-  return readChunkCell({ dataRoot, worldId: meta.worldId, x, y })
+  const base = readChunkCell({ dataRoot, worldId: meta.worldId, x, y })
+  if (!base) return null
+  return applyLandTypeOverride(base, overrides?.get(overlayKey(x, y)))
 }
 
 function getSpecific(dataRoot: string, args: { worldId: string; bounds: Aabb }): Cell[] {
   const meta = readMeta(dataRoot, args.worldId)
   const bounds = intersection(assertAabb(args.bounds), meta.bounds)
   if (!bounds) return []
+  const overrides = landTypeOverrideMap(dataRoot, args.worldId, bounds)
   const cells: Cell[] = []
   for (let y = bounds.minY; y <= bounds.maxY; y++) {
     for (let x = bounds.minX; x <= bounds.maxX; x++) {
-      const cell = getCellAt(dataRoot, meta, x, y)
+      const cell = getCellAt({ dataRoot, meta, x, y, overrides })
       if (cell) cells.push(cell)
     }
   }
@@ -236,12 +301,27 @@ function getSpecific(dataRoot: string, args: { worldId: string; bounds: Aabb }):
 
 function* iterateWorld(dataRoot: string, worldId: string): Iterable<Cell> {
   const meta = readMeta(dataRoot, worldId)
+  const overrides = landTypeOverrideMap(dataRoot, worldId, meta.bounds)
   for (let y = meta.bounds.minY; y <= meta.bounds.maxY; y++) {
     for (let x = meta.bounds.minX; x <= meta.bounds.maxX; x++) {
-      const cell = getCellAt(dataRoot, meta, x, y)
+      const cell = getCellAt({ dataRoot, meta, x, y, overrides })
       if (cell) yield cell
     }
   }
+}
+
+function getEffectiveCell(
+  dataRoot: string,
+  args: { worldId: string; x: number; y: number }
+): Cell | null {
+  const meta = readMeta(dataRoot, args.worldId)
+  const overrides = landTypeOverrideMap(dataRoot, args.worldId, {
+    minX: args.x,
+    minY: args.y,
+    maxX: args.x,
+    maxY: args.y
+  })
+  return getCellAt({ dataRoot, meta, x: args.x, y: args.y, overrides })
 }
 
 export function createWorldService(dataRoot: string): WorldService {
@@ -259,8 +339,12 @@ export function createWorldService(dataRoot: string): WorldService {
     getExpansion: (worldId, expansionId) => getExpansion(dataRoot, worldId, expansionId),
     listExpansions: (worldId) => listExpansions(dataRoot, worldId),
     getLatestExpansion: (worldId) => getLatestExpansion(dataRoot, worldId),
-    getCell: (args) => getCellAt(dataRoot, readMeta(dataRoot, args.worldId), args.x, args.y),
+    getCell: (args) => getEffectiveCell(dataRoot, args),
     getWorldSpecific: (args) => getSpecific(dataRoot, args),
-    getWorldWhole: (worldId) => iterateWorld(dataRoot, worldId)
+    getWorldWhole: (worldId) => iterateWorld(dataRoot, worldId),
+    setSparseOverlay: (overlay) => setSparseOverlay(dataRoot, overlay),
+    getSparseOverlay: (args) => getSparseOverlay(dataRoot, args),
+    listSparseOverlays: (filter) => listSparseOverlays(dataRoot, filter),
+    clearSparseOverlays: (filter) => clearSparseOverlays(dataRoot, filter)
   }
 }

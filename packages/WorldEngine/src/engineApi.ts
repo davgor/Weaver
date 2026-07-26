@@ -1,6 +1,13 @@
 import { buildEndpoints } from './endpoints.js'
-import { createWorldService, type CreateWorldOptions, type ExpandWorldOptions } from './store/worldService.js'
-import type { Aabb, Cell, ExpansionRecord, WorldMeta } from './types.js'
+import {
+  createWorldService,
+  type CreateWorldOptions,
+  type ExpandWorldOptions,
+  type GetOverlayInput,
+  type SetOverlayInput
+} from './store/worldService.js'
+import type { Aabb, Cell, ExpansionRecord, SparseOverlay, WorldMeta } from './types.js'
+import type { ListOverlaysFilter } from './store/metaStore.js'
 
 export type WorldEngineApi = {
   id: 'WorldEngine'
@@ -22,6 +29,10 @@ export type WorldEngineApi = {
   getCell: (args: { dataRoot: string; worldId: string; x: number; y: number }) => Cell | null
   getWorldSpecific: (args: { dataRoot: string; worldId: string; bounds: Aabb }) => Cell[]
   getWorldWhole: (dataRoot: string, worldId: string) => Iterable<Cell>
+  setSparseOverlay: (args: SetOverlayInput & { dataRoot: string }) => SparseOverlay
+  getSparseOverlay: (args: GetOverlayInput & { dataRoot: string }) => SparseOverlay | null
+  listSparseOverlays: (args: ListOverlaysFilter & { dataRoot: string }) => SparseOverlay[]
+  clearSparseOverlays: (args: ListOverlaysFilter & { dataRoot: string }) => number
 }
 
 const PACKAGE_NAME = '@weaver/world-engine'
@@ -80,5 +91,21 @@ export const worldEngine: WorldEngineApi = {
   },
   getWorldWhole(dataRoot, worldId) {
     return createWorldService(dataRoot).getWorldWhole(worldId)
+  },
+  setSparseOverlay(args) {
+    const { dataRoot, ...overlay } = args
+    return createWorldService(dataRoot).setSparseOverlay(overlay)
+  },
+  getSparseOverlay(args) {
+    const { dataRoot, ...query } = args
+    return createWorldService(dataRoot).getSparseOverlay(query)
+  },
+  listSparseOverlays(args) {
+    const { dataRoot, ...filter } = args
+    return createWorldService(dataRoot).listSparseOverlays(filter)
+  },
+  clearSparseOverlays(args) {
+    const { dataRoot, ...filter } = args
+    return createWorldService(dataRoot).clearSparseOverlays(filter)
   }
 }
