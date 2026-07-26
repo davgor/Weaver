@@ -23,6 +23,8 @@ import {
   type CharacterSheetPorts
 } from './loadSheet.js'
 
+export type { CharacterSheetPorts }
+
 let activeRequest: LoadCharacterSheetRequest | null = null
 
 export function createLiveCharacterSheetPorts(): CharacterSheetPorts {

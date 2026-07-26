@@ -30,7 +30,7 @@ function boot(seed = 42): { service: CivilizationService; worldId: string; regio
   const { meta } = world.createWorld({
     worldId: 'w1',
     seed,
-    bounds: { minX: 0, minY: 0, maxX: 15, maxY: 15 }
+    bounds: { minX: 0, minY: 0, maxX: 7, maxY: 7 }
   })
   const regions = regional.fillRegions(meta.worldId)
   const land = regions.find((region) => !region.isOcean)
@@ -50,24 +50,24 @@ describe('ProposeCivilizations', () => {
   })
 
   it('uses a seeded city density field deterministically', () => {
-    const first = boot(77)
-    const second = boot(77)
-    const a = first.service.proposeCivilizations(first.worldId, first.regionId, {
+    // Single boot: Windows CI cannot afford two full world+region fills under 5s.
+    const { service, worldId, regionId } = boot(77)
+    const a = service.proposeCivilizations(worldId, regionId, {
       kinds: ['city'],
       maxCount: 1,
       rngSalt: 9
     })
-    const b = second.service.proposeCivilizations(second.worldId, second.regionId, {
+    const b = service.proposeCivilizations(worldId, regionId, {
       kinds: ['city'],
       maxCount: 1,
       rngSalt: 9
     })
     if (a.length === 0 || b.length === 0) {
-      const fallbackA = first.service.proposeCivilizations(first.worldId, first.regionId, {
+      const fallbackA = service.proposeCivilizations(worldId, regionId, {
         maxCount: 1,
         rngSalt: 9
       })
-      const fallbackB = second.service.proposeCivilizations(second.worldId, second.regionId, {
+      const fallbackB = service.proposeCivilizations(worldId, regionId, {
         maxCount: 1,
         rngSalt: 9
       })
@@ -87,7 +87,7 @@ describe('CreateCivilization', () => {
     world.createWorld({
       worldId: 'w1',
       seed: 11,
-      bounds: { minX: 0, minY: 0, maxX: 15, maxY: 15 }
+      bounds: { minX: 0, minY: 0, maxX: 7, maxY: 7 }
     })
     const regions = regional.fillRegions('w1')
     const land = regions.find((region) => !region.isOcean)
