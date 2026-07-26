@@ -16,7 +16,7 @@
     "preai-ttrpg": "node scripts/ensure-dev.mjs --workspace=packages/ElectronAITTRPG",
     "ai-ttrpg": "npm run dev --workspace=@weaver/electron-aittrpg --if-present",
     "build": "npm run build --workspaces --if-present",
-    "build:engines": "npm run build -w @weaver/world-engine -w @weaver/llm-engine -w @weaver/action-engine -w @weaver/item-engine -w @weaver/character-engine -w @weaver/narration-engine -w @weaver/regional-engine -w @weaver/civilization-engine -w @weaver/dungeon-engine -w @weaver/weather-engine -w @weaver/npc-engine -w @weaver/enemy-engine -w @weaver/quest-engine -w @weaver/combat-engine -w @weaver/dm-engine",
+    "build:engines": "npm run build -w @weaver/world-engine -w @weaver/llm-engine -w @weaver/action-engine -w @weaver/item-engine -w @weaver/character-engine -w @weaver/narration-engine -w @weaver/regional-engine -w @weaver/civilization-engine -w @weaver/dungeon-engine -w @weaver/weather-engine -w @weaver/npc-engine -w @weaver/enemy-engine -w @weaver/combat-engine -w @weaver/dm-engine",
     "migrate": "node scripts/migrate.mjs",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "oxlint packages scripts",

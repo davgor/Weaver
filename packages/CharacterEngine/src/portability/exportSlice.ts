@@ -1,6 +1,5 @@
 import { listCompanionsForCampaign } from '../companions.js'
 import { getCampaignDeathMode } from '../deathModes.js'
-import { listCharacterLocations } from '../location.js'
 import { getCampaignDay } from '../timeRest.js'
 import {
   CHARACTER_SLICE_VERSION,
@@ -18,7 +17,6 @@ export function exportCampaignSlice(ctx: CharacterPortabilityContext): Character
     day: getCampaignDay(ctx.campaignId),
     ...(deathMode === undefined ? {} : { deathMode }),
     characterIds,
-    companions,
-    locations: listCharacterLocations(ctx.campaignId)
+    companions
   }
 }

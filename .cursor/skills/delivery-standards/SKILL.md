@@ -56,7 +56,7 @@ Do not check off criteria or move tickets to `done/` until section 3 passes.
 
 ## 2. TDD-first implementation
 
-For engine packages under `packages/` (`CombatEngine`, `ActionEngine`, `WorldEngine`, `RegionalEngine`, `CivilizationEngine`, `DungeonEngine`, `WeatherEngine`, `CharacterEngine`, `ItemEngine`, `NPCEngine`, `EnemyEngine`, `QuestEngine`, `NarrationEngine`, `DMEngine`, `LLMEngine`), Electron IPC/admin logic, and any logic with testable behavior:
+For engine packages under `packages/` (`CombatEngine`, `ActionEngine`, `WorldEngine`, `RegionalEngine`, `CivilizationEngine`, `DungeonEngine`, `WeatherEngine`, `CharacterEngine`, `ItemEngine`, `NPCEngine`, `EnemyEngine`, `NarrationEngine`, `DMEngine`, `LLMEngine`), Electron IPC/admin logic, and any logic with testable behavior:
 
 1. **Red** — write failing test(s) for the acceptance criterion or bug repro
 2. **Green** — minimum code to pass

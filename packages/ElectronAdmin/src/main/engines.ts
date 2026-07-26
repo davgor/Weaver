@@ -10,7 +10,6 @@ import { narrationEngine } from '@weaver/narration-engine'
 import { itemEngine } from '@weaver/item-engine'
 import { npcEngine } from '@weaver/npc-engine'
 import { enemyEngine } from '@weaver/enemy-engine'
-import { questEngine } from '@weaver/quest-engine'
 import { dmEngine } from '@weaver/dm-engine'
 import { llmEngine } from '@weaver/llm-engine'
 import type { DispatchableEngine } from './engineDispatch.js'
@@ -29,7 +28,6 @@ export const adminEngines: readonly DispatchableEngine[] = [
   itemEngine,
   npcEngine,
   enemyEngine,
-  questEngine,
   dmEngine,
   llmEngine
 ]

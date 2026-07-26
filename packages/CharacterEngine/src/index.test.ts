@@ -59,12 +59,7 @@ describe('@weaver/character-engine scaffold metadata', () => {
         'selectRace',
         'selectBackground',
         'longRest',
-        'previewLongRest',
-        'advanceTravelDays',
-        'setCharacterLocation',
-        'getCharacterLocation',
-        'clearCharacterLocation',
-        'listCharacterLocations'
+        'advanceTravelDays'
       ])
     )
   })

@@ -29,7 +29,6 @@ export type CharacterEngineErrorCode =
   | 'COMPANION_NOT_FOUND'
   | 'PROXY_INPUT_INVALID'
   | 'PROXY_ACTION_UNAVAILABLE'
-  | 'LOCATION_INPUT_INVALID'
 
 export class CharacterEngineError extends Error {
   readonly code: CharacterEngineErrorCode
