@@ -19,6 +19,14 @@ import {
   createCampaignSession,
   getActiveCampaignSession
 } from '../campaignSession.js'
+import {
+  isGuidedCreationStateStoreBound,
+  unbindGuidedCreationStateStore
+} from '../../guidedCreation/phaseState.js'
+import {
+  isOnboardingStoreBound,
+  unbindOnboardingStore
+} from '../repositories/sqliteOnboardingStore.js'
 
 describe('campaign store integration (106.5)', () => {
   afterEach(() => {
@@ -29,6 +37,8 @@ describe('campaign store integration (106.5)', () => {
     unbindEnemyCampaignStore()
     unbindQuestCampaignStore()
     unbindNarrationCampaignStore()
+    unbindOnboardingStore()
+    unbindGuidedCreationStateStore()
   })
 
   it('binds every engine store while a campaign session is open', () => {
@@ -41,7 +51,9 @@ describe('campaign store integration (106.5)', () => {
         npc: true,
         enemy: true,
         quest: true,
-        narration: true
+        narration: true,
+        onboarding: true,
+        guidedCreation: true
       })
       expect(() => assertCampaignStoresBound()).not.toThrow()
       session.close()
@@ -52,7 +64,9 @@ describe('campaign store integration (106.5)', () => {
         npc: false,
         enemy: false,
         quest: false,
-        narration: false
+        narration: false,
+        onboarding: false,
+        guidedCreation: false
       })
       expect(() => assertCampaignStoresBound()).toThrow(/not bound/)
     })
@@ -66,7 +80,9 @@ function allBoundFlags() {
     npc: isNpcCampaignStoreBound(),
     enemy: isEnemyCampaignStoreBound(),
     quest: isQuestCampaignStoreBound(),
-    narration: isNarrationCampaignStoreBound()
+    narration: isNarrationCampaignStoreBound(),
+    onboarding: isOnboardingStoreBound(),
+    guidedCreation: isGuidedCreationStateStoreBound()
   }
 }
 

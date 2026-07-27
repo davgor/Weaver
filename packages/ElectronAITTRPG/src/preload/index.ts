@@ -78,6 +78,11 @@ const api: GameApi = {
   campaignHub: {
     load: (campaignId: string): Promise<CampaignHubSnapshot> =>
       ipcRenderer.invoke('campaignHub:load', campaignId),
+    setActiveCharacter: (
+      campaignId: string,
+      characterId: string | null
+    ): Promise<CampaignHubSnapshot> =>
+      ipcRenderer.invoke('campaignHub:setActiveCharacter', campaignId, characterId),
     addCharacter: (campaignId: string) => ipcRenderer.invoke('campaignHub:addCharacter', campaignId)
   },
   play: {

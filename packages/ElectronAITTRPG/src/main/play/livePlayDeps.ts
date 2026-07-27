@@ -16,6 +16,7 @@ import {
 } from '@weaver/dm-engine'
 import { fillAndValidate, type TextCompleter } from '@weaver/narration-engine'
 import { createAskDmService, type AskDmService } from './askDmService.js'
+import { createCampaignLivePlayDeps } from './createCampaignLivePlayDeps.js'
 import { createTurnService, type TurnService } from './turnService.js'
 
 export type LivePlayDeps = {
@@ -25,15 +26,27 @@ export type LivePlayDeps = {
 
 type LivePlayDepsOptions = {
   textCompleter: TextCompleter
+  campaignsRoot: string
 }
 
 export function createLivePlayHandlerDeps(options: LivePlayDepsOptions): LivePlayDeps {
-  const turnDeps = createLiveResolveTurnDeps(options.textCompleter)
   return {
     turnService: createTurnService({
       resolveTurn,
-      deps: turnDeps,
-      getEncounter: (encounterId) => turnDeps.combat.getEncounter(encounterId),
+      getDeps: (campaignId, characterId) =>
+        createCampaignLivePlayDeps({
+          campaignId,
+          characterId,
+          campaignsRoot: options.campaignsRoot,
+          textCompleter: options.textCompleter
+        }).resolveTurnDeps,
+      getEncounter: (encounterId, campaignId, characterId) =>
+        createCampaignLivePlayDeps({
+          campaignId,
+          characterId,
+          campaignsRoot: options.campaignsRoot,
+          textCompleter: options.textCompleter
+        }).resolveTurnDeps.combat.getEncounter(encounterId),
       character: {
         getCharacterStats,
         getCharacterProgression,
@@ -50,6 +63,7 @@ export function createLivePlayHandlerDeps(options: LivePlayDepsOptions): LivePla
   }
 }
 
+/** In-memory ResolveTurnDeps for unit/smoke tests. Production uses createCampaignLivePlayDeps. */
 export function createLiveResolveTurnDeps(completer: TextCompleter): ResolveTurnDeps {
   const currency = createCurrencyService()
   const store = createMemoryEncounterStore()
