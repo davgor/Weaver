@@ -284,6 +284,8 @@ export type {
   CampaignPortabilityContext,
   CampaignPortabilityDeps,
   CampaignPortablePackage,
+  CampaignPortablePackageInput,
+  CampaignPortablePackageV1,
   ExportCampaignPackageInput,
   ImportCampaignPackageInput
 } from './portability/index.js'

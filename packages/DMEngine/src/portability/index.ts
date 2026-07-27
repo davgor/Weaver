@@ -11,4 +11,10 @@ export {
   type CampaignImportDeps,
   type ImportCampaignPackageInput
 } from './importCampaign.js'
-export { PortabilitySchemaError, type CampaignPortablePackage, type CampaignPortabilityContext } from './types.js'
+export {
+  PortabilitySchemaError,
+  type CampaignPortablePackage,
+  type CampaignPortablePackageInput,
+  type CampaignPortablePackageV1,
+  type CampaignPortabilityContext
+} from './types.js'

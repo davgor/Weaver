@@ -19,6 +19,11 @@ import {
   type NpcCampaignSlice
 } from '@weaver/npc-engine'
 import {
+  importQuestCampaignSlice,
+  QUEST_SLICE_VERSION,
+  type QuestCampaignSlice
+} from '@weaver/quest-engine'
+import {
   importRegionalCampaignSlice,
   type RegionalCampaignSlice
 } from '@weaver/regional-engine'
@@ -29,11 +34,17 @@ import {
 import type { CampaignPortabilityDeps } from './exportCampaign.js'
 import { createDefaultCampaignPortabilityDeps } from './exportCampaign.js'
 import { PORTABLE_PACKAGE_VERSION } from './schemaVersion.js'
-import { PortabilitySchemaError, type CampaignPortablePackage, type CampaignPortabilityContext } from './types.js'
+import {
+  PortabilitySchemaError,
+  type CampaignPortablePackage,
+  type CampaignPortablePackageInput,
+  type CampaignPortablePackageV1,
+  type CampaignPortabilityContext
+} from './types.js'
 
 export type ImportCampaignPackageInput = {
   dataRoot: string
-  package: CampaignPortablePackage
+  package: CampaignPortablePackageInput
 }
 
 export type CampaignImportDeps = CampaignPortabilityDeps & {
@@ -70,36 +81,40 @@ export type CampaignImportDeps = CampaignPortabilityDeps & {
       slice: ItemCampaignSlice
     ) => void
   }
+  quest: CampaignPortabilityDeps['quest'] & {
+    importCampaignSlice: (ctx: { campaignId: string }, slice: QuestCampaignSlice) => void
+  }
 }
 
 export function importCampaignPackage(
   deps: CampaignImportDeps,
   input: ImportCampaignPackageInput
 ): void {
-  assertPackageVersion(input.package)
-  assertCampaignIdMatch(input.package.campaignId, input.package)
+  const pkg = normalizePackage(input.package)
+  assertCampaignIdMatch(pkg.campaignId, pkg)
 
-  const worldId = deps.resolveWorldId(input.package.campaignId)
+  const worldId = deps.resolveWorldId(pkg.campaignId)
   const worldCtx: CampaignPortabilityContext = {
     dataRoot: input.dataRoot,
-    campaignId: input.package.campaignId,
+    campaignId: pkg.campaignId,
     worldId
   }
-  const campaignCtx = { campaignId: input.package.campaignId }
+  const campaignCtx = { campaignId: pkg.campaignId }
 
-  deps.world.importCampaignSlice(worldCtx, input.package.slices.world)
-  deps.regional.importCampaignSlice(worldCtx, input.package.slices.regional)
-  deps.civilization.importCampaignSlice(worldCtx, input.package.slices.civilization)
-  deps.npc.importCampaignSlice(campaignCtx, input.package.slices.npc)
-  deps.enemy.importCampaignSlice(campaignCtx, input.package.slices.enemy)
-  deps.character.importCampaignSlice(campaignCtx, input.package.slices.character)
+  deps.world.importCampaignSlice(worldCtx, pkg.slices.world)
+  deps.regional.importCampaignSlice(worldCtx, pkg.slices.regional)
+  deps.civilization.importCampaignSlice(worldCtx, pkg.slices.civilization)
+  deps.npc.importCampaignSlice(campaignCtx, pkg.slices.npc)
+  deps.enemy.importCampaignSlice(campaignCtx, pkg.slices.enemy)
+  deps.character.importCampaignSlice(campaignCtx, pkg.slices.character)
   deps.item.importCampaignSlice(
     {
-      campaignId: input.package.campaignId,
-      characterIds: input.package.slices.character.characterIds
+      campaignId: pkg.campaignId,
+      characterIds: pkg.slices.character.characterIds
     },
-    input.package.slices.item
+    pkg.slices.item
   )
+  deps.quest.importCampaignSlice(campaignCtx, pkg.slices.quest)
 }
 
 export function createDefaultCampaignImportDeps(
@@ -118,7 +133,8 @@ export function createDefaultCampaignImportDeps(
     npc: withImport(base.npc, overrides.npc, importNpcCampaignSlice),
     enemy: withImport(base.enemy, overrides.enemy, importEnemyCampaignSlice),
     character: withImport(base.character, overrides.character, importCharacterCampaignSlice),
-    item: withImport(base.item, overrides.item, importItemCampaignSlice)
+    item: withImport(base.item, overrides.item, importItemCampaignSlice),
+    quest: withImport(base.quest, overrides.quest, importQuestCampaignSlice)
   }
 }
 
@@ -138,11 +154,31 @@ function withImport<TExport, TImport>(
   }
 }
 
-function assertPackageVersion(pkg: CampaignPortablePackage): void {
-  if (pkg.version !== PORTABLE_PACKAGE_VERSION) {
-    throw new PortabilitySchemaError(
-      `Unsupported portable package version ${String(pkg.version)}; expected ${PORTABLE_PACKAGE_VERSION}`
-    )
+function normalizePackage(pkg: CampaignPortablePackageInput): CampaignPortablePackage {
+  if (pkg.version === PORTABLE_PACKAGE_VERSION) {
+    return pkg as CampaignPortablePackage
+  }
+  if (pkg.version === 1) {
+    return adaptV1ToCurrent(pkg as CampaignPortablePackageV1)
+  }
+  throw new PortabilitySchemaError(
+    `Unsupported portable package version ${String(pkg.version)}; expected ${PORTABLE_PACKAGE_VERSION}`
+  )
+}
+
+function adaptV1ToCurrent(pkg: CampaignPortablePackageV1): CampaignPortablePackage {
+  return {
+    version: PORTABLE_PACKAGE_VERSION,
+    campaignId: pkg.campaignId,
+    exportedAt: pkg.exportedAt,
+    slices: {
+      ...pkg.slices,
+      quest: {
+        sliceVersion: QUEST_SLICE_VERSION,
+        campaignId: pkg.campaignId,
+        worldQuests: []
+      }
+    }
   }
 }
 
@@ -154,7 +190,8 @@ function assertCampaignIdMatch(expectedCampaignId: string, pkg: CampaignPortable
     pkg.slices.npc.campaignId,
     pkg.slices.enemy.campaignId,
     pkg.slices.character.campaignId,
-    pkg.slices.item.campaignId
+    pkg.slices.item.campaignId,
+    pkg.slices.quest.campaignId
   ]
   for (const campaignId of slices) {
     if (campaignId !== expectedCampaignId) {
