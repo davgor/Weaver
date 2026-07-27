@@ -45,6 +45,10 @@ If a ticket’s stated dependency isn’t actually done yet (stale `IMPLEMENTATI
 
 Epics `106`–`117` are the Phase 2 production-hardening wave: production campaign stores, durable live play/onboarding/hub flows, full portability slices, production character/NPC UI, live RAG/context wiring, destination/weather/quest/proxy play integration, live population, and documentation reconciliation. Use [`IMPLEMENTATION-ORDER.md`](IMPLEMENTATION-ORDER.md) rather than numeric order; several Phase 2 epics depend on the campaign-store path landing first.
 
+## Phase 3 AI Visual Novel
+
+Epics `118`–`126` add a second Electron game client (**AI Visual Novel** / `ElectronAIVN`) plus shared Electron chrome (`ElectronUi`), a DMEngine short-story pipeline, VN play/persistence, and NarrationEngine image-prompt placeholders (V1) with anime image generation (V2). Phase 3 does **not** require finishing remaining Phase 2 UI/RAG tickets first — AIVN depends on already-done engine foundations (`011`, `052`, `053`, `063`, `066`, `098`, `106`, …). Use [`IMPLEMENTATION-ORDER.md`](IMPLEMENTATION-ORDER.md); shared UI (`118`) and the VN prompt contract (`123`) unlock early waves.
+
 ## Agent workflow
 
 - **Always** create/update a ticket for implementation work (never ask whether to skip).

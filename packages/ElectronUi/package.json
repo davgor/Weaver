@@ -1,0 +1,40 @@
+{
+  "name": "@weaver/electron-ui",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shared renderer-safe presentation chrome for Weaver Electron games",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./theme.css": "./src/theme.css",
+    "./loading.css": "./src/loading/loadingScreen.css",
+    "./titlebar.css": "./src/titlebar/titlebar.css",
+    "./localModel.css": "./src/localModel/localModel.css",
+    "./intro.css": "./src/intro/firstRunIntro.css"
+  },
+  "files": [
+    "dist",
+    "src/**/*.css"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --root ../.. --config vitest.config.ts packages/ElectronUi/src"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "happy-dom": "^20.0.10",
+    "typescript": "^5.5.2",
+    "vitest": "^4.1.10"
+  }
+}
