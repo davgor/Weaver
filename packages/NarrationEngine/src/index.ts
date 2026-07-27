@@ -138,7 +138,6 @@ export {
   projectScene,
   projectSocial,
   recordPlayerSocial,
-  restoreNarrationProjections,
   streamSocial,
   unbindNarrationCampaignStore
 } from './proseApi.js'
@@ -146,17 +145,8 @@ export type {
   AppendSceneBlockInput,
   AppendSocialLineInput,
   MemoryNarrationProjectionStoreOptions,
-  NarrationProjectionSnapshot,
   NarrationProjectionStore
 } from './proseApi.js'
-export {
-  exportCampaignSlice as exportNarrationCampaignSlice,
-  importCampaignSlice as importNarrationCampaignSlice,
-  NARRATION_SLICE_VERSION,
-  NarrationPortabilitySchemaError,
-  type NarrationCampaignSlice,
-  type NarrationPortabilityContext
-} from './portability/index.js'
 export { createRagIndex, DEFAULT_RAG_MAX_CHARS, RAG_REINDEX_NOTE } from './rag/ragIndex.js'
 export type {
   CampaignFactCategory,

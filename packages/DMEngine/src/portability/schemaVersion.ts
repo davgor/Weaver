@@ -1,1 +1,1 @@
-export const PORTABLE_PACKAGE_VERSION = 3
+export const PORTABLE_PACKAGE_VERSION = 2

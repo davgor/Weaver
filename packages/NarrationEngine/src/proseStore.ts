@@ -2,10 +2,6 @@ import type { SceneBlock, SocialLine } from './proseTypes.js'
 
 export type AppendSocialLineInput = Omit<SocialLine, 'id' | 'at'> & { at?: number }
 export type AppendSceneBlockInput = { text: string; at?: number }
-export type NarrationProjectionSnapshot = {
-  socialLines: readonly SocialLine[]
-  sceneBlocks: readonly SceneBlock[]
-}
 
 export type NarrationProjectionStore = {
   clearNarrationStore: () => void
@@ -13,10 +9,11 @@ export type NarrationProjectionStore = {
   projectScene: () => SceneBlock[]
   appendSocialLine: (input: AppendSocialLineInput) => SocialLine
   appendSceneBlock: (input: AppendSceneBlockInput) => SceneBlock
-  restoreNarrationProjections: (snapshot: NarrationProjectionSnapshot) => void
 }
 
-export type MemoryNarrationProjectionStoreOptions = Partial<NarrationProjectionSnapshot> & {
+export type MemoryNarrationProjectionStoreOptions = {
+  socialLines?: readonly SocialLine[]
+  sceneBlocks?: readonly SceneBlock[]
   nextId?: number
 }
 
@@ -49,13 +46,6 @@ export function createMemoryNarrationProjectionStore(
       nextId += 1
       sceneBlocks.push(copyScene(block))
       return copyScene(block)
-    },
-    restoreNarrationProjections(snapshot) {
-      socialLines.length = 0
-      sceneBlocks.length = 0
-      socialLines.push(...snapshot.socialLines.map(copySocial))
-      sceneBlocks.push(...snapshot.sceneBlocks.map(copyScene))
-      nextId = nextIdAfter([...socialLines, ...sceneBlocks])
     }
   }
 }
@@ -78,10 +68,6 @@ export function appendSocialLine(input: AppendSocialLineInput): SocialLine {
 
 export function appendSceneBlock(input: AppendSceneBlockInput): SceneBlock {
   return activeStore.appendSceneBlock(input)
-}
-
-export function restoreNarrationProjections(snapshot: NarrationProjectionSnapshot): void {
-  activeStore.restoreNarrationProjections(snapshot)
 }
 
 export function bindNarrationCampaignStore(

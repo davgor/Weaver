@@ -39,8 +39,8 @@ describe('DMEngine -> CharacterEngine export contract', () => {
 
     const slice = exportCharacterCampaignSlice({ campaignId: CAMPAIGN_ID })
     expect(slice.day).toBe(3)
-    expect(slice.sliceVersion).toBe(3)
-    expect(slice.characterIds).toEqual(['companion-contract', 'pc-owner'])
+    expect(slice.sliceVersion).toBe(2)
+    expect(slice.characterIds).toEqual(['companion-contract'])
     expect(slice.locations).toEqual([
       expect.objectContaining({
         characterId: 'pc-owner',

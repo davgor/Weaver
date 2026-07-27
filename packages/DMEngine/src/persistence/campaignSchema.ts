@@ -1,6 +1,6 @@
 import type { Migration, SqliteDatabase } from './migrationRunner.js'
 
-export const CURRENT_CAMPAIGN_SCHEMA_VERSION = 6
+export const CURRENT_CAMPAIGN_SCHEMA_VERSION = 5
 
 export const campaignMigrations: readonly Migration[] = [
   {
@@ -147,29 +147,6 @@ export const campaignMigrations: readonly Migration[] = [
         CREATE TABLE narration_store_meta (
           key TEXT PRIMARY KEY,
           value TEXT NOT NULL
-        );
-      `)
-    }
-  },
-  {
-    version: 6,
-    name: 'onboarding_and_hub_state',
-    up(db) {
-      db.exec(`
-        CREATE TABLE onboarding_records (
-          character_id TEXT PRIMARY KEY,
-          campaign_id TEXT NOT NULL,
-          character_name TEXT NOT NULL,
-          phase TEXT NOT NULL,
-          selections_json TEXT NOT NULL,
-          updated_at TEXT NOT NULL
-        );
-
-        CREATE TABLE guided_creation_states (
-          character_id TEXT PRIMARY KEY,
-          campaign_id TEXT NOT NULL,
-          payload_json TEXT NOT NULL,
-          updated_at TEXT NOT NULL
         );
       `)
     }

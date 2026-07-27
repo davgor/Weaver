@@ -22,14 +22,14 @@ Wire production live play (`createLiveResolveTurnDeps`, turn service, Ask-DM) to
 
 ## Acceptance criteria
 
-- [x] Production bootstrap opens the active campaign DB and passes SQLite-backed deps into `createLiveResolveTurnDeps`
-- [x] Currency debit/credit and inventory mutations persist across turns and survive app restart
-- [x] Narration claim checks use real NPC presence, item ownership, and location facts — no always-true stubs in production wiring
-- [x] Combat encounters use a durable store (not `createMemoryEncounterStore`) in production
-- [x] Turn resolution `persist` writes turn outcomes / autosave snapshots to campaign storage
-- [x] Unit/contract/smoke tests still inject in-memory fixtures for determinism
-- [x] `WIRING.md` documents production vs test dependency injection
-- [x] Sub-tickets verified; `npm test`, `npm run lint`, `npm run build`, `npm run deadcode` pass; cloud gate: PR checks green + PR marked ready
+- [ ] Production bootstrap opens the active campaign DB and passes SQLite-backed deps into `createLiveResolveTurnDeps`
+- [ ] Currency debit/credit and inventory mutations persist across turns and survive app restart
+- [ ] Narration claim checks use real NPC presence, item ownership, and location facts — no always-true stubs in production wiring
+- [ ] Combat encounters use a durable store (not `createMemoryEncounterStore`) in production
+- [ ] Turn resolution `persist` writes turn outcomes / autosave snapshots to campaign storage
+- [ ] Unit/contract/smoke tests still inject in-memory fixtures for determinism
+- [ ] `WIRING.md` documents production vs test dependency injection
+- [ ] Sub-tickets verified; `npm test`, `npm run lint`, `npm run build`, `npm run deadcode` pass; cloud gate: PR checks green + PR marked ready
 
 ## Sub-tickets
 
@@ -41,9 +41,9 @@ Extract a tested factory that, given `campaignId` + open campaign DB, builds `Re
 
 #### Acceptance criteria
 
-- [x] Factory lives in a tested module (not inline in IPC handler)
-- [x] Wrong/missing campaign id fails with a clear error
-- [x] Electron handler remains thin wiring-only
+- [ ] Factory lives in a tested module (not inline in IPC handler)
+- [ ] Wrong/missing campaign id fails with a clear error
+- [ ] Electron handler remains thin wiring-only
 
 ### 107.2 — Real commerce peers
 
@@ -53,8 +53,8 @@ Replace in-memory currency service with campaign-backed balances; wire item `has
 
 #### Acceptance criteria
 
-- [x] Commerce/trade intents debit/credit persisted balances
-- [x] Narration item claims consult real inventory state
+- [ ] Commerce/trade intents debit/credit persisted balances
+- [ ] Narration item claims consult real inventory state
 
 ### 107.3 — Real narration validation peers
 
@@ -64,8 +64,8 @@ Wire NPC lookup, location validation, and character stats peers used by `fillAnd
 
 #### Acceptance criteria
 
-- [x] `getNpc` returns stored NPC facts or undefined — not always undefined
-- [x] Location checks consult CharacterEngine/NPCEngine stored locations (destination permissiveness tightened in `112`; here: no unconditional `true`)
+- [ ] `getNpc` returns stored NPC facts or undefined — not always undefined
+- [ ] Location checks consult CharacterEngine/NPCEngine stored locations (destination permissiveness tightened in `112`; here: no unconditional `true`)
 
 ### 107.4 — Durable combat + persist hook
 
@@ -75,8 +75,8 @@ Swap memory encounter store; implement turn `persist` to write combat state, cha
 
 #### Acceptance criteria
 
-- [x] Active encounter survives renderer reload within the same app session and across restart when in combat
-- [x] `recordAutosaveSnapshot` (or equivalent) writes durable rows each resolved turn
+- [ ] Active encounter survives renderer reload within the same app session and across restart when in combat
+- [ ] `recordAutosaveSnapshot` (or equivalent) writes durable rows each resolved turn
 
 ### 107.5 — Smoke + contract coverage
 
@@ -86,5 +86,5 @@ Extend playability smoke and DMEngine/Electron contract tests to assert SQLite-b
 
 #### Acceptance criteria
 
-- [x] At least one contract test exercises live play factory against real campaign DB fixture
-- [x] Playability smoke documents restart persistence check (manual or automated)
+- [ ] At least one contract test exercises live play factory against real campaign DB fixture
+- [ ] Playability smoke documents restart persistence check (manual or automated)

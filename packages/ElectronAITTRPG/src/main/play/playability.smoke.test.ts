@@ -28,9 +28,6 @@ import type { WeaponDamageProfile } from '@weaver/item-engine'
 /**
  * Scripted playability smoke (REBUILD_SPEC §15 spine) without a live LLM.
  * Stages: campaign death mode → multi-PC setup → play narration → combat start/attack → XP reward.
- * Restart persistence for currency/inventory/combat/turns is covered by
- * `createCampaignLivePlayDeps.test.ts` against a real campaign SQLite session
- * (production factory; this smoke keeps in-memory fixtures for determinism).
  */
 describe('playability smoke setup', () => {
   beforeEach(() => {

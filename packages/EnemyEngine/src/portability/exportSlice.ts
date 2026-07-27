@@ -7,7 +7,6 @@ export function exportCampaignSlice(_ctx: EnemyPortabilityContext): EnemyCampaig
     sliceVersion: ENEMY_SLICE_VERSION,
     campaignId: _ctx.campaignId,
     bestiaryIds: listBestiary().map((entry) => entry.bestiaryId),
-    // Prompt token cache is a runtime optimization; durable generated foes carry persisted tokens.
     generatedFoes: listGeneratedFoes()
   }
 }

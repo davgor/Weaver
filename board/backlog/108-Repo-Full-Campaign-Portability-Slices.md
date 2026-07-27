@@ -19,14 +19,14 @@ Extend DMEngine export/import so a campaign backup restores the durable facts in
 
 ## Acceptance criteria
 
-- [x] Export bundle version bumped with explicit migration notes for older saves
-- [x] Character slice includes stats/HP, journal, logbook, per-PC quest log, known actions, level-up history, autosave snapshots
-- [x] Item slice includes item instances, per-character inventories, equipped slots, and currency balances
-- [x] NPC slice includes memories, factions, relationships, and locations; enemy slice includes generated foes; narration slice includes Social/Scene projections
-- [x] Import is idempotent-safe for same bundle (document policy) and rejects unknown future versions clearly
-- [x] Round-trip contract test: populate campaign → export → import into fresh DB → assert deep equality on sampled facts
-- [x] Electron portability UI (`097`) works without changes or receives minimal slice-version display update
-- [x] Sub-tickets verified; gates pass; cloud gate: PR checks green + PR marked ready
+- [ ] Export bundle version bumped with explicit migration notes for older saves
+- [ ] Character slice includes stats/HP, journal, logbook, per-PC quest log, known actions, level-up history, autosave snapshots
+- [ ] Item slice includes item instances, per-character inventories, equipped slots, and currency balances
+- [ ] NPC slice includes memories, factions, relationships, and locations; enemy slice includes generated foes; narration slice includes Social/Scene projections
+- [ ] Import is idempotent-safe for same bundle (document policy) and rejects unknown future versions clearly
+- [ ] Round-trip contract test: populate campaign → export → import into fresh DB → assert deep equality on sampled facts
+- [ ] Electron portability UI (`097`) works without changes or receives minimal slice-version display update
+- [ ] Sub-tickets verified; gates pass; cloud gate: PR checks green + PR marked ready
 
 ## Sub-tickets
 
@@ -36,8 +36,8 @@ Extend DMEngine export/import so a campaign backup restores the durable facts in
 
 #### Acceptance criteria
 
-- [x] `CHARACTER_SLICE_VERSION` incremented; schema validation tests cover new fields
-- [x] Export/import preserves stats, HP, journal, logbook, quest log entries, known action ids, autosaves
+- [ ] `CHARACTER_SLICE_VERSION` incremented; schema validation tests cover new fields
+- [ ] Export/import preserves stats, HP, journal, logbook, quest log entries, known action ids, autosaves
 
 ### 108.2 — Item full portability slice
 
@@ -45,8 +45,8 @@ Extend DMEngine export/import so a campaign backup restores the durable facts in
 
 #### Acceptance criteria
 
-- [x] Item slice exports instances, inventory membership, equipment, and balances
-- [x] Import remaps ids if needed (document policy) without duplicating items
+- [ ] Item slice exports instances, inventory membership, equipment, and balances
+- [ ] Import remaps ids if needed (document policy) without duplicating items
 
 ### 108.3 — NPC, enemy, narration slices
 
@@ -54,8 +54,8 @@ Extend DMEngine export/import so a campaign backup restores the durable facts in
 
 #### Acceptance criteria
 
-- [x] Each engine exposes `export*CampaignSlice` / `import*CampaignSlice` covering durable rows from `106`
-- [x] Narration projections round-trip per character
+- [ ] Each engine exposes `export*CampaignSlice` / `import*CampaignSlice` covering durable rows from `106`
+- [ ] Narration projections round-trip per character
 
 ### 108.4 — DMEngine orchestration + contract suite
 
@@ -63,5 +63,5 @@ Extend DMEngine export/import so a campaign backup restores the durable facts in
 
 #### Acceptance criteria
 
-- [x] `exportCampaign` / `importCampaign` invoke all new slices in documented order
-- [x] DMEngine `*.contract.test.ts` covers full round-trip against real engine providers
+- [ ] `exportCampaign` / `importCampaign` invoke all new slices in documented order
+- [ ] DMEngine `*.contract.test.ts` covers full round-trip against real engine providers

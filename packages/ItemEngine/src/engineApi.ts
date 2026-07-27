@@ -7,7 +7,7 @@ import {
   type PriceClampOptions
 } from './currencyService.js'
 import type { EnchantmentOverlay } from './enchantmentTypes.js'
-import { createItemService, type ItemCampaignState, type ItemService } from './itemService.js'
+import { createItemService, type ItemService } from './itemService.js'
 import { generateLoot, type GenerateLootRequest, type LootDrop } from './lootService.js'
 import {
   listPlaceInventory,
@@ -57,8 +57,6 @@ export type ItemEngineApi = {
   clampProposedPrice: (proposed: number, opts?: PriceClampOptions) => number
   snapshotCampaignBalances: (characterIds: readonly string[]) => Record<string, number>
   restoreCampaignBalances: (balances: Record<string, number>) => void
-  snapshotCampaignItems: (characterIds: readonly string[]) => ItemCampaignState
-  restoreCampaignItems: (state: ItemCampaignState) => void
   generateLoot: (request: GenerateLootRequest) => LootDrop[]
   seedPlaceLoot: (placeId: string, drops: readonly LootDrop[]) => PlaceInventorySnapshot
   listPlaceInventory: (placeId: string) => PlaceInventorySnapshot
@@ -68,7 +66,7 @@ export type ItemEngineApi = {
 const PACKAGE_NAME = '@weaver/item-engine'
 const VERSION = '0.1.0'
 
-type ItemCampaignStores = {
+export type ItemCampaignStores = {
   itemService: ItemService
   currencyService: CurrencyService
 }
@@ -167,12 +165,6 @@ export const itemEngine: ItemEngineApi = {
   },
   restoreCampaignBalances(balances) {
     activeCurrencyService.restoreBalances(balances)
-  },
-  snapshotCampaignItems(characterIds) {
-    return activeItemService.snapshotCampaignState(characterIds)
-  },
-  restoreCampaignItems(state) {
-    activeItemService.restoreCampaignState(state)
   },
   generateLoot(request) {
     return generateLoot(request)

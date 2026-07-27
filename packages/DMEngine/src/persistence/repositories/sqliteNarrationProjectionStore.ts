@@ -71,17 +71,6 @@ function wrapWriteThrough(
       persistSceneBlock(db, scope, block)
       writeNextId(db, scope.campaignId, numericIdSuffix(block.id) + 1)
       return block
-    },
-    restoreNarrationProjections: (snapshot) => {
-      memory.restoreNarrationProjections(snapshot)
-      clearRows(db, scope.campaignId)
-      for (const line of snapshot.socialLines) {
-        persistSocialLine(db, scope, line)
-      }
-      for (const block of snapshot.sceneBlocks) {
-        persistSceneBlock(db, scope, block)
-      }
-      writeNextId(db, scope.campaignId, nextIdAfter(snapshot.socialLines, snapshot.sceneBlocks))
     }
   }
 }

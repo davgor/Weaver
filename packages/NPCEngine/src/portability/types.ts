@@ -1,17 +1,8 @@
 import type { NpcLocation } from '../location.js'
-import type {
-  DmNpcOpinion,
-  FactionRecord,
-  FactionRelation,
-  NpcMemory,
-  NpcOpinion,
-  NpcRecord,
-  ReputationStanding,
-  WorldFact
-} from '../types.js'
+import type { NpcRecord } from '../types.js'
 
-/** v3 adds durable NPC projection rows beyond records and current locations. */
-export const NPC_SLICE_VERSION = 3
+/** v2 adds per-NPC current `locations` placement records (epic 103). */
+export const NPC_SLICE_VERSION = 2
 
 export type NpcPortabilityContext = {
   campaignId: string
@@ -23,13 +14,6 @@ export type NpcCampaignSlice = {
   npcIds: string[]
   npcs: NpcRecord[]
   locations: NpcLocation[]
-  memories: NpcMemory[]
-  factions: FactionRecord[]
-  factionRelations: FactionRelation[]
-  characterFactionReputations: ReputationStanding[]
-  npcOpinions: NpcOpinion[]
-  dmNpcOpinions: DmNpcOpinion[]
-  worldFacts: WorldFact[]
 }
 
 export class NpcPortabilitySchemaError extends Error {

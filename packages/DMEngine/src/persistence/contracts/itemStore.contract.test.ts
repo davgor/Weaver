@@ -18,66 +18,35 @@ describe('item campaign store contract', () => {
   })
 
   it('round-trips item and currency facts through SQLite reopen', () => {
-    expectItemFactsRoundTrip()
-  })
+    withCampaignPath((filePath) => {
+      let active: CampaignSession | undefined
+      try {
+        active = createCampaignSession({ campaignId: 'item-camp', filePath })
+        expect(active.isStoreBound()).toBe(true)
+        const instanceId = seedItemFacts()
+        const beforeInventory = itemEngine.listInventory('pc-1')
+        const beforeBalance = itemEngine.getBalance('pc-1')
+        active.close()
+        active = undefined
 
-  it('persists restored portable item state through SQLite reopen', () => {
-    expectRestoredItemStateRoundTrip()
+        unbindItemCampaignStores()
+        expect(() => itemEngine.listInventory('pc-1')).toThrow(/Inventory not found/)
+
+        active = openCampaignSession({ campaignId: 'item-camp', filePath })
+        expect(itemEngine.listInventory('pc-1')).toEqual(beforeInventory)
+        expect(itemEngine.getBalance('pc-1')).toBe(beforeBalance)
+
+        itemEngine.transferItem('pc-1', 'pc-2', instanceId)
+        expect(itemEngine.listInventory('pc-1').equipped.mainHand).toBeUndefined()
+        expect(itemEngine.listInventory('pc-2').held.map((item) => item.instance.id)).toEqual([instanceId])
+        expect(() => itemEngine.transferItem('pc-1', 'pc-2', instanceId)).toThrow(/not owned/i)
+        active.close()
+      } finally {
+        active?.close()
+      }
+    })
   })
 })
-
-function expectItemFactsRoundTrip(): void {
-  withCampaignPath((filePath) => {
-    let active: CampaignSession | undefined
-    try {
-      active = createCampaignSession({ campaignId: 'item-camp', filePath })
-      expect(active.isStoreBound()).toBe(true)
-      const instanceId = seedItemFacts()
-      const beforeInventory = itemEngine.listInventory('pc-1')
-      const beforeBalance = itemEngine.getBalance('pc-1')
-      active.close()
-      active = openReboundCampaign(filePath)
-      expect(itemEngine.listInventory('pc-1')).toEqual(beforeInventory)
-      expect(itemEngine.getBalance('pc-1')).toBe(beforeBalance)
-      expectTransferPersistsOwnership(instanceId)
-      active.close()
-    } finally {
-      active?.close()
-    }
-  })
-}
-
-function expectRestoredItemStateRoundTrip(): void {
-  withCampaignPath((filePath) => {
-    let active: CampaignSession | undefined
-    try {
-      active = createCampaignSession({ campaignId: 'item-camp', filePath })
-      seedItemFacts()
-      restorePortableItemState()
-      active.close()
-      active = openReboundCampaign(filePath)
-      expect(itemEngine.listInventory('pc-1').held.map((item) => item.instance.id)).toEqual(['item.9'])
-      expect(itemEngine.getItemInstance('item.9')).toMatchObject({ customName: 'Restored Oath' })
-      expect(itemEngine.addItem('pc-1', 'template.restored-sword').id).toBe('item.a')
-      active.close()
-    } finally {
-      active?.close()
-    }
-  })
-}
-
-function openReboundCampaign(filePath: string): CampaignSession {
-  unbindItemCampaignStores()
-  expect(() => itemEngine.listInventory('pc-1')).toThrow(/Inventory not found/)
-  return openCampaignSession({ campaignId: 'item-camp', filePath })
-}
-
-function expectTransferPersistsOwnership(instanceId: string): void {
-  itemEngine.transferItem('pc-1', 'pc-2', instanceId)
-  expect(itemEngine.listInventory('pc-1').equipped.mainHand).toBeUndefined()
-  expect(itemEngine.listInventory('pc-2').held.map((item) => item.instance.id)).toEqual([instanceId])
-  expect(() => itemEngine.transferItem('pc-1', 'pc-2', instanceId)).toThrow(/not owned/i)
-}
 
 function seedItemFacts(): string {
   itemEngine.defineTemplate({
@@ -95,21 +64,6 @@ function seedItemFacts(): string {
   itemEngine.equip('pc-1', item.id, 'mainHand')
   itemEngine.credit('pc-1', 33)
   return item.id
-}
-
-function restorePortableItemState(): void {
-  itemEngine.restoreCampaignItems({
-    templates: [{ id: 'template.restored-sword', name: 'Restored Sword' }],
-    instances: [
-      {
-        id: 'item.9',
-        templateId: 'template.restored-sword',
-        ownerCharacterId: 'pc-1',
-        customName: 'Restored Oath'
-      }
-    ],
-    inventories: [{ characterId: 'pc-1', heldItemIds: ['item.9'], equipped: { accessories: [] } }]
-  })
 }
 
 function withCampaignPath(run: (filePath: string) => void): void {

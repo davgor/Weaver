@@ -19,32 +19,14 @@ export type TurnService = {
   submitAction: (request: SubmitPlayActionRequest) => Promise<SubmitPlayActionResult>
 }
 
-type TurnServiceDepsBase = {
-  resolveTurn: (input: ResolveTurnInput, deps: never) => Promise<ResolveTurnResult>
+type TurnServiceDeps<TDeps> = {
+  deps: TDeps
+  resolveTurn: (input: ResolveTurnInput, deps: TDeps) => Promise<ResolveTurnResult>
+  getEncounter?: (encounterId: string) => EncounterState | undefined
   character?: PlayCharacterLifecyclePorts
   now?: () => string
   respawnConfig?: RespawnConfig
 }
-
-type FixedTurnServiceDeps<TDeps> = TurnServiceDepsBase & {
-  deps: TDeps
-  getDeps?: never
-  getEncounter?: (encounterId: string) => EncounterState | undefined
-  resolveTurn: (input: ResolveTurnInput, deps: TDeps) => Promise<ResolveTurnResult>
-}
-
-type LazyTurnServiceDeps<TDeps> = TurnServiceDepsBase & {
-  deps?: never
-  getDeps: (campaignId: string, characterId: string) => TDeps
-  getEncounter?: (
-    encounterId: string,
-    campaignId: string,
-    characterId: string
-  ) => EncounterState | undefined
-  resolveTurn: (input: ResolveTurnInput, deps: TDeps) => Promise<ResolveTurnResult>
-}
-
-export type TurnServiceDeps<TDeps> = FixedTurnServiceDeps<TDeps> | LazyTurnServiceDeps<TDeps>
 
 export function createTurnService<TDeps>(deps: TurnServiceDeps<TDeps>): TurnService {
   return {
@@ -67,9 +49,8 @@ async function submitSuccessfulAction<TDeps>(
   deps: TurnServiceDeps<TDeps>,
   request: SubmitPlayActionRequest
 ): Promise<SubmitPlayActionSuccess> {
-  const turnDeps = resolveTurnDeps(deps, request)
-  const result = await deps.resolveTurn(toResolveTurnInput(request), turnDeps)
-  const encounter = lookupEncounter(deps, request)
+  const result = await deps.resolveTurn(toResolveTurnInput(request), deps.deps)
+  const encounter = request.encounterId === undefined ? undefined : deps.getEncounter?.(request.encounterId)
   const death = await handleCharacterLifecycle({
     campaignId: request.campaignId,
     characterId: request.characterId,
@@ -84,27 +65,6 @@ async function submitSuccessfulAction<TDeps>(
     roll: rollFeedback(result),
     death
   }
-}
-
-function resolveTurnDeps<TDeps>(
-  deps: TurnServiceDeps<TDeps>,
-  request: SubmitPlayActionRequest
-): TDeps {
-  if (deps.getDeps !== undefined) {
-    return deps.getDeps(request.campaignId, request.characterId)
-  }
-  return deps.deps
-}
-
-function lookupEncounter<TDeps>(
-  deps: TurnServiceDeps<TDeps>,
-  request: SubmitPlayActionRequest
-): EncounterState | undefined {
-  if (request.encounterId === undefined || deps.getEncounter === undefined) return undefined
-  if (deps.getDeps !== undefined) {
-    return deps.getEncounter(request.encounterId, request.campaignId, request.characterId)
-  }
-  return deps.getEncounter(request.encounterId)
 }
 
 function lifecycleDeps<TDeps>(deps: TurnServiceDeps<TDeps>): PlayCharacterLifecycleDeps {

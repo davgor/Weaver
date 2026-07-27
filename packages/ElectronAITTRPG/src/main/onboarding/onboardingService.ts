@@ -21,7 +21,6 @@ import {
 } from '@weaver/character-engine'
 import {
   confirmOpeningScene,
-  createMemoryOnboardingStore as createDmMemoryOnboardingStore,
   generateOpeningScene,
   getGuidedCreationState,
   startGuidedIdentity,
@@ -29,9 +28,7 @@ import {
   type CharacterIdentityGroundingApi,
   type CharacterIdentitySelection,
   type GuidedCreationNarrationApi,
-  type GuidedCreationState,
-  type OnboardingStore as DurableOnboardingStore,
-  type OnboardingStoredRecord
+  type GuidedCreationState
 } from '@weaver/dm-engine'
 import type { TextCompleter } from '@weaver/narration-engine'
 import { fillAndValidate, generateGuidedIdentityReply } from '@weaver/narration-engine'
@@ -59,13 +56,6 @@ type OnboardingRecord = {
   characterName: string
   phase: WizardPhase
   selections: OnboardingSelectionsSnapshot
-}
-
-export type OnboardingStore = DurableOnboardingStore
-
-export type OnboardingServiceOptions = {
-  store?: OnboardingStore
-  resolveStore?: (campaignId: string) => OnboardingStore
 }
 
 export type OnboardingCharacterSummary = {
@@ -131,9 +121,7 @@ export type OnboardingService = {
   listCompletedCharacters: (campaignId: string) => OnboardingCharacterSummary[]
 }
 
-const defaultOnboardingStore = createDmMemoryOnboardingStore()
-
-export const createMemoryOnboardingStore = createDmMemoryOnboardingStore
+const records = new Map<string, OnboardingRecord>()
 
 export function createLiveOnboardingPorts(
   narrationOverrides: Pick<OnboardingNarrationPorts, 'completer'> &
@@ -184,40 +172,26 @@ function createLiveNarrationPorts(
   }
 }
 
-export function createOnboardingService(
-  ports: OnboardingPorts,
-  options: OnboardingServiceOptions = {}
-): OnboardingService {
+export function createOnboardingService(ports: OnboardingPorts): OnboardingService {
   return {
-    begin: (request) => beginOnboardingRecord(storeFor(options, request.campaignId), request),
-    getState: (request) =>
-      snapshotFor(ports, requireRecord(storeFor(options, request.campaignId), request)),
-    saveMechanicalSetup: (request) =>
-      applyMechanicalSetup(ports, storeForRequest(options, request), request),
-    saveRace: (request) => applyRaceStep(ports, storeForRequest(options, request), request),
-    saveBackground: (request) =>
-      applyBackgroundStep(ports, storeForRequest(options, request), request),
-    saveEquipment: (request) =>
-      applyEquipmentStep(ports, storeForRequest(options, request), request),
-    saveCompanions: (request) =>
-      applyCompanionsStep(ports, storeForRequest(options, request), request),
-    startGuidedIdentity: (request) =>
-      applyGuidedIdentityStart(ports, storeForRequest(options, request), request),
-    submitGuidedIdentity: (request) =>
-      submitGuidedIdentityStep(ports, storeForRequest(options, request), request),
-    generateOpeningScene: (request) =>
-      generateOpeningSceneStep(ports, storeForRequest(options, request), request),
-    confirmOpeningScene: (request) =>
-      applyOpeningSceneConfirm(ports, storeForRequest(options, request), request),
-    goBack: (request) => applyGoBack(ports, storeForRequest(options, request), request),
+    begin: (request) => beginOnboardingRecord(request),
+    getState: (request) => snapshotFor(requireRecord(request.characterId)),
+    saveMechanicalSetup: (request) => applyMechanicalSetup(ports, request),
+    saveRace: (request) => applyRaceStep(ports, request),
+    saveBackground: (request) => applyBackgroundStep(ports, request),
+    saveEquipment: (request) => applyEquipmentStep(ports, request),
+    saveCompanions: (request) => applyCompanionsStep(ports, request),
+    startGuidedIdentity: (request) => applyGuidedIdentityStart(ports, request),
+    submitGuidedIdentity: (request) => submitGuidedIdentityStep(ports, request),
+    generateOpeningScene: (request) => generateOpeningSceneStep(ports, request),
+    confirmOpeningScene: (request) => applyOpeningSceneConfirm(ports, request),
+    goBack: (request) => applyGoBack(request),
     listArchetypes: () => ports.character.listArchetypes(),
     listRaces: (campaignId) => ports.character.listCampaignRaces(campaignId),
     listBackgrounds: (campaignId) => ports.character.listCampaignBackgrounds(campaignId),
     rollAbilityScores: () => ports.character.rollAbilityScoreDraft(),
-    listCharacters: (campaignId) =>
-      listOnboardingCharacters(campaignId, storeFor(options, campaignId)),
-    listCompletedCharacters: (campaignId) =>
-      listCompletedOnboardingCharacters(campaignId, storeFor(options, campaignId))
+    listCharacters: (campaignId) => listOnboardingCharacters(campaignId),
+    listCompletedCharacters: (campaignId) => listCompletedOnboardingCharacters(campaignId)
   }
 }
 
@@ -235,10 +209,7 @@ export function saveMechanicalSetupStep(
   return service.saveMechanicalSetup(request)
 }
 
-export function saveRaceStep(
-  service: OnboardingService,
-  request: RaceStepRequest
-): OnboardingSnapshot {
+export function saveRaceStep(service: OnboardingService, request: RaceStepRequest): OnboardingSnapshot {
   return service.saveRace(request)
 }
 
@@ -271,32 +242,20 @@ export function goBackOnboarding(
 }
 
 export function clearOnboardingStore(): void {
-  defaultOnboardingStore.clearRecords()
-  defaultOnboardingStore.clearGuidedStates()
-  defaultOnboardingStore.setActiveCharacterId(null)
+  records.clear()
 }
 
-export function listOnboardingCharacters(
-  campaignId: string,
-  store: OnboardingStore = defaultOnboardingStore
-): OnboardingCharacterSummary[] {
-  return store
-    .listRecords(campaignId)
-    .map(toOnboardingRecord)
+export function listOnboardingCharacters(campaignId: string): OnboardingCharacterSummary[] {
+  return [...records.values()]
+    .filter((record) => record.campaignId === campaignId)
     .map(toCharacterSummary)
 }
 
-export function listCompletedOnboardingCharacters(
-  campaignId: string,
-  store: OnboardingStore = defaultOnboardingStore
-): OnboardingCharacterSummary[] {
-  return listOnboardingCharacters(campaignId, store).filter((record) => record.phase === 'complete')
+export function listCompletedOnboardingCharacters(campaignId: string): OnboardingCharacterSummary[] {
+  return listOnboardingCharacters(campaignId).filter((record) => record.phase === 'complete')
 }
 
-function beginOnboardingRecord(
-  store: OnboardingStore,
-  request: BeginOnboardingRequest
-): OnboardingSnapshot {
+function beginOnboardingRecord(request: BeginOnboardingRequest): OnboardingSnapshot {
   const record: OnboardingRecord = {
     campaignId: request.campaignId,
     characterId: request.characterId,
@@ -304,15 +263,15 @@ function beginOnboardingRecord(
     phase: 'mechanical_setup',
     selections: {}
   }
-  return snapshotWithGuidedState(saveRecord(store, record))
+  records.set(request.characterId, record)
+  return snapshotFor(record)
 }
 
 function applyMechanicalSetup(
   ports: OnboardingPorts,
-  store: OnboardingStore,
   request: MechanicalSetupRequest
 ): OnboardingSnapshot {
-  const record = requireRecord(store, request)
+  const record = requireRecord(request.characterId)
   assertPhase(record, 'mechanical_setup')
   const scores = resolveAbilityScores(ports, request.method, request.scores, request.rolledDraft)
   record.selections = {
@@ -322,15 +281,11 @@ function applyMechanicalSetup(
     abilityScores: scores
   }
   record.phase = nextPhase(record.phase)
-  return snapshotFor(ports, saveRecord(store, record))
+  return snapshotFor(record)
 }
 
-function applyRaceStep(
-  ports: OnboardingPorts,
-  store: OnboardingStore,
-  request: RaceStepRequest
-): OnboardingSnapshot {
-  const record = requireRecord(store, request)
+function applyRaceStep(ports: OnboardingPorts, request: RaceStepRequest): OnboardingSnapshot {
+  const record = requireRecord(request.characterId)
   assertPhase(record, 'race')
   const selection = ports.character.selectRace(request)
   record.selections = {
@@ -339,15 +294,14 @@ function applyRaceStep(
     raceName: selection.name
   }
   record.phase = nextPhase(record.phase)
-  return snapshotFor(ports, saveRecord(store, record))
+  return snapshotFor(record)
 }
 
 function applyBackgroundStep(
   ports: OnboardingPorts,
-  store: OnboardingStore,
   request: BackgroundStepRequest
 ): OnboardingSnapshot {
-  const record = requireRecord(store, request)
+  const record = requireRecord(request.characterId)
   assertPhase(record, 'background')
   const selection = ports.character.selectBackground(request)
   record.selections = {
@@ -357,51 +311,47 @@ function applyBackgroundStep(
     ...(request.personalStory === undefined ? {} : { personalStory: request.personalStory })
   }
   record.phase = nextPhase(record.phase)
-  return snapshotFor(ports, saveRecord(store, record))
+  return snapshotFor(record)
 }
 
 function applyEquipmentStep(
   ports: OnboardingPorts,
-  store: OnboardingStore,
   request: EquipmentStepRequest
 ): OnboardingSnapshot {
-  const record = requireRecord(store, request)
+  const record = requireRecord(request.characterId)
   assertPhase(record, 'equipment')
   const archetype = requireArchetype(record)
   ports.character.selectStartingLoadout(request.characterId, archetype)
   record.phase = nextPhase(record.phase)
-  return snapshotFor(ports, saveRecord(store, record))
+  return snapshotFor(record)
 }
 
 function applyCompanionsStep(
   ports: OnboardingPorts,
-  store: OnboardingStore,
   request: CompanionsStepRequest
 ): OnboardingSnapshot {
-  const record = requireRecord(store, request)
+  const record = requireRecord(request.characterId)
   assertPhase(record, 'companions')
   record.selections = applyCompanionChoice(ports, request, record.selections)
   record.phase = nextPhase(record.phase)
-  return snapshotFor(ports, saveRecord(store, record))
+  return snapshotFor(record)
 }
 
 function applyGuidedIdentityStart(
   ports: OnboardingPorts,
-  store: OnboardingStore,
   request: OnboardingContextRequest
 ): OnboardingSnapshot {
-  const record = requireRecord(store, request)
+  const record = requireRecord(request.characterId)
   assertPhase(record, 'guided_identity')
-  const guided = ports.dm.startGuidedIdentity(request)
-  return snapshotWithGuidedState(record, guided)
+  ports.dm.startGuidedIdentity(request)
+  return snapshotFor(record)
 }
 
 async function submitGuidedIdentityStep(
   ports: OnboardingPorts,
-  store: OnboardingStore,
   request: GuidedIdentityRequest
 ): Promise<GuidedIdentityStepResult> {
-  const record = requireRecord(store, request)
+  const record = requireRecord(request.characterId)
   assertPhase(record, 'guided_identity')
   const result = await ports.dm.submitGuidedIdentityMessage(
     { characterId: request.characterId, message: request.message },
@@ -409,16 +359,15 @@ async function submitGuidedIdentityStep(
     ports.narration.completer,
     ports.narration.characterGrounding
   )
-  const snapshot = snapshotFor(ports, record)
+  const snapshot = snapshotFor(record)
   if (!result.ok) {
     return { snapshot, errors: [...result.errors] }
   }
   if (result.phase === 'opening_scene') {
     record.phase = 'opening_scene'
   }
-  const saved = saveRecord(store, record)
   return {
-    snapshot: snapshotWithGuidedState(saved, result.state),
+    snapshot: snapshotFor(record),
     reply: result.prose,
     errors: []
   }
@@ -426,48 +375,38 @@ async function submitGuidedIdentityStep(
 
 async function generateOpeningSceneStep(
   ports: OnboardingPorts,
-  store: OnboardingStore,
   request: OnboardingContextRequest
 ): Promise<OpeningSceneStepResult> {
-  const record = requireRecord(store, request)
+  const record = requireRecord(request.characterId)
   assertPhase(record, 'opening_scene')
   const result = await ports.dm.generateOpeningScene(
     { characterId: request.characterId },
     ports.narration.narration,
     ports.narration.completer
   )
-  const snapshot = snapshotFor(ports, record)
+  const snapshot = snapshotFor(record)
   if (!result.ok || result.prose === undefined) {
     return { snapshot, errors: [...result.errors] }
   }
   record.selections = { ...record.selections }
-  return {
-    snapshot: snapshotFor(ports, saveRecord(store, record)),
-    prose: result.prose,
-    errors: []
-  }
+  return { snapshot: snapshotFor(record), prose: result.prose, errors: [] }
 }
 
 function applyOpeningSceneConfirm(
   ports: OnboardingPorts,
-  store: OnboardingStore,
   request: OnboardingContextRequest
 ): OnboardingSnapshot {
-  const record = requireRecord(store, request)
+  const record = requireRecord(request.characterId)
   assertPhase(record, 'opening_scene')
   const state = ports.dm.confirmOpeningScene(request)
   record.phase = 'complete'
-  return snapshotWithGuidedState(saveRecord(store, record), state)
+  return snapshotWithGuidedState(record, state)
 }
 
-function applyGoBack(
-  ports: OnboardingPorts,
-  store: OnboardingStore,
-  request: OnboardingContextRequest
-): OnboardingSnapshot {
-  const record = requireRecord(store, request)
+function applyGoBack(request: OnboardingContextRequest): OnboardingSnapshot {
+  const record = requireRecord(request.characterId)
   record.phase = previousPhase(record.phase)
-  return snapshotFor(ports, saveRecord(store, record))
+  return snapshotFor(record)
 }
 
 function applyCompanionChoice(
@@ -512,8 +451,8 @@ function resolveAbilityScores(
   return ports.character.confirmRolledAbilityScores(rolledDraft)
 }
 
-function snapshotFor(ports: OnboardingPorts, record: OnboardingRecord): OnboardingSnapshot {
-  const guided = ports.dm.getGuidedCreationState(record.characterId)
+function snapshotFor(record: OnboardingRecord): OnboardingSnapshot {
+  const guided = getGuidedCreationState(record.characterId)
   return snapshotWithGuidedState(record, guided)
 }
 
@@ -541,16 +480,12 @@ function snapshotWithGuidedState(
   }
 }
 
-function requireRecord(store: OnboardingStore, request: OnboardingContextRequest): OnboardingRecord {
-  const record = store.loadRecord(request.characterId)
+function requireRecord(characterId: string): OnboardingRecord {
+  const record = records.get(characterId)
   if (record === undefined) {
-    throw new Error(`Onboarding has not started for character ${request.characterId}.`)
+    throw new Error(`Onboarding has not started for character ${characterId}.`)
   }
-  const restored = toOnboardingRecord(record)
-  if (restored.campaignId !== request.campaignId) {
-    throw new Error(`Onboarding character ${request.characterId} is not in campaign ${request.campaignId}.`)
-  }
-  return restored
+  return record
 }
 
 function requireArchetype(record: OnboardingRecord): ArchetypeId {
@@ -575,47 +510,6 @@ function nextPhase(phase: WizardPhase): WizardPhase {
 function previousPhase(phase: WizardPhase): WizardPhase {
   const index = WIZARD_PHASES.indexOf(phase)
   return WIZARD_PHASES[Math.max(0, index - 1)] ?? phase
-}
-
-function storeFor(options: OnboardingServiceOptions, campaignId: string): OnboardingStore {
-  return options.resolveStore?.(campaignId) ?? options.store ?? defaultOnboardingStore
-}
-
-function storeForRequest(
-  options: OnboardingServiceOptions,
-  request: OnboardingContextRequest
-): OnboardingStore {
-  return storeFor(options, request.campaignId)
-}
-
-function saveRecord(store: OnboardingStore, record: OnboardingRecord): OnboardingRecord {
-  return toOnboardingRecord(store.saveRecord(record))
-}
-
-function toOnboardingRecord(stored: OnboardingStoredRecord): OnboardingRecord {
-  return {
-    campaignId: stored.campaignId,
-    characterId: stored.characterId,
-    characterName: stored.characterName,
-    phase: toWizardPhase(stored.phase),
-    selections: toSelections(stored.selections)
-  }
-}
-
-function toWizardPhase(phase: string): WizardPhase {
-  if ((WIZARD_PHASES as readonly string[]).includes(phase)) {
-    return phase as WizardPhase
-  }
-  throw new Error(`Unknown onboarding phase in campaign store: ${phase}`)
-}
-
-function toSelections(value: unknown): OnboardingSelectionsSnapshot {
-  if (!isRecord(value)) return {}
-  return { ...value } as OnboardingSelectionsSnapshot
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null
 }
 
 function createCharacterGroundingPorts(): CharacterIdentityGroundingApi {

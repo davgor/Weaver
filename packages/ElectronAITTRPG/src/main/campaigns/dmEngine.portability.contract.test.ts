@@ -16,8 +16,7 @@ import { createRegionStore } from '@weaver/regional-engine'
 import { createWorldService } from '@weaver/world-engine'
 import {
   createDefaultCampaignImportDeps,
-  exportCampaignPackage,
-  getActiveCampaignSession
+  exportCampaignPackage
 } from '@weaver/dm-engine'
 import {
   invokeExportCampaignPackage,
@@ -30,7 +29,6 @@ const CAMPAIGN_ID = 'electron-portability-contract'
 const TIMESTAMP = '2026-01-01T00:00:00.000Z'
 
 beforeEach(() => {
-  getActiveCampaignSession()?.close()
   clearNpcStore()
   clearEnemyStore()
   clearQuestStores()
@@ -39,15 +37,9 @@ beforeEach(() => {
 })
 
 afterEach(() => {
-  getActiveCampaignSession()?.close()
   while (roots.length > 0) {
     const root = roots.pop()
-    if (root === undefined) continue
-    try {
-      rmSync(root, { force: true, recursive: true })
-    } catch {
-      // Windows CI can briefly lock sqlite files after session close.
-    }
+    if (root !== undefined) rmSync(root, { force: true, recursive: true })
   }
 })
 
@@ -69,7 +61,6 @@ describe('DMEngine campaign portability contract (097)', () => {
     const restored = exportCampaignPackage(deps, { dataRoot, campaignId: CAMPAIGN_ID })
     expect(restored.slices.npc.npcIds).toEqual(exported.slices.npc.npcIds)
     expect(restored.slices.quest.worldQuests).toEqual(exported.slices.quest.worldQuests)
-    getActiveCampaignSession()?.close()
   })
 })
 

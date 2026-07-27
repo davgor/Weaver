@@ -51,10 +51,7 @@ type CompanionRow = {
   onboarding_owner_status: string | null
 }
 type MetaRow = { key: string; value: string }
-type StatsWriteThrough = Pick<
-  CharacterFactStore,
-  'getStats' | 'setStats' | 'clearStats' | 'listCharacterFactIds'
->
+type StatsWriteThrough = Pick<CharacterFactStore, 'getStats' | 'setStats' | 'clearStats'>
 type RecordsWriteThrough = Pick<
   CharacterFactStore,
   | 'listJournal'
@@ -209,8 +206,7 @@ function buildStatsWriteThrough(db: SqliteDatabase, memory: CharacterFactStore):
     clearStats: () => {
       memory.clearStats()
       db.prepare('DELETE FROM characters').run()
-    },
-    listCharacterFactIds: () => memory.listCharacterFactIds()
+    }
   }
 }
 

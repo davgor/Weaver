@@ -109,17 +109,14 @@ export type {
 // Guided character-creation orchestration (epic 061).
 export {
   buildCharacterFacts,
-  bindGuidedCreationStateStore,
   confirmOpeningScene,
   exportGuidedCreationStates,
   generateOpeningScene,
   getGuidedCreationState,
   importGuidedCreationStates,
-  isGuidedCreationStateStoreBound,
   resetGuidedCreationStateStore,
   startGuidedIdentity,
-  submitGuidedIdentityMessage,
-  unbindGuidedCreationStateStore
+  submitGuidedIdentityMessage
 } from './guidedCreation/index.js'
 export type {
   CharacterIdentityGroundingApi,
@@ -139,7 +136,6 @@ export type {
   StartGuidedIdentityInput,
   SubmitGuidedIdentityInput
 } from './guidedCreation/index.js'
-export type { GuidedCreationStateStore } from './guidedCreation/index.js'
 
 export { runCampaignGeneration } from './campaignGen/pipeline.js'
 export { CAMPAIGN_GENERATION_STAGES } from './campaignGen/types.js'
@@ -290,31 +286,20 @@ export type {
 
 // Campaign portability (epic 059).
 export {
-  ONBOARDING_CAMPAIGN_SLICE_VERSION,
   PORTABLE_PACKAGE_VERSION,
   PortabilitySchemaError,
   createDefaultCampaignImportDeps,
   createDefaultCampaignPortabilityDeps,
-  createMemoryOnboardingStore,
-  createSqliteOnboardingStore,
   exportCampaignPackage,
-  exportOnboardingCampaignSlice,
-  getActiveOnboardingStore,
-  importOnboardingCampaignSlice,
   importCampaignPackage
 } from './portability/index.js'
 export type {
   CampaignImportDeps,
-  OnboardingCampaignSlice,
-  OnboardingRecordWrite,
-  OnboardingStore,
-  OnboardingStoredRecord,
   CampaignPortabilityContext,
   CampaignPortabilityDeps,
   CampaignPortablePackage,
   CampaignPortablePackageInput,
   CampaignPortablePackageV1,
-  CampaignPortablePackageV2,
   ExportCampaignPackageInput,
   ImportCampaignPackageInput
 } from './portability/index.js'

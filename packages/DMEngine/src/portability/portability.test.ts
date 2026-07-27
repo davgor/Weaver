@@ -16,12 +16,8 @@ import { createRegionStore } from '@weaver/regional-engine'
 import { createWorldService } from '@weaver/world-engine'
 import {
   createDefaultCampaignImportDeps,
-  createMemoryOnboardingStore,
   exportCampaignPackage,
-  exportOnboardingCampaignSlice,
-  importOnboardingCampaignSlice,
   importCampaignPackage,
-  ONBOARDING_CAMPAIGN_SLICE_VERSION,
   PortabilitySchemaError
 } from './index.js'
 import { seedCampaign } from './seedCampaignForTest.js'
@@ -75,27 +71,6 @@ describe('DMEngine campaign portability round-trip', () => {
     clearCampaignState(dataRoot, CAMPAIGN_ID)
     importCampaignPackage(deps, { dataRoot, package: exported })
     expect(listWorldQuests(CAMPAIGN_ID)).toEqual([])
-  })
-
-})
-
-describe('DMEngine campaign onboarding portability', () => {
-  it('round-trips in-progress onboarding and guided creation state', () => {
-    const dataRoot = tempRoot()
-    seedCampaign(dataRoot, CAMPAIGN_ID)
-    const sourceStore = createMemoryOnboardingStore()
-    seedOnboardingSlice(sourceStore)
-
-    const exported = exportCampaignPackage(onboardingDeps(sourceStore), {
-      dataRoot,
-      campaignId: CAMPAIGN_ID
-    })
-    expect(exported.version).toBe(PORTABLE_PACKAGE_VERSION)
-    expect(exported.slices.onboarding.sliceVersion).toBe(ONBOARDING_CAMPAIGN_SLICE_VERSION)
-
-    const restoredStore = createMemoryOnboardingStore()
-    importCampaignPackage(onboardingDeps(restoredStore), { dataRoot, package: exported })
-    assertOnboardingSliceRestored(restoredStore)
   })
 })
 
@@ -167,7 +142,7 @@ function toV1Package(current: CampaignPortablePackage): {
   version: 1
   campaignId: string
   exportedAt: string
-  slices: Omit<CampaignPortablePackage['slices'], 'quest' | 'onboarding' | 'narration'>
+  slices: Omit<CampaignPortablePackage['slices'], 'quest'>
 } {
   return {
     version: 1,
@@ -209,47 +184,6 @@ function assertRoundTripEquivalent(
   expect(restored.slices.character.characterIds).toEqual(exported.slices.character.characterIds)
   expect(restored.slices.item.balances).toEqual(exported.slices.item.balances)
   expect(restored.slices.quest.worldQuests).toEqual(exported.slices.quest.worldQuests)
-  expect(restored.slices.narration).toEqual(exported.slices.narration)
-  expect(restored.slices.onboarding).toEqual(exported.slices.onboarding)
-}
-
-function onboardingDeps(store: ReturnType<typeof createMemoryOnboardingStore>) {
-  return createDefaultCampaignImportDeps({
-    onboarding: {
-      exportCampaignSlice: (ctx) => exportOnboardingCampaignSlice(ctx, store),
-      importCampaignSlice: (ctx, slice) => importOnboardingCampaignSlice(ctx, slice, store)
-    }
-  })
-}
-
-function seedOnboardingSlice(store: ReturnType<typeof createMemoryOnboardingStore>): void {
-  store.saveRecord({
-    campaignId: CAMPAIGN_ID,
-    characterId: 'pc-onboarding',
-    characterName: 'Ilyra',
-    phase: 'guided_identity',
-    selections: { archetype: 'Ranger', raceId: 'elf' }
-  })
-  store.saveGuidedState({
-    campaignId: CAMPAIGN_ID,
-    characterId: 'pc-onboarding',
-    guidedCreationPhase: 'why',
-    transcript: [{ speaker: 'player', phase: 'who', text: 'I carry a lantern.' }],
-    characterFacts: { oath: 'carry the lantern' },
-    enterWorldUnlocked: false
-  })
-  store.setActiveCharacterId('pc-onboarding')
-}
-
-function assertOnboardingSliceRestored(
-  store: ReturnType<typeof createMemoryOnboardingStore>
-): void {
-  expect(store.loadRecord('pc-onboarding')).toMatchObject({
-    phase: 'guided_identity',
-    selections: { archetype: 'Ranger', raceId: 'elf' }
-  })
-  expect(store.loadGuidedState('pc-onboarding')?.transcript[0]?.text).toBe('I carry a lantern.')
-  expect(store.getActiveCharacterId()).toBe('pc-onboarding')
 }
 
 function clearCampaignState(dataRoot: string, campaignId: string): void {

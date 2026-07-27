@@ -39,15 +39,6 @@ export type ItemServiceSeed = {
   nextInstanceNumber?: number
 }
 
-export type ItemCampaignState = {
-  templates: ItemTemplate[]
-  instances: Array<ItemInstance & { ownerCharacterId: string }>
-  inventories: Array<{ characterId: string; heldItemIds: string[]; equipped: EquippedItems }>
-}
-
-type PortableItemInstance = ItemCampaignState['instances'][number]
-type ItemCampaignInventoryState = ItemCampaignState['inventories'][number]
-
 export type ItemService = {
   defineTemplate: (template: ItemTemplate) => ItemTemplate
   getTemplate: (templateId: string) => ItemTemplate
@@ -62,11 +53,7 @@ export type ItemService = {
   applyEnchantment: (instanceId: string, overlay: EnchantmentOverlay) => ItemInstance
   removeEnchantment: (instanceId: string, overlayId: string) => ItemInstance
   getWeaponDamageProfile: (instanceId: string) => WeaponDamageProfile
-  snapshotCampaignState: (characterIds: readonly string[]) => ItemCampaignState
-  restoreCampaignState: (state: ItemCampaignState) => void
 }
-
-const GENERATED_ITEM_ID_PREFIX = 'item.'
 
 function requireId(value: string, label: string): string {
   if (!value.trim()) throw new Error(`${label} required`)
@@ -103,14 +90,6 @@ function cloneEquippedItems(equipped: EquippedItems): EquippedItems {
   return copy
 }
 
-function cloneInventoryState(inventory: ItemCampaignInventoryState): ItemCampaignInventoryState {
-  return {
-    characterId: inventory.characterId,
-    heldItemIds: [...inventory.heldItemIds],
-    equipped: cloneEquippedItems(inventory.equipped)
-  }
-}
-
 function normalizeTemplate(template: ItemTemplate): ItemTemplate {
   requireId(template.id, 'Template id')
   requireId(template.name, 'Template name')
@@ -129,22 +108,6 @@ function createInstance(id: string, templateId: string, state: ItemInstanceState
     instance.enchantmentOverlays = listEnchantmentOverlays({ id, templateId, enchantmentOverlays: state.enchantmentOverlays })
   }
   return instance
-}
-
-function parseGeneratedItemNumber(instanceId: string): number {
-  if (!instanceId.startsWith(GENERATED_ITEM_ID_PREFIX)) return 0
-  const suffix = instanceId.slice(GENERATED_ITEM_ID_PREFIX.length)
-  if (!/^[0-9a-z]+$/i.test(suffix)) return 0
-  return Number.parseInt(suffix, 36)
-}
-
-function inferNextInstanceNumber(instances: readonly ItemInstance[]): number {
-  let next = 1
-  for (const instance of instances) {
-    const candidate = parseGeneratedItemNumber(instance.id) + 1
-    if (candidate > next) next = candidate
-  }
-  return next
 }
 
 function removeHeld(inventory: InventoryRecord, instanceId: string): void {
@@ -169,7 +132,7 @@ class InMemoryItemService implements ItemService {
   private nextInstanceNumber: number
 
   constructor(seed: ItemServiceSeed = {}) {
-    this.nextInstanceNumber = seed.nextInstanceNumber ?? inferNextInstanceNumber(seed.instances ?? [])
+    this.nextInstanceNumber = seed.nextInstanceNumber ?? 1
     for (const template of seed.templates ?? []) {
       const normalized = normalizeTemplate(template)
       this.templates.set(normalized.id, normalized)
@@ -201,7 +164,10 @@ class InMemoryItemService implements ItemService {
   }
 
   createInventory(characterId: string): InventorySnapshot {
-    this.ensureInventory(characterId)
+    requireId(characterId, 'Character id')
+    if (!this.inventories.has(characterId)) {
+      this.inventories.set(characterId, { characterId, heldItemIds: [], equipped: createEmptyEquippedItems() })
+    }
     return this.listInventory(characterId)
   }
 
@@ -285,42 +251,10 @@ class InMemoryItemService implements ItemService {
     return buildWeaponDamageProfile(this.getTemplate(instance.templateId), instance)
   }
 
-  snapshotCampaignState(characterIds: readonly string[]): ItemCampaignState {
-    const inventories = characterIds.map((characterId) => this.snapshotInventory(characterId))
-    const instances = inventories.flatMap((inventory) => this.snapshotInventoryInstances(inventory))
-    return {
-      templates: this.snapshotReferencedTemplates(instances),
-      instances,
-      inventories
-    }
-  }
-
-  restoreCampaignState(state: ItemCampaignState): void {
-    this.templates.clear()
-    this.instances.clear()
-    this.inventories.clear()
-    this.nextInstanceNumber = inferNextInstanceNumber(state.instances)
-    for (const template of state.templates) this.templates.set(template.id, normalizeTemplate(template))
-    for (const instance of state.instances) this.instances.set(instance.id, cloneInstance(instance))
-    for (const inventory of state.inventories) {
-      requireId(inventory.characterId, 'Character id')
-      this.inventories.set(inventory.characterId, cloneInventoryState(inventory))
-    }
-  }
-
   private requireInstance(instanceId: string): ItemInstance {
     const instance = this.instances.get(instanceId)
     if (!instance) throw new Error(`Item instance not found: ${instanceId}`)
     return instance
-  }
-
-  private ensureInventory(characterId: string): InventoryRecord {
-    const id = requireId(characterId, 'Character id')
-    const inventory = this.inventories.get(id)
-    if (inventory) return inventory
-    const created = { characterId: id, heldItemIds: [], equipped: createEmptyEquippedItems() }
-    this.inventories.set(id, created)
-    return created
   }
 
   private getInventory(characterId: string): InventoryRecord {
@@ -333,36 +267,6 @@ class InMemoryItemService implements ItemService {
     const instance = this.instances.get(instanceId)
     if (!instance) throw new Error(`Item instance not found: ${instanceId}`)
     return { instance: cloneInstance(instance), template: this.getTemplate(instance.templateId) }
-  }
-
-  private snapshotInventory(characterId: string): ItemCampaignInventoryState {
-    const inventory = this.ensureInventory(characterId)
-    return {
-      characterId: inventory.characterId,
-      heldItemIds: [...inventory.heldItemIds],
-      equipped: cloneEquippedItems(inventory.equipped)
-    }
-  }
-
-  private snapshotInventoryInstances(inventory: ItemCampaignInventoryState): PortableItemInstance[] {
-    return this.listOwnedInstanceIds(inventory).map((id) => ({
-      ...cloneInstance(this.requireInstance(id)),
-      ownerCharacterId: inventory.characterId
-    }))
-  }
-
-  private listOwnedInstanceIds(inventory: ItemCampaignInventoryState): string[] {
-    const ids = [...inventory.heldItemIds]
-    for (const slot of ['mainHand', 'offHand', 'shield', 'armor'] as const) {
-      if (inventory.equipped[slot] !== undefined) ids.push(inventory.equipped[slot])
-    }
-    ids.push(...inventory.equipped.accessories)
-    return ids
-  }
-
-  private snapshotReferencedTemplates(instances: readonly PortableItemInstance[]): ItemTemplate[] {
-    const templateIds = new Set(instances.map((instance) => instance.templateId))
-    return [...templateIds].map((templateId) => this.getTemplate(templateId))
   }
 
   private requireHeldInstance(inventory: InventoryRecord, instanceId: string): ItemInstance {

@@ -15,10 +15,6 @@ import {
   type ItemCampaignSlice
 } from '@weaver/item-engine'
 import {
-  exportNarrationCampaignSlice,
-  type NarrationCampaignSlice
-} from '@weaver/narration-engine'
-import {
   exportNpcCampaignSlice,
   type NpcCampaignSlice
 } from '@weaver/npc-engine'
@@ -34,10 +30,6 @@ import {
   exportWorldCampaignSlice,
   type WorldCampaignSlice
 } from '@weaver/world-engine'
-import {
-  exportOnboardingCampaignSlice,
-  type OnboardingCampaignSlice
-} from '../persistence/repositories/sqliteOnboardingStore.js'
 import { PORTABLE_PACKAGE_VERSION } from './schemaVersion.js'
 import type { CampaignPortablePackage, CampaignPortabilityContext } from './types.js'
 
@@ -77,12 +69,6 @@ export type CampaignPortabilityDeps = {
   quest: {
     exportCampaignSlice: (ctx: { campaignId: string }) => QuestCampaignSlice
   }
-  narration: {
-    exportCampaignSlice: (ctx: { campaignId: string }) => NarrationCampaignSlice
-  }
-  onboarding: {
-    exportCampaignSlice: (ctx: { campaignId: string }) => OnboardingCampaignSlice
-  }
 }
 
 export type ExportCampaignPackageInput = {
@@ -117,9 +103,7 @@ export function exportCampaignPackage(
         campaignId: input.campaignId,
         characterIds: characterSlice.characterIds
       }),
-      quest: deps.quest.exportCampaignSlice(campaignCtx),
-      narration: deps.narration.exportCampaignSlice(campaignCtx),
-      onboarding: deps.onboarding.exportCampaignSlice(campaignCtx)
+      quest: deps.quest.exportCampaignSlice(campaignCtx)
     }
   }
 }
@@ -137,8 +121,6 @@ export function createDefaultCampaignPortabilityDeps(
     character: { exportCampaignSlice: exportCharacterCampaignSlice },
     item: { exportCampaignSlice: exportItemCampaignSlice },
     quest: { exportCampaignSlice: exportQuestCampaignSlice },
-    narration: { exportCampaignSlice: exportNarrationCampaignSlice },
-    onboarding: { exportCampaignSlice: exportOnboardingCampaignSlice },
     ...overrides
   }
 }

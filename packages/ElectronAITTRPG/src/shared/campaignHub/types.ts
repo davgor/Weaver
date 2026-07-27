@@ -43,16 +43,11 @@ export type CampaignHubCharacter = {
 
 export type CampaignHubSnapshot = {
   campaignId: string
-  activeCharacterId: string | null
   worldPreview: CampaignWorldPreview
   characters: CampaignHubCharacter[]
 }
 
 export type CampaignHubApi = {
   load: (campaignId: string) => Promise<CampaignHubSnapshot>
-  setActiveCharacter: (
-    campaignId: string,
-    characterId: string | null
-  ) => Promise<CampaignHubSnapshot>
   addCharacter: (campaignId: string) => Promise<BeginOnboardingRequest>
 }

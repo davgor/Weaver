@@ -33,7 +33,6 @@ const EXPECTED_CAMPAIGN_TABLES = [
   'faction_relations',
   'factions',
   'generated_foes',
-  'guided_creation_states',
   'item_instances',
   'item_store_meta',
   'item_templates',
@@ -44,7 +43,6 @@ const EXPECTED_CAMPAIGN_TABLES = [
   'npc_memories',
   'npc_opinions',
   'npcs',
-  'onboarding_records',
   'place_inventories',
   'quest_templates',
   'schema_migrations',
@@ -63,7 +61,7 @@ describe('campaign persistence lifecycle', () => {
         campaignId: 'alpha',
         filePath,
         schemaVersion: CURRENT_CAMPAIGN_SCHEMA_VERSION,
-        appliedMigrations: [1, 2, 3, 4, 5, 6]
+        appliedMigrations: [1, 2, 3, 4, 5]
       })
       expect(readTableNames(filePath).sort()).toEqual([...EXPECTED_CAMPAIGN_TABLES].sort())
     })
@@ -78,7 +76,7 @@ describe('campaign persistence lifecycle', () => {
 
       expect(opened.schemaVersion).toBe(CURRENT_CAMPAIGN_SCHEMA_VERSION)
       expect(opened.appliedMigrations).toEqual([])
-      expect(readMigrationVersions(filePath)).toEqual([1, 2, 3, 4, 5, 6])
+      expect(readMigrationVersions(filePath)).toEqual([1, 2, 3, 4, 5])
     })
   })
 })
