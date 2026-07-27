@@ -64,7 +64,7 @@ quest proposal/tracking orchestration (056). Exposes `health`, `describeRole`
 matching admin endpoints, and the intent/quest orchestration helpers below.
 Full design lives in epics
 [052](../../board/done/052-DMEngine-Campaign-Generation-Pipeline.md)–[062](../../board/done/062-DMEngine-Context-Efficiency-And-Rag-Integration.md),
-with production campaign stores continuing in [106](../../board/done/106-DMEngine-Production-Campaign-Stores.md).
+with production campaign stores shipped in [106](../../board/done/106-DMEngine-Production-Campaign-Stores.md).
 
 ## Public API (today)
 
