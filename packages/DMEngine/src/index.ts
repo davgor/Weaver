@@ -38,6 +38,16 @@ export type {
 } from './persistence/campaignPersistence.js'
 
 export {
+  readCampaignMeta,
+  readCatalogEntry,
+  upsertCampaignMeta
+} from './persistence/campaignMeta.js'
+export type {
+  CampaignMetaWriter,
+  CatalogEntryRow
+} from './persistence/campaignMeta.js'
+
+export {
   assertCampaignStoresBound,
   createCampaignSession,
   getActiveCampaignSession,
@@ -146,6 +156,31 @@ export type {
   CampaignGenerationStageId,
   StageOutput
 } from './campaignGen/types.js'
+
+export {
+  runVnStoryGeneration,
+  assertVnStoryBrief,
+  assertVnStoryGenerationInput,
+  permanentizeVnStory,
+  VN_STORY_ACT_COUNT_DEFAULT,
+  VN_STORY_ACT_COUNT_MAX,
+  VN_STORY_ACT_COUNT_MIN,
+  VN_STORY_GENERATION_STAGES
+} from './vnStory/index.js'
+export type {
+  AssertedVnStoryBrief,
+  PermanentizeVnStoryResult,
+  VnMainCharacterBrief,
+  VnStageOutput,
+  VnStoryActOverview,
+  VnStoryBrief,
+  VnStoryCastMember,
+  VnStoryGenerationDeps,
+  VnStoryGenerationInput,
+  VnStoryGenerationResult,
+  VnStoryGenerationStageId,
+  VnStoryOverview
+} from './vnStory/index.js'
 
 export {
   emitWorldMutation

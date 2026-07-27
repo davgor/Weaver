@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { APP_DISPLAY_NAME, APP_EXE_NAME } from './appBranding.js'
+import { APP_DISPLAY_NAME, APP_EXE_NAME, BOOT_BRAND_TITLE } from './appBranding.js'
 
 describe('appBranding', () => {
   it('uses AI Visual Novel as the user-visible product name', () => {
@@ -8,5 +8,9 @@ describe('appBranding', () => {
 
   it('uses a hyphenated Windows executable name', () => {
     expect(APP_EXE_NAME).toBe('AI-Visual-Novel.exe')
+  })
+
+  it('brands the boot loading screen with Weaver', () => {
+    expect(BOOT_BRAND_TITLE).toBe('AI Visual Novel powered by Weaver')
   })
 })

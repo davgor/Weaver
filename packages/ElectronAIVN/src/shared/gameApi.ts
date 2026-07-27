@@ -7,6 +7,37 @@ export type StartupBootSnapshot = {
   failureMessage: string | null
 }
 
+export type LocalBackendPreference = 'vulkan' | 'cpu'
+
+export type FirstRunSnapshot = {
+  needed: boolean
+  dismissed: boolean
+  ready: boolean
+  canDismiss: boolean
+  reason: string | null
+}
+
+export type AivnLocalModelStatus = {
+  phase: 'not_installed' | 'installing' | 'ready' | 'error'
+  backend: LocalBackendPreference | null
+  error: string | null
+  bytesDownloaded: number
+  bytesTotal: number | null
+}
+
+export type AivnInstallProgress = {
+  phase: 'installing'
+  bytesDownloaded: number
+  bytesTotal: number | null
+  fraction: number | null
+}
+
+export type BootProgressUpdate = {
+  progress: number
+  stageLabel: string
+  statusText: string
+}
+
 export type AivnApi = {
   windowControls: {
     minimize: () => void
@@ -15,6 +46,18 @@ export type AivnApi = {
   }
   startup: {
     getBoot: () => Promise<StartupBootSnapshot>
+    onBootProgress: (listener: (update: BootProgressUpdate) => void) => () => void
+  }
+  llm: {
+    getStatus: () => Promise<AivnLocalModelStatus>
+    install: () => Promise<AivnLocalModelStatus>
+    onInstallProgress: (listener: (progress: AivnInstallProgress) => void) => () => void
+    getBackend: () => Promise<LocalBackendPreference | null>
+    setBackend: (backend: LocalBackendPreference) => Promise<LocalBackendPreference>
+  }
+  firstRun: {
+    get: () => Promise<FirstRunSnapshot>
+    dismiss: () => Promise<FirstRunSnapshot>
   }
   app: {
     getVersion: () => Promise<string>
