@@ -6,7 +6,13 @@ import type {
   BootProgressUpdate,
   FirstRunSnapshot,
   LocalBackendPreference,
-  StartupBootSnapshot
+  PlayVnStoryResult,
+  StartupBootSnapshot,
+  SubmitVnPlayActionRequest,
+  VnPlaySnapshot,
+  VnSavedGameSummary,
+  VnStoryDraft,
+  VnStoryReviewSnapshot
 } from '../shared/gameApi.js'
 import {
   LLM_INSTALL_PROGRESS_CHANNEL,
@@ -36,6 +42,21 @@ const api: AivnApi = {
   firstRun: {
     get: (): Promise<FirstRunSnapshot> => ipcRenderer.invoke('firstRun:get'),
     dismiss: (): Promise<FirstRunSnapshot> => ipcRenderer.invoke('firstRun:dismiss')
+  },
+  story: {
+    startGeneration: (draft: VnStoryDraft): Promise<VnStoryReviewSnapshot> =>
+      ipcRenderer.invoke('vnStory:startGeneration', draft),
+    getReview: (): Promise<VnStoryReviewSnapshot | null> => ipcRenderer.invoke('vnStory:getReview'),
+    confirmReview: (): Promise<VnStoryReviewSnapshot> => ipcRenderer.invoke('vnStory:confirmReview'),
+    backToEdit: (): Promise<void> => ipcRenderer.invoke('vnStory:backToEdit'),
+    play: (): Promise<PlayVnStoryResult> => ipcRenderer.invoke('vnStory:play'),
+    listSavedGames: (): Promise<VnSavedGameSummary[]> => ipcRenderer.invoke('vnStory:listSavedGames')
+  },
+  play: {
+    open: (campaignId: string): Promise<VnPlaySnapshot> =>
+      ipcRenderer.invoke('vnPlay:open', campaignId),
+    submitAction: (request: SubmitVnPlayActionRequest): Promise<VnPlaySnapshot> =>
+      ipcRenderer.invoke('vnPlay:submitAction', request)
   },
   app: {
     getVersion: (): Promise<string> => ipcRenderer.invoke('app:getVersion')

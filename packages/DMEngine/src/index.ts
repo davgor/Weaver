@@ -182,6 +182,12 @@ export type {
   VnStoryOverview
 } from './vnStory/index.js'
 
+export { generateVnChoicePair } from './vnPlay/index.js'
+export type {
+  GenerateVnChoicePairInput,
+  GenerateVnChoicePairResult
+} from './vnPlay/index.js'
+
 export {
   emitWorldMutation
 } from './worldMutations/index.js'

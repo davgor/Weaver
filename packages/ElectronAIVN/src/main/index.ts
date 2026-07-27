@@ -9,6 +9,19 @@ import { createNodePrefsFs } from './llm/nodePrefsFs.js'
 import { readBackendPreference } from './llm/backendPreferenceStore.js'
 import { registerLlmHandlers } from './llm/registerHandlers.js'
 import type { LocalLlmEnginePort } from './llm/llmPorts.js'
+import {
+  createLiveVnStoryDeps,
+  invokeRunVnStoryGeneration,
+  permanentizeVnStory
+} from './story/runVnGeneration.js'
+import { registerVnStoryHandlers } from './story/registerHandlers.js'
+import { createDiskStoryPort, createVnStoryService } from './story/storyService.js'
+import { createLiveVnResolveTurnDeps } from './play/livePlayDeps.js'
+import { registerVnPlayHandlers } from './play/registerHandlers.js'
+import {
+  createDiskVnPlayCatalog,
+  createVnPlayService
+} from './play/playService.js'
 
 Menu.setApplicationMenu(null)
 
@@ -63,7 +76,7 @@ function registerWindowControlHandlers(): void {
   })
 }
 
-async function wireLlmAndStartup(): Promise<void> {
+async function wireLlmAndStartup(): Promise<EngineHolder> {
   const prefsFs = createNodePrefsFs()
   const prefsPath = join(app.getPath('userData'), 'aivn-llm-prefs.json')
   const dataDir = defaultAivnLlmDataDir(app.getPath('userData'))
@@ -81,6 +94,36 @@ async function wireLlmAndStartup(): Promise<void> {
     prefsPath,
     checkEngines: checkCatalogHealth
   })
+  return holder
+}
+
+function wireVnStory(holder: EngineHolder): string {
+  const storiesRoot = join(app.getPath('userData'), 'vn-stories')
+  const completer = {
+    completeText: (request: Parameters<LocalLlmEnginePort['completeText']>[0]) =>
+      holder.current.completeText(request)
+  }
+  const port = createDiskStoryPort(storiesRoot, {
+    generate: (input) =>
+      invokeRunVnStoryGeneration(input, createLiveVnStoryDeps(completer)),
+    permanentize: (options) => permanentizeVnStory(options)
+  })
+  registerVnStoryHandlers(createVnStoryService(port))
+  return storiesRoot
+}
+
+function wireVnPlay(holder: EngineHolder, storiesRoot: string): void {
+  const completer = {
+    completeText: (request: Parameters<LocalLlmEnginePort['completeText']>[0]) =>
+      holder.current.completeText(request)
+  }
+  registerVnPlayHandlers(
+    createVnPlayService({
+      catalog: createDiskVnPlayCatalog(storiesRoot),
+      completer,
+      resolveTurnDeps: createLiveVnResolveTurnDeps(completer)
+    })
+  )
 }
 
 function registerAppHandlers(): void {
@@ -90,7 +133,9 @@ function registerAppHandlers(): void {
 app.whenReady().then(async () => {
   registerWindowControlHandlers()
   registerAppHandlers()
-  await wireLlmAndStartup()
+  const holder = await wireLlmAndStartup()
+  const storiesRoot = wireVnStory(holder)
+  wireVnPlay(holder, storiesRoot)
   createMainWindow()
 
   app.on('activate', () => {

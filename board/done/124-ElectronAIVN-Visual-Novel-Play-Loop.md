@@ -20,13 +20,13 @@ Build the standard visual-novel play window and interaction model: background pl
 
 ## Acceptance criteria
 
-- [ ] Play window is a full-bleed VN layout: background layer, MC placeholder, optional NPC speaker, bottom interaction panel
-- [ ] Scene mode: DM/Narration scene prose drives the beat; Social/NPC mode: DM steps back and NPC dialogue is primary
-- [ ] Interaction panel always offers exactly two personality-grounded generated options plus a free-text input
-- [ ] Placeholders show prompts like `David's character, Standing, Angry` (and background prompt text) — no fake stock art required
-- [ ] Generated choices call NarrationEngine/DMEngine APIs (MC personality from CharacterEngine/NPC-equivalent MC record) — no invention in Electron
-- [ ] Consumer `*.contract.test.ts` cover Electron → DMEngine turn/scene APIs and prompt-contract consumption
-- [ ] Gates pass; cloud gate: PR checks green + PR marked ready
+- [x] Play window is a full-bleed VN layout: background layer, MC placeholder, optional NPC speaker, bottom interaction panel
+- [x] Scene mode: DM/Narration scene prose drives the beat; Social/NPC mode: DM steps back and NPC dialogue is primary
+- [x] Interaction panel always offers exactly two personality-grounded generated options plus a free-text input
+- [x] Placeholders show prompts like `David's character, Standing, Angry` (and background prompt text) — no fake stock art required
+- [x] Generated choices call NarrationEngine/DMEngine APIs (MC personality from CharacterEngine/NPC-equivalent MC record) — no invention in Electron
+- [x] Consumer `*.contract.test.ts` cover Electron → DMEngine turn/scene APIs and prompt-contract consumption
+- [x] Gates pass; cloud gate: PR checks green + PR marked ready
 
 ## Sub-tickets
 
@@ -36,8 +36,8 @@ Build the standard visual-novel play window and interaction model: background pl
 
 #### Acceptance criteria
 
-- [ ] Renderer stage composes background, MC, NPC (conditional), text box
-- [ ] Layout works at desktop and narrow widths without breaking interaction
+- [x] Renderer stage composes background, MC, NPC (conditional), text box
+- [x] Layout works at desktop and narrow widths without breaking interaction
 
 ### 124.2 — Scene vs NPC step-back
 
@@ -45,8 +45,8 @@ Build the standard visual-novel play window and interaction model: background pl
 
 #### Acceptance criteria
 
-- [ ] Mode switch is driven by DMEngine/Narration projections (Scene vs Social), not ad-hoc UI guessing
-- [ ] Unit tests cover mode selection from projection fixtures
+- [x] Mode switch is driven by DMEngine/Narration projections (Scene vs Social), not ad-hoc UI guessing
+- [x] Unit tests cover mode selection from projection fixtures
 
 ### 124.3 — Two choices + free text
 
@@ -54,9 +54,9 @@ Build the standard visual-novel play window and interaction model: background pl
 
 #### Acceptance criteria
 
-- [ ] Two options generated from MC personality + current beat; third control is free-text
-- [ ] Selecting either path submits a turn through DMEngine routing
-- [ ] Tests use scripted completers for deterministic options
+- [x] Two options generated from MC personality + current beat; third control is free-text
+- [x] Selecting either path submits a turn through DMEngine routing
+- [x] Tests use scripted completers for deterministic options
 
 ### 124.4 — Image prompt placeholders
 
@@ -64,8 +64,8 @@ Build the standard visual-novel play window and interaction model: background pl
 
 #### Acceptance criteria
 
-- [ ] MC/NPC/background placeholders render contract prompt strings (not empty boxes)
-- [ ] Placeholder updates when stance/expression/scene changes
+- [x] MC/NPC/background placeholders render contract prompt strings (not empty boxes)
+- [x] Placeholder updates when stance/expression/scene changes
 
 ### 124.5 — Contract tests
 
@@ -73,4 +73,4 @@ Build the standard visual-novel play window and interaction model: background pl
 
 #### Acceptance criteria
 
-- [ ] Contract tests against DMEngine + NarrationEngine published APIs for beat advance and choice generation
+- [x] Contract tests against DMEngine + NarrationEngine published APIs for beat advance and choice generation
