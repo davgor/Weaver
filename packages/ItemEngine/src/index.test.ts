@@ -1,5 +1,13 @@
-import { describe, expect, it } from 'vitest'
-import { EQUIPMENT_SLOTS, itemEngine } from './index.js'
+import { afterEach, describe, expect, it } from 'vitest'
+import {
+  EQUIPMENT_SLOTS,
+  bindItemCampaignStores,
+  createCurrencyService,
+  createItemService,
+  isItemCampaignStoreBound,
+  itemEngine,
+  unbindItemCampaignStores
+} from './index.js'
 
 const EXPECTED_ENDPOINTS = [
   'health',
@@ -12,6 +20,7 @@ const EXPECTED_ENDPOINTS = [
   'getEquipped',
   'equip',
   'unequip',
+  'transferItem',
   'getItemInstance',
   'applyEnchantment',
   'removeEnchantment',
@@ -23,6 +32,10 @@ const EXPECTED_ENDPOINTS = [
   'generateLoot',
   'getStartingLoadout'
 ]
+
+afterEach(() => {
+  unbindItemCampaignStores()
+})
 
 function requireInstanceId(result: unknown): string {
   if (!result || typeof result !== 'object' || !('id' in result)) {
@@ -89,6 +102,25 @@ describe('@weaver/item-engine typed singleton API', () => {
     expect(itemEngine.clampProposedPrice(50_000)).toBe(10_000)
     expect(itemEngine.generateLoot({ difficulty: 'easy', seed: 'singleton.loot' }).length).toBeGreaterThan(0)
     expect(itemEngine.getStartingLoadout('Mage').actionIds).toContain('ice_bolt')
+  })
+
+  it('binds campaign item and currency stores into the singleton API', () => {
+    const itemService = createItemService()
+    const currencyService = createCurrencyService()
+    itemService.defineTemplate({ id: 'template.bound', name: 'Bound Test Item' })
+    itemService.createInventory('character.bound')
+    currencyService.credit('character.bound', 5)
+
+    bindItemCampaignStores({ itemService, currencyService })
+
+    expect(isItemCampaignStoreBound()).toBe(true)
+    expect(itemEngine.addItem('character.bound', 'template.bound').templateId).toBe('template.bound')
+    expect(itemEngine.getBalance('character.bound')).toBe(5)
+
+    unbindItemCampaignStores()
+    expect(isItemCampaignStoreBound()).toBe(false)
+    expect(() => itemEngine.listInventory('character.bound')).toThrow(/Inventory not found/)
+    expect(itemEngine.getBalance('character.bound')).toBe(0)
   })
 })
 

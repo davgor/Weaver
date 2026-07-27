@@ -10,6 +10,9 @@ Owns encounter-ready enemy definitions and instances consumed by CombatEngine an
 
 - **LLM-free** — no Electron, no story invention
 - Consumers need `*.contract.test.ts` against the real API
+- Engine-local services default to in-memory for unit tests. Production play binds
+  SQLite foe/token stores via DMEngine campaign sessions
+  ([106](../../board/done/106-DMEngine-Production-Campaign-Stores.md)).
 
 ## Status
 
@@ -38,9 +41,9 @@ await enemyEngine.call('health')
 
 | Epic | Intent |
 |------|--------|
-| [045](../../board/in-progress/045-EnemyEngine-Bestiary-Catalog.md) | Bestiary catalog: species/variants, seeded creature content |
-| [046](../../board/in-progress/046-EnemyEngine-Dynamic-Foe-Generation.md) | Dynamic encounter foe generation + quest-foe assignment |
-| [047](../../board/in-progress/047-EnemyEngine-Combat-Token-Hook.md) | Non-blocking combat-token generation hook |
+| [045](../../board/done/045-EnemyEngine-Bestiary-Catalog.md) | Bestiary catalog: species/variants, seeded creature content |
+| [046](../../board/done/046-EnemyEngine-Dynamic-Foe-Generation.md) | Dynamic encounter foe generation + quest-foe assignment |
+| [047](../../board/done/047-EnemyEngine-Combat-Token-Hook.md) | Non-blocking combat-token generation hook |
 
 ## Scripts
 

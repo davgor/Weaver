@@ -1,12 +1,12 @@
 # AI-TTRPG — Rebuild Specification
 
-**Purpose:** single source of truth to recreate this product from a clean tree (or empty repo) without rediscovering design from hundreds of board tickets.
+**Purpose:** rebuild orientation for recreating this product from a clean tree without rediscovering design from hundreds of board tickets.
 
 **Product name (display):** AI TTRPG
-**Package / Electron ids (do not “clean up”):** `ai-dnd-matrix`, `com.davgor.aidndmatrix`  
+**Package / Electron ids:** `@weaver/electron-aittrpg`, `com.davgor.weaver.aittrpg`
 **Nature:** personal desktop app shared as packaged binaries with friends — not a public SaaS.
 
-When rebuilding, treat this document as the contract. Domain detail that already has a living SPEC under `src/**/SPEC.md` is summarized here and linked; prefer those SPECs for implementation edge cases once the tree exists again.
+This file is a historical rebuild map. The living contracts in the Weaver tree are package READMEs, package tests, and `/board` epics. The monolith-era `src/**/SPEC.md` files referenced by older versions of this document are not present under `packages/`; use [`SPEC-INDEX.md`](SPEC-INDEX.md) for each historical SPEC path and its current replacement.
 
 ---
 
@@ -29,7 +29,7 @@ Campaigns are **generated from a free-text premise**, reviewed, then played. Wor
 4. **Campaign-level world, character-level story.** Shared: world prose, pantheon, regions, NPCs, factions, threads, events, `current_state_summary`. Per character: journal, log book, quests, spells, narration history, Social/Scene projections, guided-creation state, `currentRegionId`, owned companions.
 5. **Social vs Scene.** Play UI splits player/NPC dialogue (Social, streaming) from DM exposition (Scene).
 6. **Provider-agnostic LLM.** Pluggable providers; Settings-driven; no code change to swap clouds.
-7. **Plain-English fantasy tone.** No D&D-trademark user copy (see `docs/terminology/ttrpg-replacement-map.md`). Internal “DM” naming is fine.
+7. **Plain-English fantasy tone.** No D&D-trademark user copy (see `packages/NarrationEngine/src/terminologyMap.ts`; verify with `npm run terminology:check`). Internal “DM” naming is fine.
 
 ---
 
@@ -75,24 +75,30 @@ Settings UI is the preferred place for provider + model; `.env` next to the `.ex
 
 ---
 
-## 3. Repository layout (target)
+## 3. Repository layout (current monorepo)
 
 ```
-/src
-  /main       Electron main: window, SQLite, IPC handlers, combat/turn orchestration, tokens, llama/RAG downloads
-  /preload    contextBridge APIs (typed, narrow)
-  /renderer   React UI (see §8)
-  /engine     Pure TS rules — NO Electron, DB, or LLM imports
-  /agents     DM/NPC/party/campaign-gen/providers; re-ground from DB-shaped context
-  /db         Schema, forward-only migrations, repositories, catalog seeds, RAG
-  /shared     Types + domain SPECs shared across processes
-/board        Text tickets: backlog → in-progress → done
-/docs         Runbooks, research, this rebuild spec
+/packages
+  /ActionEngine        Actions, effects, ranges, and turn-cost lockouts
+  /CharacterEngine     PC facts, checks, HP, journals/logs/quests, rest/time
+  /CombatEngine        Encounters, initiative, turns, hit/damage, flee/yield
+  /DMEngine            Campaign orchestration, routing, campaign-bundle lifecycle
+  /EnemyEngine         Bestiary, foe generation, combat-token hook
+  /ItemEngine          Items, inventory, currency, loot, starting gear
+  /LLMEngine           Local/provider raw text completion and usage metering
+  /NarrationEngine     Story prose and portrait-token invention with validation
+  /NPCEngine           NPC construction, memory/social facts, placement
+  /QuestEngine         World quest templates and seeded campaign instances
+  /ElectronAITTRPG     AI TTRPG Electron chrome, IPC, renderer UI, packaging
+  /ElectronAdmin       AI ADMIN Electron chrome and dev surfaces
+/board                       Text tickets: backlog → in-progress → done
+/packages/ElectronAITTRPG/docs
+                             Rebuild spec, SPEC audit index, and runbooks
 /.cursor + /.claude   Skills: delivery-standards, complete-ticket, …
 /.github/workflows    pr-checks.yml, deadcode.yml, deploy
 ```
 
-**Import boundary (enforce with a unit test):** `/engine` must not import Electron, `better-sqlite3`, or agent/provider modules.
+Electron packages own UI, IPC, packaging, and app chrome only. Business rules and durable facts live in `packages/*Engine` libraries and are consumed through published exports with consumer contract tests. Deterministic engines must not import Electron or LLM providers; only NarrationEngine invents story prose/visual tokens, and only DMEngine orchestrates those results into peer-engine APIs.
 
 ---
 
@@ -119,7 +125,7 @@ Settings UI is the preferred place for provider + model; `.env` next to the `.ex
 - Model returns `<<<TOKEN>>>…<<</TOKEN>>>` labeled blocks.
 - `fillSkeleton` → parse → `normalize*` → validate → persist.
 - Outer seed retries (~5); per-stage retries (~3).
-- Full change checklist: `docs/runbooks/campaign-create-change-checklist.md`.
+- Recreate or restore a campaign-create change checklist when changing this path. The current checked-in runbook is [`docs/runbooks/playability-smoke.md`](runbooks/playability-smoke.md).
 
 **After create:** Campaign Review (edit/regenerate world, pantheon, regions, NPCs, factions, bestiary) → continue into character onboarding (or Hub if characters already exist).
 
@@ -155,7 +161,7 @@ Re-opening a campaign with ≥1 completed character lands on **Campaign Hub** (w
 
 ### 4.6 Combat
 
-Structured encounter: initiative once (`d20 + Agility`), Action + Movement per turn, engine-owned hit/damage/crits/conditions/dying. Flee, surrender, non-lethal, execute. See `src/shared/combat/SPEC.md`.
+Structured encounter: initiative once (`d20 + Agility`), Action + Movement per turn, engine-owned hit/damage/crits/conditions/dying. Flee, surrender, non-lethal, execute. See the [CombatEngine README](../../CombatEngine/README.md), epics [048](../../../board/done/048-CombatEngine-Encounter-Lifecycle.md)–[051](../../../board/done/051-CombatEngine-Dynamic-Start-And-Triggers.md), and [`SPEC-INDEX.md`](SPEC-INDEX.md).
 
 ### 4.7 Death modes
 
@@ -169,7 +175,7 @@ Structured encounter: initiative once (`d20 + Agility`), Action + Movement per t
 
 ## 5. Rules engine contract
 
-Custom simplified tabletop rules — fully unit-tested in `/engine`.
+Custom simplified tabletop rules — fully unit-tested in the owning engine packages.
 
 | Concept | Spec |
 |---------|------|
@@ -189,19 +195,27 @@ Custom simplified tabletop rules — fully unit-tested in `/engine`.
 | Time | Day counter; long rest +1 day; travel DM-estimated, engine-clamped |
 | Economy | Engine debits/credits currency; clamps DM-proposed prices |
 
-Domain SPECs (implement against these once present):
-
-- `src/engine/hp/SPEC.md`, `startingLoadout/SPEC.md`, `raceSelection/SPEC.md`
-- `src/shared/combat/SPEC.md`, `combat/flee/SPEC.md`
-- `src/shared/items/SPEC.md`, `loot/SPEC.md`, `spells/SPEC.md`, `quests/SPEC.md`
-- `src/shared/progression/SPEC.md`, `rulesDebt/SPEC.md`, `rulesHonesty/SPEC.md`
-- `src/shared/commerceTravel/SPEC.md`, `worldMutations/SPEC.md`, `sharedTime/SPEC.md`
+Historical domain SPEC paths are audited in [`SPEC-INDEX.md`](SPEC-INDEX.md). Implement against package READMEs, public APIs, tests, and board epics instead of recreating monolith `src/**/SPEC.md` files. `rulesDebt` and `rulesHonesty` were monolith cleanup placeholders and are intentionally obsolete.
 
 ---
 
 ## 6. Persistence model
 
-One SQLite file per campaign. Forward-only numbered migrations on open.
+The intended production shape is one durable campaign-store boundary with
+forward-only numbered migrations. Current Weaver splits this work into two
+layers:
+
+- **Campaign-bundle SQLite (epic [081](../../../board/done/081-DMEngine-Campaign-Persistence-And-Migrations.md)):**
+  DMEngine owns create/open/migrate for the campaign file and currently stores
+  cross-cutting stubs (`campaign_meta`, character/NPC/quest references, seeded
+  catalog entries).
+- **Engine-local stores and in-memory services:** deterministic packages keep
+  package-owned facts behind their own APIs today. DMEngine coordinates them but
+  should not duplicate peer-engine internals into the bundle.
+- **Production path:** backlog epic [106](../../../board/done/106-DMEngine-Production-Campaign-Stores.md)
+  promotes durable campaign facts into the production campaign-store path after
+  the 081 stubs. Treat the broad table below as the target inventory for 106+
+  work, not as the current 081 schema.
 
 ### Core tables (minimum viable rebuild set)
 
@@ -229,9 +243,13 @@ One SQLite file per campaign. Forward-only numbered migrations on open.
 | `llm_usage_events` | Metering |
 | RAG chunk / embedder meta tables | Hybrid retrieval index |
 
-**Catalog:** seed creatures/spells on migrate; taxonomy + seed format live in `docs/runbooks/catalog-*.md`.
+**Catalog:** seed creatures/actions on migrate through engine APIs and DMEngine
+seed hooks. Restore dedicated catalog runbooks only when the catalog pipeline
+needs operator steps.
 
-**Portability:** export/import/backup campaign packages (`src/shared/campaignPortability/SPEC.md`).
+**Portability:** export/import/backup campaign packages are covered by
+[059](../../../board/done/059-DMEngine-Campaign-Portability.md) and the full
+slice backlog in [108](../../../board/backlog/108-Repo-Full-Campaign-Portability-Slices.md).
 
 ---
 
@@ -264,7 +282,7 @@ Common chat-completions-shaped adapter with:
 
 ### Turn routing (play)
 
-See `src/shared/turnRouting/SPEC.md`. Summary:
+See the [DMEngine README](../../DMEngine/README.md), [053](../../../board/done/053-DMEngine-Turn-Routing.md), and [`SPEC-INDEX.md`](SPEC-INDEX.md). Summary:
 
 1. Heuristic may supply a deterministic plan → intent-only LLM call.
 2. Else merged `interpretIntentAndRoute`.
@@ -275,9 +293,10 @@ See `src/shared/turnRouting/SPEC.md`. Summary:
 
 ### Context & RAG
 
-- Slim context budgets (token caps / truncation) — epic 040 class constraints.
-- RAG selects existing rows into prompts within a hard injection cap; always-on fields (HP, present NPCs, combat state, …) are **not** replaced by RAG. See `src/db/rag/SPEC.md`.
-- Embedder mode: lexical fallback if assets/keys missing; Settings picker for local/cloud when rebuilt.
+- Slim context budgets (token caps / truncation) — see [062](../../../board/done/062-DMEngine-Context-Efficiency-And-Rag-Integration.md).
+- NarrationEngine owns RAG retrieval primitives from [065](../../../board/done/065-NarrationEngine-Rag-Retrieval.md) under `packages/NarrationEngine/src/rag/`.
+- Live DM/NPC/party grounding through RAG is backlog [111](../../../board/backlog/111-DMEngine-Live-Rag-And-Context-Integration.md) and depends on the production campaign-store path in [106](../../../board/done/106-DMEngine-Production-Campaign-Stores.md).
+- Always-on fields (HP, present NPCs, combat state, …) are **not** replaced by RAG.
 
 ### Campaign-create tone guards
 
@@ -335,17 +354,17 @@ Expose only via `contextBridge` (names as in current preload):
 ## 11. Engineering workflow (mandatory)
 
 1. **Board tickets** under `/board` with Description + checkable Acceptance Criteria before/during work.
-2. **TDD-first** for `/engine`, `/db`, agents, IPC, and other testable logic.
+2. **TDD-first** for engine packages, shared scripts, IPC, and other testable logic.
 3. **Verify before done:**
    - `npm test`
    - `npm run lint`
    - `npm run build`
    - `npm run deadcode`
-   - `act` on `.github/workflows/pr-checks.yml` and `deadcode.yml` (Docker required)
-4. Campaign-create changes: also run `docs/runbooks/campaign-create-change-checklist.md`.
+   - Remote CI gate per delivery standards (cloud: GitHub PR checks; desktop: `npm run ci:act`)
+4. Campaign-create changes: restore or update a dedicated checklist if that path changes.
 5. Skills: `.claude/skills/delivery-standards/SKILL.md` and `complete-ticket` (keep Cursor copies in sync).
 
-Smoke runbooks live in `docs/runbooks/` — recreate critical ones early (startup, campaign create, gameplay loop, combat, guided creation, hub).
+Current checked-in smoke runbook: [`docs/runbooks/playability-smoke.md`](runbooks/playability-smoke.md). Recreate additional operator runbooks only when the surface needs them.
 
 ---
 
@@ -355,7 +374,7 @@ Use this sequence so each phase is playable or testable before stacking the next
 
 ### Phase A — Scaffold & safety
 
-- Electron + React + TS monorepo layout (`main` / `preload` / `renderer` / `engine` / `db` / `shared` / `agents`)
+- Electron + React + TS monorepo layout (`packages/*Engine`, `ElectronAITTRPG/src/main`, `preload`, `renderer`, `shared`)
 - Security baseline, frameless window, empty sidebar
 - Vitest + oxlint + CI workflows + deadcode gate
 - Terminology map + `terminology:check`
@@ -437,9 +456,9 @@ Use this sequence so each phase is playable or testable before stacking the next
 
 ### Phase J — RAG & efficiency
 
-- Chunk index, hybrid retrieve, embedder selection
+- NarrationEngine RAG primitives from [065](../../../board/done/065-NarrationEngine-Rag-Retrieval.md)
+- Live DM/NPC/party grounding via backlog [111](../../../board/backlog/111-DMEngine-Live-Rag-And-Context-Integration.md), after campaign stores [106](../../../board/done/106-DMEngine-Production-Campaign-Stores.md)
 - Context caps / templates from efficiency epic
-- Wire DM/NPC/party grounding
 
 ### Phase K — Packaging & polish
 
@@ -510,45 +529,10 @@ Use as a rebuild completeness audit (shipped product scope).
 
 ## 14. Domain SPEC index
 
-Keep or recreate these as the detailed contracts (path = canonical):
-
-| Path | Topic |
-|------|-------|
-| `src/shared/combat/SPEC.md` | Encounters |
-| `src/shared/combat/flee/SPEC.md` | Flee |
-| `src/shared/turnRouting/SPEC.md` | Play routing |
-| `src/shared/campaignHub/SPEC.md` | Multi-PC hub |
-| `src/shared/playResilience/SPEC.md` | Turn failure UX |
-| `src/shared/playPopulation/SPEC.md` | Live mint |
-| `src/shared/worldMutations/SPEC.md` | Hard mutations |
-| `src/shared/sharedTime/SPEC.md` | Multi-PC time |
-| `src/shared/commerceTravel/SPEC.md` | Buy/sell/travel |
-| `src/shared/factions/SPEC.md` | Factions |
-| `src/shared/npcDossier/SPEC.md` | Dossier |
-| `src/shared/npcRelationships/SPEC.md` | Opinions web |
-| `src/shared/npcCombat/SPEC.md` | NPC combat hydration |
-| `src/shared/npcFaceTokens/SPEC.md` | NPC portraits |
-| `src/shared/creatureTokens/SPEC.md` | Enemy tokens |
-| `src/shared/playerCharacterIcons/SPEC.md` | PC icons |
-| `src/shared/partyMembers/SPEC.md` | Companions |
-| `src/shared/bestiary/SPEC.md` | Bestiary |
-| `src/shared/quests/SPEC.md` | Quests |
-| `src/shared/journal/SPEC.md` | Journal |
-| `src/shared/items/SPEC.md` | Items |
-| `src/shared/loot/SPEC.md` | Loot |
-| `src/shared/spells/SPEC.md` | Spells |
-| `src/shared/progression/SPEC.md` | XP/level-up |
-| `src/shared/llmUsage/SPEC.md` | Metering |
-| `src/shared/campaignPortability/SPEC.md` | Export/import |
-| `src/shared/sessionRecap/SPEC.md` | Hub recap |
-| `src/shared/weaponModifications/SPEC.md` | Enchantments |
-| `src/shared/rulesDebt/SPEC.md` | Closed rules gaps |
-| `src/shared/rulesHonesty/SPEC.md` | Conditions/homebrew honesty |
-| `src/db/rag/SPEC.md` | RAG |
-| `src/engine/hp/SPEC.md` | HP |
-| `src/engine/startingLoadout/SPEC.md` | Starting gear |
-| `src/engine/raceSelection/SPEC.md` | Races |
-| `src/shared/inCampaignLayout/*_SPEC.md` | Layout / Ask DM / Play UX |
+Historical monolith SPEC paths and their replacements are maintained in
+[`SPEC-INDEX.md`](SPEC-INDEX.md). Do not assume `src/**/SPEC.md` exists in the
+Weaver monorepo; package READMEs, tests, and board epics are the living
+contracts.
 
 ---
 
@@ -557,10 +541,10 @@ Keep or recreate these as the detailed contracts (path = canonical):
 A rebuild is successful when:
 
 1. `npm run dev` supports create → onboard → hub → play → combat → death-mode behavior end-to-end with a configured provider.
-2. Engine/DB/agent/IPC tests + lint + build + deadcode pass; `act` CI green.
+2. Engine/DM/IPC tests + lint + build + deadcode pass; remote CI gate green per the current delivery standards.
 3. Campaign-create contract tests pass with skeleton/labeled-block fixtures.
 4. Electron security baseline unchanged.
-5. `/engine` import boundary intact.
+5. Engine package import boundaries intact.
 6. Multi-PC shared world + per-PC story isolation hold under smoke tests.
 7. Packaging produces runnable Win portable (and optionally NSIS/mac) artifacts.
 
@@ -568,11 +552,11 @@ A rebuild is successful when:
 
 ## 16. Pointers for humans refreshing the tree
 
-- Prefer **copying out** this file + `docs/runbooks/` + `src/**/SPEC.md` + terminology map **before** wiping code.
-- Board history under `/board/done` is archaeology, not required to rebuild — this doc + SPECs replace it.
-- Do not rename package/`appId` if you want updater/install continuity with existing friend installs.
-- If Docker is unavailable, do not claim CI done; run `act` once Docker is up.
+- Prefer copying out this file, [`SPEC-INDEX.md`](SPEC-INDEX.md), package READMEs, `docs/runbooks/`, and relevant `/board` epics before wiping code.
+- Board history under `/board/done` is living archaeology for shipped decisions; use package READMEs and this index for the current map.
+- Do not rename `@weaver/electron-aittrpg` or `com.davgor.weaver.aittrpg` unless intentionally resetting installer/updater continuity.
+- If Docker is unavailable in a desktop session, do not claim local `act` CI done; in cloud sessions use the GitHub PR-check gate instead.
 
 ---
 
-*Generated as a rebuild contract for AI-TTRPG. Prefer updating this file when product invariants change; keep domain SPECs as the deep implementation contracts.*
+*Historical rebuild contract for AI-TTRPG. Prefer updating this file and `SPEC-INDEX.md` when product invariants or package ownership change.*

@@ -11,6 +11,45 @@ import {
   type CatalogSeedHook
 } from './campaignPersistence.js'
 
+const EXPECTED_CAMPAIGN_TABLES = [
+  'campaign_catalog_entries',
+  'campaign_characters',
+  'campaign_meta',
+  'campaign_npcs',
+  'campaign_quests',
+  'character_currency',
+  'character_faction_reputations',
+  'character_inventories',
+  'character_journal_entries',
+  'character_known_actions',
+  'character_locations',
+  'character_log_entries',
+  'character_quest_log',
+  'character_store_meta',
+  'characters',
+  'companions',
+  'dm_npc_opinions',
+  'enemy_token_cache',
+  'faction_relations',
+  'factions',
+  'generated_foes',
+  'item_instances',
+  'item_store_meta',
+  'item_templates',
+  'narration_scene_blocks',
+  'narration_social_lines',
+  'narration_store_meta',
+  'npc_locations',
+  'npc_memories',
+  'npc_opinions',
+  'npcs',
+  'place_inventories',
+  'quest_templates',
+  'schema_migrations',
+  'world_facts',
+  'world_quests'
+]
+
 describe('campaign persistence lifecycle', () => {
   it('creates one SQLite file per campaign and migrates schema stubs', () => {
     withCampaignPath('alpha.sqlite', (filePath) => {
@@ -22,16 +61,9 @@ describe('campaign persistence lifecycle', () => {
         campaignId: 'alpha',
         filePath,
         schemaVersion: CURRENT_CAMPAIGN_SCHEMA_VERSION,
-        appliedMigrations: [1]
+        appliedMigrations: [1, 2, 3, 4, 5]
       })
-      expect(readTableNames(filePath)).toEqual([
-        'campaign_catalog_entries',
-        'campaign_characters',
-        'campaign_meta',
-        'campaign_npcs',
-        'campaign_quests',
-        'schema_migrations'
-      ])
+      expect(readTableNames(filePath).sort()).toEqual([...EXPECTED_CAMPAIGN_TABLES].sort())
     })
   })
 
@@ -44,7 +76,7 @@ describe('campaign persistence lifecycle', () => {
 
       expect(opened.schemaVersion).toBe(CURRENT_CAMPAIGN_SCHEMA_VERSION)
       expect(opened.appliedMigrations).toEqual([])
-      expect(readMigrationVersions(filePath)).toEqual([1])
+      expect(readMigrationVersions(filePath)).toEqual([1, 2, 3, 4, 5])
     })
   })
 })

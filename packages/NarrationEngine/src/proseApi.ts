@@ -11,13 +11,26 @@ import type {
 import { decideSilentResolve } from './silentResolve.js'
 import {
   appendSceneBlock,
-  appendSocialLine,
-  clearNarrationStore,
-  projectScene,
-  projectSocial
+  appendSocialLine
 } from './proseStore.js'
 
-export { clearNarrationStore, projectScene, projectSocial }
+export {
+  appendSceneBlock,
+  appendSocialLine,
+  bindNarrationCampaignStore,
+  clearNarrationStore,
+  createMemoryNarrationProjectionStore,
+  isNarrationCampaignStoreBound,
+  projectScene,
+  projectSocial,
+  unbindNarrationCampaignStore
+} from './proseStore.js'
+export type {
+  AppendSceneBlockInput,
+  AppendSocialLineInput,
+  MemoryNarrationProjectionStoreOptions,
+  NarrationProjectionStore
+} from './proseStore.js'
 
 export function recordPlayerSocial(input: { speakerId: string; text: string }) {
   return appendSocialLine({

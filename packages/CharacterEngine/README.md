@@ -15,6 +15,9 @@ call this package instead of reimplementing the math.
 - **No Electron** - library only; UI shells call through published exports.
 - **No ItemEngine dependency for AC** - equipment flows pass a numeric armor bonus.
 - Consumers that call this package need `*.contract.test.ts` against the real API.
+- Character-scoped records default to in-memory for unit tests. Production play
+  binds SQLite-backed stores through DMEngine `createCampaignSession` /
+  `openCampaignSession` ([106](../../board/done/106-DMEngine-Production-Campaign-Stores.md)).
 
 ## Public API
 

@@ -2,7 +2,17 @@ export type { EnemyEngineApi, EngineEndpoint } from './types.js'
 export type * from './types.js'
 export { getBestiaryEntry, hydrateBestiaryEntry, listBestiary } from './bestiary.js'
 export { assignQuestFoes, generateEncounterFoes, hydrateCombatantFromFoe } from './generation.js'
-export { clearEnemyStore, getGeneratedFoe, listGeneratedFoes, saveGeneratedFoe } from './store.js'
+export {
+  bindEnemyCampaignStore,
+  clearEnemyStore,
+  createMemoryEnemyCampaignStore,
+  getGeneratedFoe,
+  isEnemyCampaignStoreBound,
+  listGeneratedFoes,
+  saveGeneratedFoe,
+  unbindEnemyCampaignStore
+} from './store.js'
+export type { EnemyCampaignStore } from './store.js'
 export { requestCombatToken } from './tokenHook.js'
 
 import { buildEndpoints, health } from './endpoints.js'

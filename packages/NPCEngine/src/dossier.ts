@@ -1,6 +1,6 @@
 import { assertText, NpcEngineError } from './errors.js'
 import { listWorldFactsMentioningNpc } from './memory.js'
-import { requireNpc } from './store.js'
+import { getNpcCampaignStore, requireNpc } from './store.js'
 import type {
   GetNpcDossierInput,
   NpcDossier,
@@ -8,10 +8,8 @@ import type {
   UpsertDmNpcOpinionInput
 } from './types.js'
 
-const dmOpinions = new Map<string, string>()
-
 export function clearDmOpinionStore(): void {
-  dmOpinions.clear()
+  getNpcCampaignStore().clearDmNpcOpinions()
 }
 
 export function upsertDmNpcOpinion(input: UpsertDmNpcOpinionInput): string {
@@ -20,9 +18,7 @@ export function upsertDmNpcOpinion(input: UpsertDmNpcOpinionInput): string {
   assertText(input.text, 'text')
   const npc = requireNpc(input.npcId)
   assertCampaignMatch(npc.campaignId, input.campaignId)
-  const key = dmOpinionKey(input.campaignId, input.npcId)
-  dmOpinions.set(key, input.text)
-  return input.text
+  return getNpcCampaignStore().setDmNpcOpinion(input.campaignId, input.npcId, input.text)
 }
 
 export function getNpcDossier(input: GetNpcDossierInput): NpcDossier {
@@ -56,11 +52,7 @@ function buildTraits(npc: ReturnType<typeof requireNpc>): NpcDossierTraits {
 }
 
 function readDmOpinion(campaignId: string, npcId: string): string | null {
-  return dmOpinions.get(dmOpinionKey(campaignId, npcId)) ?? null
-}
-
-function dmOpinionKey(campaignId: string, npcId: string): string {
-  return `${campaignId}:${npcId}`
+  return getNpcCampaignStore().getDmNpcOpinion(campaignId, npcId) ?? null
 }
 
 function assertCampaignMatch(npcCampaignId: string, requestedCampaignId: string): void {

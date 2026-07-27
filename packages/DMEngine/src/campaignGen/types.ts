@@ -96,7 +96,7 @@ export type CampaignGenerationResult = {
   bestiaryFlavor: string
   storyPremise: string
   quests: WorldQuest[]
-  campaign: Omit<CampaignHandle, 'close'>
+  campaign: Omit<CampaignHandle, 'close' | 'getDb'>
   catalogEntries: CatalogSeedEntry[]
 }
 
@@ -206,6 +206,6 @@ export type GenerationState = {
   bestiaryFlavor?: string
   storyPremise?: string
   quests: WorldQuest[]
-  campaign?: Omit<CampaignHandle, 'close'>
+  campaign?: Omit<CampaignHandle, 'close' | 'getDb'>
   catalogEntries: CatalogSeedEntry[]
 }

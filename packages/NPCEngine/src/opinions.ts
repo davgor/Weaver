@@ -1,33 +1,25 @@
 import { assertText } from './errors.js'
-import { requireNpc } from './store.js'
+import { getNpcCampaignStore, requireNpc } from './store.js'
 import type { NpcOpinion, UpsertNpcOpinionInput } from './types.js'
 
-const opinions = new Map<string, NpcOpinion>()
-
 export function clearOpinionStore(): void {
-  opinions.clear()
+  getNpcCampaignStore().clearNpcOpinions()
 }
 
 export function upsertNpcOpinion(input: UpsertNpcOpinionInput): NpcOpinion {
   requireNpc(input.holderNpcId)
   assertText(input.subjectId, 'subjectId')
-  const opinion = copyOpinion(buildOpinion(input))
-  opinions.set(opinionKey(input.holderNpcId, input.subjectId), opinion)
-  return copyOpinion(opinion)
+  return getNpcCampaignStore().setNpcOpinion(buildOpinion(input))
 }
 
 export function listNpcOpinionsHeldBy(holderNpcId: string): NpcOpinion[] {
   requireNpc(holderNpcId)
-  return [...opinions.values()]
-    .filter((opinion) => opinion.holderNpcId === holderNpcId)
-    .map(copyOpinion)
+  return getNpcCampaignStore().listNpcOpinionsHeldBy(holderNpcId)
 }
 
 export function listNpcOpinionsAbout(subjectId: string): NpcOpinion[] {
   assertText(subjectId, 'subjectId')
-  return [...opinions.values()]
-    .filter((opinion) => opinion.subjectId === subjectId)
-    .map(copyOpinion)
+  return getNpcCampaignStore().listNpcOpinionsAbout(subjectId)
 }
 
 function buildOpinion(input: UpsertNpcOpinionInput): NpcOpinion {
@@ -43,13 +35,3 @@ function buildOpinion(input: UpsertNpcOpinionInput): NpcOpinion {
   }
 }
 
-function opinionKey(holderNpcId: string, subjectId: string): string {
-  return `${holderNpcId}->${subjectId}`
-}
-
-function copyOpinion(opinion: NpcOpinion): NpcOpinion {
-  return {
-    ...opinion,
-    ...(opinion.provenance === undefined ? {} : { provenance: { ...opinion.provenance } })
-  }
-}

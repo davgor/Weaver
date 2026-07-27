@@ -12,6 +12,9 @@ Owns NPC facts: stats, identity keys, spawn/home placement links, **current loca
 - **No Electron**
 - Consumes CivilizationEngine placeholder slots at construction; **current location** uses opaque region/place ids (no World/Regional/Civilization/Dungeon imports for placement validation)
 - Consumers need `*.contract.test.ts` against the real API
+- NPC facts default to in-memory for unit tests. Production play binds SQLite NPC
+  stores (records, memories, factions, locations) via DMEngine campaign sessions
+  ([106](../../board/done/106-DMEngine-Production-Campaign-Stores.md)).
 
 ## Public API (today)
 

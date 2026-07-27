@@ -4,7 +4,18 @@ export { NPC_WORLD_STATUSES } from './types.js'
 export { NpcEngineError } from './errors.js'
 export type { NpcEngineErrorCode } from './errors.js'
 export { constructNpc } from './construction.js'
-export { clearNpcStore, getNpc, listNpcsForCampaign, saveNpc } from './store.js'
+export {
+  bindNpcCampaignStore,
+  clearNpcStore,
+  createMemoryNpcCampaignStore,
+  getNpc,
+  getNpcCampaignStore,
+  isNpcCampaignStoreBound,
+  listNpcsForCampaign,
+  saveNpc,
+  unbindNpcCampaignStore,
+  type NpcCampaignStore
+} from './store.js'
 export { appendNpcMemory, appendWorldFact, listWorldFactsMentioningNpc, queryNpcGroundingContext } from './memory.js'
 export { clearDmOpinionStore, getNpcDossier, upsertDmNpcOpinion } from './dossier.js'
 export { hydrateNpcCombatTier, setNpcDefeatDisposition } from './combatDisposition.js'

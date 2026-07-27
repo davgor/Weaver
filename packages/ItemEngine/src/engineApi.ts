@@ -46,6 +46,7 @@ export type ItemEngineApi = {
   getEquipped: (characterId: string) => EquippedItemViews
   equip: (characterId: string, instanceId: string, slot: EquipmentSlot) => InventorySnapshot
   unequip: (characterId: string, target: string) => InventorySnapshot
+  transferItem: (fromCharacterId: string, toCharacterId: string, instanceId: string) => InventorySnapshot
   getItemInstance: (instanceId: string) => ItemInstance
   applyEnchantment: (instanceId: string, overlay: EnchantmentOverlay) => ItemInstance
   removeEnchantment: (instanceId: string, overlayId: string) => ItemInstance
@@ -64,8 +65,31 @@ export type ItemEngineApi = {
 
 const PACKAGE_NAME = '@weaver/item-engine'
 const VERSION = '0.1.0'
-const singletonService: ItemService = createItemService()
-const singletonCurrency: CurrencyService = createCurrencyService()
+
+export type ItemCampaignStores = {
+  itemService: ItemService
+  currencyService: CurrencyService
+}
+
+let activeItemService: ItemService = createItemService()
+let activeCurrencyService: CurrencyService = createCurrencyService()
+let campaignStoreBound = false
+
+export function bindItemCampaignStores(stores: ItemCampaignStores): void {
+  activeItemService = stores.itemService
+  activeCurrencyService = stores.currencyService
+  campaignStoreBound = true
+}
+
+export function unbindItemCampaignStores(): void {
+  activeItemService = createItemService()
+  activeCurrencyService = createCurrencyService()
+  campaignStoreBound = false
+}
+
+export function isItemCampaignStoreBound(): boolean {
+  return campaignStoreBound
+}
 
 export const itemEngine: ItemEngineApi = {
   id: 'ItemEngine',
@@ -75,69 +99,72 @@ export const itemEngine: ItemEngineApi = {
     return { ok: true, package: PACKAGE_NAME, version: VERSION }
   },
   listEndpoints() {
-    return buildEndpoints(singletonService, singletonCurrency)
+    return buildEndpoints(activeItemService, activeCurrencyService)
   },
   async call(endpoint: string, payload?: unknown) {
-    const match = buildEndpoints(singletonService, singletonCurrency).find((entry) => entry.name === endpoint)
+    const match = buildEndpoints(activeItemService, activeCurrencyService).find((entry) => entry.name === endpoint)
     if (!match) throw new Error(`Unknown endpoint: ${endpoint}`)
     return await match.invoke(payload)
   },
   defineTemplate(template) {
-    return singletonService.defineTemplate(template)
+    return activeItemService.defineTemplate(template)
   },
   getTemplate(templateId) {
-    return singletonService.getTemplate(templateId)
+    return activeItemService.getTemplate(templateId)
   },
   seedItemTemplateCatalog() {
-    return seedItemTemplateCatalog(singletonService)
+    return seedItemTemplateCatalog(activeItemService)
   },
   createInventory(characterId) {
-    return singletonService.createInventory(characterId)
+    return activeItemService.createInventory(characterId)
   },
   addItem(characterId, templateId, state) {
-    return singletonService.addItem(characterId, templateId, state)
+    return activeItemService.addItem(characterId, templateId, state)
   },
   listInventory(characterId) {
-    return singletonService.listInventory(characterId)
+    return activeItemService.listInventory(characterId)
   },
   getEquipped(characterId) {
-    return singletonService.getEquipped(characterId)
+    return activeItemService.getEquipped(characterId)
   },
   equip(characterId, instanceId, slot) {
-    return singletonService.equip(characterId, instanceId, slot)
+    return activeItemService.equip(characterId, instanceId, slot)
   },
   unequip(characterId, target) {
-    return singletonService.unequip(characterId, target)
+    return activeItemService.unequip(characterId, target)
+  },
+  transferItem(fromCharacterId, toCharacterId, instanceId) {
+    return activeItemService.transferItem(fromCharacterId, toCharacterId, instanceId)
   },
   getItemInstance(instanceId) {
-    return singletonService.getItemInstance(instanceId)
+    return activeItemService.getItemInstance(instanceId)
   },
   applyEnchantment(instanceId, overlay) {
-    return singletonService.applyEnchantment(instanceId, overlay)
+    return activeItemService.applyEnchantment(instanceId, overlay)
   },
   removeEnchantment(instanceId, overlayId) {
-    return singletonService.removeEnchantment(instanceId, overlayId)
+    return activeItemService.removeEnchantment(instanceId, overlayId)
   },
   getWeaponDamageProfile(instanceId) {
-    return singletonService.getWeaponDamageProfile(instanceId)
+    return activeItemService.getWeaponDamageProfile(instanceId)
   },
   credit(characterId, amount) {
-    return singletonCurrency.credit(characterId, amount)
+    return activeCurrencyService.credit(characterId, amount)
   },
   debit(characterId, amount) {
-    return singletonCurrency.debit(characterId, amount)
+    return activeCurrencyService.debit(characterId, amount)
   },
   getBalance(characterId) {
-    return singletonCurrency.getBalance(characterId)
+    return activeCurrencyService.getBalance(characterId)
   },
   clampProposedPrice(proposed, opts) {
     return clampProposedPrice(proposed, opts)
   },
   snapshotCampaignBalances(characterIds) {
-    return singletonCurrency.snapshotBalances(characterIds)
+    return activeCurrencyService.snapshotBalances(characterIds)
   },
   restoreCampaignBalances(balances) {
-    singletonCurrency.restoreBalances(balances)
+    activeCurrencyService.restoreBalances(balances)
   },
   generateLoot(request) {
     return generateLoot(request)

@@ -11,6 +11,9 @@ Owns item definitions, mutations, and inventory-facing item APIs. Combat, DM, an
 - **LLM-free** — deterministic item construction/mutation
 - **No Electron**
 - Consumers need `*.contract.test.ts` against the real API
+- Engine-local services default to in-memory for unit tests. Production play binds
+  SQLite item/currency stores via DMEngine campaign sessions
+  ([106](../../board/done/106-DMEngine-Production-Campaign-Stores.md)).
 
 ## Status
 
@@ -121,10 +124,10 @@ Electron modules.
 
 | Epic | Intent |
 |------|--------|
-| [033](../../board/in-progress/033-ItemEngine-Currency-And-Economy.md) | Implemented: single-currency debit/credit + DM-proposed price clamps |
-| [034](../../board/backlog/034-ItemEngine-Weapon-Enchantments-And-Damage-Types.md) | Weapon enchantment overlays, multi-type damage |
-| [035](../../board/in-progress/035-ItemEngine-Loot-Generation.md) | Implemented: encounter/quest loot tables |
-| [036](../../board/in-progress/036-ItemEngine-Starting-Gear-Catalog.md) | Implemented: archetype starting-loadout catalog |
+| [033](../../board/done/033-ItemEngine-Currency-And-Economy.md) | Implemented: single-currency debit/credit + DM-proposed price clamps |
+| [034](../../board/done/034-ItemEngine-Weapon-Enchantments-And-Damage-Types.md) | Weapon enchantment overlays, multi-type damage |
+| [035](../../board/done/035-ItemEngine-Loot-Generation.md) | Implemented: encounter/quest loot tables |
+| [036](../../board/done/036-ItemEngine-Starting-Gear-Catalog.md) | Implemented: archetype starting-loadout catalog |
 
 ## Scripts
 

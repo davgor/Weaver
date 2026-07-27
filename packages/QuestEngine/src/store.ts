@@ -10,8 +10,58 @@ import {
   type WorldQuest
 } from './types.js'
 
-const templates = new Map<string, QuestTemplate>()
-const worldQuests = new Map<string, WorldQuest>()
+export type QuestCampaignStore = {
+  saveQuestTemplate: (template: QuestTemplate) => QuestTemplate
+  getQuestTemplate: (templateId: string) => QuestTemplate | undefined
+  listQuestTemplates: () => QuestTemplate[]
+  putWorldQuest: (quest: WorldQuest) => WorldQuest
+  getWorldQuest: (questId: string) => WorldQuest | undefined
+  listWorldQuests: (campaignId?: string) => WorldQuest[]
+  deleteWorldQuest: (questId: string) => boolean
+  clearWorldQuestsForCampaign: (campaignId: string) => number
+  clearQuestStores: () => void
+}
+
+let activeStore: QuestCampaignStore = createMemoryQuestCampaignStore()
+let campaignBound = false
+
+export function createMemoryQuestCampaignStore(): QuestCampaignStore {
+  const templates = new Map<string, QuestTemplate>()
+  const worldQuests = new Map<string, WorldQuest>()
+
+  return {
+    saveQuestTemplate(template) {
+      templates.set(template.templateId, copyTemplate(template))
+      return copyTemplate(template)
+    },
+    getQuestTemplate(templateId) {
+      const template = templates.get(templateId)
+      return template === undefined ? undefined : copyTemplate(template)
+    },
+    listQuestTemplates() {
+      return [...templates.values()].map(copyTemplate).sort(templateSort)
+    },
+    putWorldQuest(quest) {
+      worldQuests.set(quest.questId, copyWorldQuest(quest))
+      return copyWorldQuest(quest)
+    },
+    getWorldQuest(questId) {
+      const quest = worldQuests.get(questId)
+      return quest === undefined ? undefined : copyWorldQuest(quest)
+    },
+    listWorldQuests(campaignId) {
+      return filteredWorldQuests([...worldQuests.values()], campaignId)
+    },
+    deleteWorldQuest: (questId) => worldQuests.delete(questId),
+    clearWorldQuestsForCampaign(campaignId) {
+      return deleteWorldQuestsForCampaign(worldQuests, campaignId)
+    },
+    clearQuestStores() {
+      templates.clear()
+      worldQuests.clear()
+    }
+  }
+}
 
 export function defineQuestTemplate(input: DefineQuestTemplateInput): QuestTemplate {
   assertNonEmpty(input.templateId, 'templateId')
@@ -25,50 +75,36 @@ export function defineQuestTemplate(input: DefineQuestTemplateInput): QuestTempl
     ...(input.title === undefined ? {} : { title: input.title }),
     ...(input.brief === undefined ? {} : { brief: input.brief })
   }
-  templates.set(template.templateId, copyTemplate(template))
-  return copyTemplate(template)
+  return activeStore.saveQuestTemplate(template)
 }
 
 export function getQuestTemplate(templateId: string): QuestTemplate | undefined {
-  const template = templates.get(templateId)
-  return template === undefined ? undefined : copyTemplate(template)
+  return activeStore.getQuestTemplate(templateId)
 }
 
 export function listQuestTemplates(): QuestTemplate[] {
-  return [...templates.values()].map(copyTemplate).sort((a, b) => a.templateId.localeCompare(b.templateId))
+  return activeStore.listQuestTemplates()
 }
 
 export function putWorldQuest(quest: WorldQuest): WorldQuest {
   const validated = validateWorldQuest(quest)
-  worldQuests.set(validated.questId, validated)
-  return copyWorldQuest(validated)
+  return activeStore.putWorldQuest(validated)
 }
 
 export function getWorldQuest(questId: string): WorldQuest | undefined {
-  const quest = worldQuests.get(questId)
-  return quest === undefined ? undefined : copyWorldQuest(quest)
+  return activeStore.getWorldQuest(questId)
 }
 
 export function listWorldQuests(campaignId?: string): WorldQuest[] {
-  const records = [...worldQuests.values()].map(copyWorldQuest)
-  const filtered =
-    campaignId === undefined
-      ? records
-      : records.filter((quest) => quest.campaignId === campaignId)
-  return filtered.sort((a, b) => a.questId.localeCompare(b.questId))
+  return activeStore.listWorldQuests(campaignId)
 }
 
 export function deleteWorldQuest(questId: string): boolean {
-  return worldQuests.delete(questId)
+  return activeStore.deleteWorldQuest(questId)
 }
 
 export function clearWorldQuestsForCampaign(campaignId: string): number {
-  let cleared = 0
-  for (const quest of listWorldQuests(campaignId)) {
-    worldQuests.delete(quest.questId)
-    cleared += 1
-  }
-  return cleared
+  return activeStore.clearWorldQuestsForCampaign(campaignId)
 }
 
 export function restoreWorldQuests(quests: readonly WorldQuest[]): void {
@@ -78,8 +114,21 @@ export function restoreWorldQuests(quests: readonly WorldQuest[]): void {
 }
 
 export function clearQuestStores(): void {
-  templates.clear()
-  worldQuests.clear()
+  activeStore.clearQuestStores()
+}
+
+export function bindQuestCampaignStore(store: QuestCampaignStore): void {
+  activeStore = store
+  campaignBound = true
+}
+
+export function unbindQuestCampaignStore(): void {
+  activeStore = createMemoryQuestCampaignStore()
+  campaignBound = false
+}
+
+export function isQuestCampaignStoreBound(): boolean {
+  return campaignBound
 }
 
 export function validateObjectiveRefs(
@@ -192,4 +241,33 @@ function copyWorldQuest(quest: WorldQuest): WorldQuest {
     ...(quest.title === undefined ? {} : { title: quest.title }),
     ...(quest.brief === undefined ? {} : { brief: quest.brief })
   }
+}
+
+function templateSort(left: QuestTemplate, right: QuestTemplate): number {
+  return left.templateId.localeCompare(right.templateId)
+}
+
+function questSort(left: WorldQuest, right: WorldQuest): number {
+  return left.questId.localeCompare(right.questId)
+}
+
+function filteredWorldQuests(
+  quests: readonly WorldQuest[],
+  campaignId: string | undefined
+): WorldQuest[] {
+  const copies = quests.map(copyWorldQuest)
+  const filtered = campaignId === undefined ? copies : copies.filter((quest) => quest.campaignId === campaignId)
+  return filtered.sort(questSort)
+}
+
+function deleteWorldQuestsForCampaign(
+  worldQuests: Map<string, WorldQuest>,
+  campaignId: string
+): number {
+  let cleared = 0
+  for (const quest of filteredWorldQuests([...worldQuests.values()], campaignId)) {
+    worldQuests.delete(quest.questId)
+    cleared += 1
+  }
+  return cleared
 }
