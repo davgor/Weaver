@@ -1,4 +1,5 @@
 import { getArchetype, isArchetypeId, type ArchetypeId } from './archetypes.js'
+import { getCharacterFactStore } from './campaignFactStore.js'
 import { CharacterEngineError } from './errors.js'
 import { persistCharacterMaxHp } from './hp.js'
 import { selectStartingLoadout, getCharacterStartingLoadout } from './startingLoadout.js'
@@ -23,15 +24,10 @@ export type CreateCompanionInput = {
   level?: number
 }
 
-const companionRecords = new Map<string, CompanionRecord>()
-const companionsByOwner = new Map<string, string[]>()
-const onboardingStatus = new Map<string, CompanionOnboardingStatus>()
-let nextCompanionId = 1
-
 export function getCompanionOnboardingStatus(
   ownerCharacterId: string
 ): CompanionOnboardingStatus | undefined {
-  const explicit = onboardingStatus.get(ownerCharacterId)
+  const explicit = getCharacterFactStore().getOnboardingStatus(ownerCharacterId)
   if (explicit !== undefined) {
     return explicit
   }
@@ -43,15 +39,16 @@ export function getCompanionOnboardingStatus(
 
 export function markCompanionOnboardingPending(ownerCharacterId: string): CompanionOnboardingStatus {
   assertNonEmpty(ownerCharacterId, 'ownerCharacterId')
-  if (!onboardingStatus.has(ownerCharacterId)) {
-    onboardingStatus.set(ownerCharacterId, 'pending')
+  const store = getCharacterFactStore()
+  if (store.getOnboardingStatus(ownerCharacterId) === undefined) {
+    store.setOnboardingStatus(ownerCharacterId, 'pending')
   }
-  return onboardingStatus.get(ownerCharacterId)!
+  return store.getOnboardingStatus(ownerCharacterId)!
 }
 
 export function skipCompanionCreation(ownerCharacterId: string): CompanionOnboardingStatus {
   assertOwnerReadyForCompanionStep(ownerCharacterId)
-  onboardingStatus.set(ownerCharacterId, 'skipped')
+  getCharacterFactStore().setOnboardingStatus(ownerCharacterId, 'skipped')
   return 'skipped'
 }
 
@@ -61,7 +58,7 @@ export function createCompanion(input: CreateCompanionInput): CompanionRecord {
   const archetype = getArchetype(input.archetype)
   const level = input.level ?? 1
   const bodyMod = input.bodyMod ?? 0
-  const characterId = createCompanionId()
+  const characterId = getCharacterFactStore().allocateCompanionId()
   const record: CompanionRecord = {
     characterId,
     ownerCharacterId: input.ownerCharacterId,
@@ -70,8 +67,7 @@ export function createCompanion(input: CreateCompanionInput): CompanionRecord {
     isCompanion: true,
     archetype: input.archetype
   }
-  companionRecords.set(characterId, record)
-  appendCompanionForOwner(input.ownerCharacterId, characterId)
+  getCharacterFactStore().setCompanion(record)
   selectStartingLoadout(characterId, input.archetype, level)
   persistCharacterMaxHp({
     characterId,
@@ -79,57 +75,40 @@ export function createCompanion(input: CreateCompanionInput): CompanionRecord {
     level,
     bodyMod
   })
-  onboardingStatus.set(input.ownerCharacterId, 'completed')
+  getCharacterFactStore().setOnboardingStatus(input.ownerCharacterId, 'completed')
   return copyCompanion(record)
 }
 
 export function listCompanions(ownerCharacterId: string): CompanionRecord[] {
   assertNonEmpty(ownerCharacterId, 'ownerCharacterId')
-  const ids = companionsByOwner.get(ownerCharacterId) ?? []
-  return ids.map((id) => copyCompanion(requireCompanion(id)))
+  const store = getCharacterFactStore()
+  return store.listCompanionIdsForOwner(ownerCharacterId).map((id) => copyCompanion(requireCompanion(id)))
 }
 
 export function getCompanion(characterId: string): CompanionRecord | undefined {
-  const record = companionRecords.get(characterId)
+  const record = getCharacterFactStore().getCompanion(characterId)
   return record === undefined ? undefined : copyCompanion(record)
 }
 
 export function isCompanionCharacter(characterId: string): boolean {
-  return companionRecords.has(characterId)
+  return getCharacterFactStore().getCompanion(characterId) !== undefined
 }
 
 export function clearCompanionStore(): void {
-  companionRecords.clear()
-  companionsByOwner.clear()
-  onboardingStatus.clear()
-  nextCompanionId = 1
+  getCharacterFactStore().clearCompanions()
 }
 
 export function listCompanionsForCampaign(campaignId: string): CompanionRecord[] {
-  return [...companionRecords.values()]
-    .filter((record) => record.campaignId === campaignId)
-    .map(copyCompanion)
+  return getCharacterFactStore().listCompanionsForCampaign(campaignId).map(copyCompanion)
 }
 
 export function clearCompanionsForCampaign(campaignId: string): void {
-  for (const record of listCompanionsForCampaign(campaignId)) {
-    companionRecords.delete(record.characterId)
-    for (const [ownerId, companionIds] of companionsByOwner.entries()) {
-      companionsByOwner.set(
-        ownerId,
-        companionIds.filter((companionId) => companionId !== record.characterId)
-      )
-    }
-  }
+  getCharacterFactStore().clearCompanionsForCampaign(campaignId)
 }
 
 export function restoreCompanionsForCampaign(records: readonly CompanionRecord[]): void {
   for (const record of records) {
-    companionRecords.set(record.characterId, copyCompanion(record))
-    const existing = companionsByOwner.get(record.ownerCharacterId) ?? []
-    if (!existing.includes(record.characterId)) {
-      companionsByOwner.set(record.ownerCharacterId, [...existing, record.characterId])
-    }
+    getCharacterFactStore().setCompanion(copyCompanion(record))
   }
 }
 
@@ -154,22 +133,11 @@ function assertOwnerReadyForCompanionStep(ownerCharacterId: string): void {
 }
 
 function requireCompanion(characterId: string): CompanionRecord {
-  const record = companionRecords.get(characterId)
+  const record = getCharacterFactStore().getCompanion(characterId)
   if (record === undefined) {
     throw new CharacterEngineError('COMPANION_NOT_FOUND', `Unknown companion: ${characterId}`)
   }
   return record
-}
-
-function appendCompanionForOwner(ownerCharacterId: string, characterId: string): void {
-  const existing = companionsByOwner.get(ownerCharacterId) ?? []
-  companionsByOwner.set(ownerCharacterId, [...existing, characterId])
-}
-
-function createCompanionId(): string {
-  const id = `companion-${nextCompanionId}`
-  nextCompanionId += 1
-  return id
 }
 
 function copyCompanion(record: CompanionRecord): CompanionRecord {

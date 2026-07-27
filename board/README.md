@@ -41,6 +41,10 @@ Before picking a ticket without an id already named for you, read [`IMPLEMENTATI
 
 If a ticket’s stated dependency isn’t actually done yet (stale `IMPLEMENTATION-ORDER.md`, or a dependency someone forgot to update), stop and say so rather than improvising a stand-in for the missing piece — see `complete-ticket` §2.
 
+## Phase 2 production hardening
+
+Epics `106`–`117` are the Phase 2 production-hardening wave: production campaign stores, durable live play/onboarding/hub flows, full portability slices, production character/NPC UI, live RAG/context wiring, destination/weather/quest/proxy play integration, live population, and documentation reconciliation. Use [`IMPLEMENTATION-ORDER.md`](IMPLEMENTATION-ORDER.md) rather than numeric order; several Phase 2 epics depend on the campaign-store path landing first.
+
 ## Agent workflow
 
 - **Always** create/update a ticket for implementation work (never ask whether to skip).

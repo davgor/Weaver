@@ -175,7 +175,7 @@ function regionalReader(
   }
 }
 
-function closeAndSummarize(handle: CampaignHandle): Omit<CampaignHandle, 'close'> {
+function closeAndSummarize(handle: CampaignHandle): Omit<CampaignHandle, 'close' | 'getDb'> {
   try {
     return {
       campaignId: handle.campaignId,

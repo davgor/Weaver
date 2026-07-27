@@ -30,6 +30,8 @@ export type CampaignHandle = {
   schemaVersion: number
   appliedMigrations: number[]
   close: () => void
+  /** Internal: repository adapters only. Not for Electron/renderer. */
+  getDb: () => SqliteDatabase
 }
 
 export type CatalogSeedEntry = {
@@ -174,6 +176,12 @@ function buildHandle(
     filePath: options.filePath,
     schemaVersion: result.targetVersion,
     appliedMigrations: result.appliedVersions,
+    getDb() {
+      if (closed) {
+        throw new Error('Campaign database is closed')
+      }
+      return db
+    },
     close() {
       if (!closed) {
         db.close()

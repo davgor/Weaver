@@ -1,5 +1,5 @@
 import { NpcEngineError } from './errors.js'
-import { addNpcFaction, requireNpc } from './store.js'
+import { addNpcFaction, getNpcCampaignStore, requireNpc } from './store.js'
 import type {
   AddNpcToFactionInput,
   CreateFactionInput,
@@ -11,20 +11,15 @@ import type {
   UpdateReputationInput
 } from './types.js'
 
-const factions = new Map<string, FactionRecord>()
-const relations = new Map<string, FactionRelation>()
-const reputations = new Map<string, ReputationStanding>()
-
 export function clearFactionStore(): void {
-  factions.clear()
-  relations.clear()
-  reputations.clear()
+  getNpcCampaignStore().clearFactions()
+  getNpcCampaignStore().clearFactionRelations()
+  getNpcCampaignStore().clearReputations()
 }
 
 export function createFaction(input: CreateFactionInput): FactionRecord {
   const faction = { factionId: input.factionId, name: input.name, memberships: [] }
-  factions.set(input.factionId, faction)
-  return copyFaction(faction)
+  return getNpcCampaignStore().setFaction(faction)
 }
 
 export function addNpcToFaction(input: AddNpcToFactionInput): FactionRecord {
@@ -32,7 +27,7 @@ export function addNpcToFaction(input: AddNpcToFactionInput): FactionRecord {
   requireNpc(input.npcId)
   const memberships = mergeMembership(faction.memberships, input)
   const updated = { ...faction, memberships }
-  factions.set(input.factionId, updated)
+  getNpcCampaignStore().setFaction(updated)
   addNpcFaction(input.npcId, input.factionId)
   return copyFaction(updated)
 }
@@ -41,8 +36,8 @@ export function setFactionRelation(input: SetFactionRelationInput): FactionRelat
   requireFaction(input.sourceFactionId)
   requireFaction(input.targetFactionId)
   const relation = { ...input }
-  relations.set(relationKey(input.sourceFactionId, input.targetFactionId), relation)
-  relations.set(relationKey(input.targetFactionId, input.sourceFactionId), reverseRelation(relation))
+  getNpcCampaignStore().setFactionRelation(relation)
+  getNpcCampaignStore().setFactionRelation(reverseRelation(relation))
   return { ...relation }
 }
 
@@ -50,38 +45,33 @@ export function getFactionRelation(
   sourceFactionId: string,
   targetFactionId: string
 ): FactionRelation | undefined {
-  const relation = relations.get(relationKey(sourceFactionId, targetFactionId))
-  return relation === undefined ? undefined : { ...relation }
+  return getNpcCampaignStore().getFactionRelation(sourceFactionId, targetFactionId)
 }
 
 export function updateReputation(input: UpdateReputationInput): ReputationStanding {
   requireFaction(input.factionId)
-  const current = reputations.get(reputationKey(input.characterId, input.factionId))
+  const current = getNpcCampaignStore().getReputation(input.characterId, input.factionId)
   const standing = buildStanding(input, current)
-  reputations.set(reputationKey(input.characterId, input.factionId), standing)
-  return copyStanding(standing)
+  return getNpcCampaignStore().setReputation(standing)
 }
 
 export function getReputationStanding(
   characterId: string,
   factionId: string
 ): ReputationStanding | undefined {
-  const standing = reputations.get(reputationKey(characterId, factionId))
-  return standing === undefined ? undefined : copyStanding(standing)
+  return getNpcCampaignStore().getReputation(characterId, factionId)
 }
 
 export function listCharacterReputationStandings(characterId: string): ReputationStanding[] {
-  return [...reputations.values()]
-    .filter((standing) => standing.characterId === characterId)
-    .map(copyStanding)
+  return getNpcCampaignStore().listReputationsForCharacter(characterId)
 }
 
 function requireFaction(factionId: string): FactionRecord {
-  const faction = factions.get(factionId)
+  const faction = getNpcCampaignStore().getFaction(factionId)
   if (faction === undefined) {
     throw new NpcEngineError('FACTION_NOT_FOUND', `Faction not found: ${factionId}`)
   }
-  return copyFaction(faction)
+  return faction
 }
 
 function mergeMembership(
@@ -116,26 +106,9 @@ function reverseRelation(relation: FactionRelation): FactionRelation {
   }
 }
 
-function relationKey(sourceFactionId: string, targetFactionId: string): string {
-  return `${sourceFactionId}->${targetFactionId}`
-}
-
-function reputationKey(characterId: string, factionId: string): string {
-  return `${characterId}->${factionId}`
-}
-
 function copyFaction(faction: FactionRecord): FactionRecord {
   return {
     ...faction,
     memberships: faction.memberships.map((membership) => ({ ...membership }))
-  }
-}
-
-function copyStanding(standing: ReputationStanding): ReputationStanding {
-  return {
-    ...standing,
-    ...(standing.lastProvenance === undefined
-      ? {}
-      : { lastProvenance: { ...standing.lastProvenance } })
   }
 }

@@ -267,6 +267,18 @@ function inventoryMutationEndpoints(service: ItemService): EngineEndpoint[] {
       }
     },
     {
+      name: 'transferItem',
+      description: 'Move one item instance from one character inventory to another',
+      invoke: (payload) => {
+        const body = asRecord(payload)
+        return service.transferItem(
+          requireString(body, 'fromCharacterId'),
+          requireString(body, 'toCharacterId'),
+          requireString(body, 'instanceId')
+        )
+      }
+    },
+    {
       name: 'getItemInstance',
       description: 'Return one item instance by id',
       invoke: (payload) => service.getItemInstance(requireString(asRecord(payload), 'instanceId'))

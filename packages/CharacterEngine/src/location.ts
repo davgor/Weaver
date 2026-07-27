@@ -1,3 +1,4 @@
+import { getCharacterFactStore } from './campaignFactStore.js'
 import { CharacterEngineError } from './errors.js'
 import { getCampaignDay } from './timeRest.js'
 
@@ -23,8 +24,6 @@ export type SetCharacterLocationInput = {
   /** When omitted, stamped from the campaign day counter. */
   updatedDay?: number
 }
-
-const locations = new Map<string, CharacterLocation>()
 
 export function isLocationKind(value: unknown): value is LocationKind {
   return typeof value === 'string' && LOCATION_KINDS.some((kind) => kind === value)
@@ -59,41 +58,34 @@ export function setCharacterLocation(input: SetCharacterLocationInput): Characte
     updatedDay,
     ...(input.placeId === undefined ? {} : { placeId: input.placeId })
   })
-  locations.set(record.characterId, record)
+  getCharacterFactStore().setLocation(record)
   return copyLocation(record)
 }
 
 export function getCharacterLocation(characterId: string): CharacterLocation | null {
-  const record = locations.get(characterId)
+  const record = getCharacterFactStore().getLocation(characterId)
   return record === undefined ? null : copyLocation(record)
 }
 
 export function clearCharacterLocation(characterId: string): boolean {
-  return locations.delete(characterId)
+  return getCharacterFactStore().deleteLocation(characterId)
 }
 
 export function listCharacterLocations(campaignId?: string): CharacterLocation[] {
-  const records = [...locations.values()].map(copyLocation)
-  if (campaignId === undefined) {
-    return records.sort(byCharacterId)
-  }
-  return records.filter((record) => record.campaignId === campaignId).sort(byCharacterId)
+  return getCharacterFactStore().listLocations(campaignId).map(copyLocation)
 }
 
 export function clearCharacterLocationStore(): void {
-  locations.clear()
+  getCharacterFactStore().clearLocations()
 }
 
 export function clearCharacterLocationsForCampaign(campaignId: string): void {
-  for (const record of listCharacterLocations(campaignId)) {
-    locations.delete(record.characterId)
-  }
+  getCharacterFactStore().clearLocationsForCampaign(campaignId)
 }
 
 export function restoreCharacterLocations(records: readonly CharacterLocation[]): void {
   for (const record of records) {
-    const validated = validateCharacterLocation(record)
-    locations.set(validated.characterId, validated)
+    getCharacterFactStore().setLocation(validateCharacterLocation(record))
   }
 }
 
@@ -106,10 +98,6 @@ function copyLocation(record: CharacterLocation): CharacterLocation {
     ...(record.placeId === undefined ? {} : { placeId: record.placeId }),
     ...(record.updatedDay === undefined ? {} : { updatedDay: record.updatedDay })
   }
-}
-
-function byCharacterId(left: CharacterLocation, right: CharacterLocation): number {
-  return left.characterId.localeCompare(right.characterId)
 }
 
 function assertNonEmpty(value: string, label: string): void {

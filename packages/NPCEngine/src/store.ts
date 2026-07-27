@@ -1,34 +1,318 @@
 import { NpcEngineError } from './errors.js'
-import { clearNpcLocation, clearNpcLocationStore } from './location.js'
-import type { NpcMemory, NpcPortrait, NpcRecord, SpeakingStyle, WorldFact } from './types.js'
+import type { NpcLocation } from './location.js'
+import type {
+  FactionRecord,
+  FactionRelation,
+  NpcMemory,
+  NpcOpinion,
+  NpcPortrait,
+  NpcRecord,
+  ReputationStanding,
+  SpeakingStyle,
+  WorldFact
+} from './types.js'
 
-const npcs = new Map<string, NpcRecord>()
-const memories = new Map<string, NpcMemory[]>()
-const worldFacts = new Map<string, WorldFact>()
+export type NpcCampaignStore = {
+  getNpc: (npcId: string) => NpcRecord | undefined
+  setNpc: (npc: NpcRecord) => NpcRecord
+  deleteNpc: (npcId: string) => boolean
+  listNpcsForCampaign: (campaignId: string) => NpcRecord[]
+  clearNpcs: () => void
+  clearNpcsForCampaign: (campaignId: string) => void
+
+  appendMemory: (memory: NpcMemory) => NpcMemory
+  listMemories: (npcId: string) => NpcMemory[]
+  clearMemories: () => void
+  clearMemoriesForNpc: (npcId: string) => void
+
+  setWorldFact: (fact: WorldFact) => WorldFact
+  listWorldFacts: () => WorldFact[]
+  clearWorldFacts: () => void
+
+  getFaction: (factionId: string) => FactionRecord | undefined
+  setFaction: (faction: FactionRecord) => FactionRecord
+  clearFactions: () => void
+
+  getFactionRelation: (sourceFactionId: string, targetFactionId: string) => FactionRelation | undefined
+  setFactionRelation: (relation: FactionRelation) => FactionRelation
+  clearFactionRelations: () => void
+
+  getReputation: (characterId: string, factionId: string) => ReputationStanding | undefined
+  setReputation: (standing: ReputationStanding) => ReputationStanding
+  listReputationsForCharacter: (characterId: string) => ReputationStanding[]
+  clearReputations: () => void
+
+  setNpcOpinion: (opinion: NpcOpinion) => NpcOpinion
+  listNpcOpinionsHeldBy: (holderNpcId: string) => NpcOpinion[]
+  listNpcOpinionsAbout: (subjectId: string) => NpcOpinion[]
+  clearNpcOpinions: () => void
+
+  setDmNpcOpinion: (campaignId: string, npcId: string, text: string) => string
+  getDmNpcOpinion: (campaignId: string, npcId: string) => string | undefined
+  clearDmNpcOpinions: () => void
+
+  getLocation: (npcId: string) => NpcLocation | undefined
+  setLocation: (location: NpcLocation) => NpcLocation
+  deleteLocation: (npcId: string) => boolean
+  listLocations: (campaignId?: string) => NpcLocation[]
+  clearLocations: () => void
+  clearLocationsForCampaign: (campaignId: string) => void
+}
+
+let activeStore: NpcCampaignStore = createMemoryNpcCampaignStore()
+let campaignBound = false
+
+type MemoryNpcCampaignStoreMaps = {
+  npcs: Map<string, NpcRecord>
+  memories: Map<string, NpcMemory[]>
+  worldFacts: Map<string, WorldFact>
+  factions: Map<string, FactionRecord>
+  relations: Map<string, FactionRelation>
+  reputations: Map<string, ReputationStanding>
+  opinions: Map<string, NpcOpinion>
+  dmOpinions: Map<string, string>
+  locations: Map<string, NpcLocation>
+}
+
+export function createMemoryNpcCampaignStore(): NpcCampaignStore {
+  const maps: MemoryNpcCampaignStoreMaps = {
+    npcs: new Map<string, NpcRecord>(),
+    memories: new Map<string, NpcMemory[]>(),
+    worldFacts: new Map<string, WorldFact>(),
+    factions: new Map<string, FactionRecord>(),
+    relations: new Map<string, FactionRelation>(),
+    reputations: new Map<string, ReputationStanding>(),
+    opinions: new Map<string, NpcOpinion>(),
+    dmOpinions: new Map<string, string>(),
+    locations: new Map<string, NpcLocation>()
+  }
+  return {
+    ...createNpcRecordMemoryStore(maps),
+    ...createWorldFactMemoryStore(maps),
+    ...createFactionMemoryStore(maps),
+    ...createReputationMemoryStore(maps),
+    ...createOpinionMemoryStore(maps),
+    ...createLocationMemoryStore(maps)
+  }
+}
+
+function createNpcRecordMemoryStore(
+  maps: MemoryNpcCampaignStoreMaps
+): Pick<
+  NpcCampaignStore,
+  | 'getNpc'
+  | 'setNpc'
+  | 'deleteNpc'
+  | 'listNpcsForCampaign'
+  | 'clearNpcs'
+  | 'clearNpcsForCampaign'
+  | 'appendMemory'
+  | 'listMemories'
+  | 'clearMemories'
+  | 'clearMemoriesForNpc'
+> {
+  return {
+    getNpc: (npcId) => copyOptional(maps.npcs.get(npcId), copyNpc),
+    setNpc: (npc) => {
+      maps.npcs.set(npc.npcId, copyNpc(npc))
+      return copyNpc(npc)
+    },
+    deleteNpc: (npcId) => maps.npcs.delete(npcId),
+    listNpcsForCampaign: (campaignId) =>
+      [...maps.npcs.values()].filter((npc) => npc.campaignId === campaignId).map(copyNpc),
+    clearNpcs: () => {
+      maps.npcs.clear()
+    },
+    clearNpcsForCampaign: (campaignId) => {
+      for (const npc of maps.npcs.values()) {
+        if (npc.campaignId === campaignId) {
+          maps.npcs.delete(npc.npcId)
+        }
+      }
+    },
+    appendMemory: (memory) => {
+      const entries = maps.memories.get(memory.npcId) ?? []
+      const nextMemory = copyMemory(memory)
+      maps.memories.set(memory.npcId, [...entries, nextMemory])
+      return copyMemory(nextMemory)
+    },
+    listMemories: (npcId) => (maps.memories.get(npcId) ?? []).map(copyMemory),
+    clearMemories: () => {
+      maps.memories.clear()
+    },
+    clearMemoriesForNpc: (npcId) => {
+      maps.memories.delete(npcId)
+    }
+  }
+}
+
+function createWorldFactMemoryStore(
+  maps: MemoryNpcCampaignStoreMaps
+): Pick<NpcCampaignStore, 'setWorldFact' | 'listWorldFacts' | 'clearWorldFacts'> {
+  return {
+    setWorldFact: (fact) => {
+      maps.worldFacts.set(fact.factId, copyWorldFact(fact))
+      return copyWorldFact(fact)
+    },
+    listWorldFacts: () => [...maps.worldFacts.values()].map(copyWorldFact),
+    clearWorldFacts: () => {
+      maps.worldFacts.clear()
+    }
+  }
+}
+
+function createFactionMemoryStore(
+  maps: MemoryNpcCampaignStoreMaps
+): Pick<
+  NpcCampaignStore,
+  | 'getFaction'
+  | 'setFaction'
+  | 'clearFactions'
+  | 'getFactionRelation'
+  | 'setFactionRelation'
+  | 'clearFactionRelations'
+> {
+  return {
+    getFaction: (factionId) => copyOptional(maps.factions.get(factionId), copyFaction),
+    setFaction: (faction) => {
+      maps.factions.set(faction.factionId, copyFaction(faction))
+      return copyFaction(faction)
+    },
+    clearFactions: () => {
+      maps.factions.clear()
+    },
+    getFactionRelation: (sourceFactionId, targetFactionId) =>
+      copyOptional(maps.relations.get(relationKey(sourceFactionId, targetFactionId)), copyRelation),
+    setFactionRelation: (relation) => {
+      const key = relationKey(relation.sourceFactionId, relation.targetFactionId)
+      maps.relations.set(key, copyRelation(relation))
+      return copyRelation(relation)
+    },
+    clearFactionRelations: () => {
+      maps.relations.clear()
+    }
+  }
+}
+
+function createReputationMemoryStore(
+  maps: MemoryNpcCampaignStoreMaps
+): Pick<
+  NpcCampaignStore,
+  'getReputation' | 'setReputation' | 'listReputationsForCharacter' | 'clearReputations'
+> {
+  return {
+    getReputation: (characterId, factionId) =>
+      copyOptional(maps.reputations.get(reputationKey(characterId, factionId)), copyStanding),
+    setReputation: (standing) => {
+      maps.reputations.set(
+        reputationKey(standing.characterId, standing.factionId),
+        copyStanding(standing)
+      )
+      return copyStanding(standing)
+    },
+    listReputationsForCharacter: (characterId) =>
+      [...maps.reputations.values()]
+        .filter((standing) => standing.characterId === characterId)
+        .map(copyStanding),
+    clearReputations: () => {
+      maps.reputations.clear()
+    }
+  }
+}
+
+function createOpinionMemoryStore(
+  maps: MemoryNpcCampaignStoreMaps
+): Pick<
+  NpcCampaignStore,
+  | 'setNpcOpinion'
+  | 'listNpcOpinionsHeldBy'
+  | 'listNpcOpinionsAbout'
+  | 'clearNpcOpinions'
+  | 'setDmNpcOpinion'
+  | 'getDmNpcOpinion'
+  | 'clearDmNpcOpinions'
+> {
+  return {
+    setNpcOpinion: (opinion) => {
+      maps.opinions.set(opinionKey(opinion.holderNpcId, opinion.subjectId), copyOpinion(opinion))
+      return copyOpinion(opinion)
+    },
+    listNpcOpinionsHeldBy: (holderNpcId) =>
+      [...maps.opinions.values()]
+        .filter((opinion) => opinion.holderNpcId === holderNpcId)
+        .map(copyOpinion),
+    listNpcOpinionsAbout: (subjectId) =>
+      [...maps.opinions.values()]
+        .filter((opinion) => opinion.subjectId === subjectId)
+        .map(copyOpinion),
+    clearNpcOpinions: () => {
+      maps.opinions.clear()
+    },
+    setDmNpcOpinion: (campaignId, npcId, text) => {
+      maps.dmOpinions.set(dmOpinionKey(campaignId, npcId), text)
+      return text
+    },
+    getDmNpcOpinion: (campaignId, npcId) =>
+      maps.dmOpinions.get(dmOpinionKey(campaignId, npcId)),
+    clearDmNpcOpinions: () => {
+      maps.dmOpinions.clear()
+    }
+  }
+}
+
+function createLocationMemoryStore(
+  maps: MemoryNpcCampaignStoreMaps
+): Pick<
+  NpcCampaignStore,
+  | 'getLocation'
+  | 'setLocation'
+  | 'deleteLocation'
+  | 'listLocations'
+  | 'clearLocations'
+  | 'clearLocationsForCampaign'
+> {
+  return {
+    getLocation: (npcId) => copyOptional(maps.locations.get(npcId), copyLocation),
+    setLocation: (location) => {
+      maps.locations.set(location.npcId, copyLocation(location))
+      return copyLocation(location)
+    },
+    deleteLocation: (npcId) => maps.locations.delete(npcId),
+    listLocations: (campaignId) => listLocations(maps.locations, campaignId),
+    clearLocations: () => {
+      maps.locations.clear()
+    },
+    clearLocationsForCampaign: (campaignId) => {
+      for (const record of maps.locations.values()) {
+        if (record.campaignId === campaignId) {
+          maps.locations.delete(record.npcId)
+        }
+      }
+    }
+  }
+}
 
 export function clearNpcStore(): void {
-  npcs.clear()
-  memories.clear()
-  worldFacts.clear()
-  clearNpcLocationStore()
+  getNpcCampaignStore().clearNpcs()
+  getNpcCampaignStore().clearMemories()
+  getNpcCampaignStore().clearWorldFacts()
+  getNpcCampaignStore().clearLocations()
 }
 
 export function saveNpc(npc: NpcRecord): NpcRecord {
-  npcs.set(npc.npcId, copyNpc(npc))
-  return copyNpc(npc)
+  return getNpcCampaignStore().setNpc(npc)
 }
 
 export function getNpc(npcId: string): NpcRecord | undefined {
-  const npc = npcs.get(npcId)
-  return npc === undefined ? undefined : copyNpc(npc)
+  return getNpcCampaignStore().getNpc(npcId)
 }
 
 export function requireNpc(npcId: string): NpcRecord {
-  const npc = npcs.get(npcId)
+  const npc = getNpc(npcId)
   if (npc === undefined) {
     throw new NpcEngineError('NPC_NOT_FOUND', `NPC not found: ${npcId}`)
   }
-  return copyNpc(npc)
+  return npc
 }
 
 export function replaceNpc(npc: NpcRecord): NpcRecord {
@@ -51,38 +335,49 @@ export function updateNpcPortrait(npcId: string, portrait: NpcPortrait): NpcReco
 
 export function appendMemory(memory: NpcMemory): NpcMemory {
   requireNpc(memory.npcId)
-  const entries = memories.get(memory.npcId) ?? []
-  const nextMemory = copyMemory(memory)
-  memories.set(memory.npcId, [...entries, nextMemory])
-  return copyMemory(nextMemory)
+  return getNpcCampaignStore().appendMemory(memory)
 }
 
 export function listMemories(npcId: string): NpcMemory[] {
-  return (memories.get(npcId) ?? []).map(copyMemory)
+  return getNpcCampaignStore().listMemories(npcId)
 }
 
 export function saveWorldFact(fact: WorldFact): WorldFact {
-  const nextFact = copyWorldFact(fact)
-  worldFacts.set(fact.factId, nextFact)
-  return copyWorldFact(nextFact)
+  return getNpcCampaignStore().setWorldFact(fact)
 }
 
 export function listWorldFacts(): WorldFact[] {
-  return [...worldFacts.values()].map(copyWorldFact)
+  return getNpcCampaignStore().listWorldFacts()
 }
 
 export function listNpcsForCampaign(campaignId: string): NpcRecord[] {
-  return [...npcs.values()]
-    .filter((npc) => npc.campaignId === campaignId)
-    .map(copyNpc)
+  return getNpcCampaignStore().listNpcsForCampaign(campaignId)
 }
 
 export function clearCampaignNpcs(campaignId: string): void {
   for (const npc of listNpcsForCampaign(campaignId)) {
-    npcs.delete(npc.npcId)
-    memories.delete(npc.npcId)
-    clearNpcLocation(npc.npcId)
+    getNpcCampaignStore().clearMemoriesForNpc(npc.npcId)
+    getNpcCampaignStore().deleteLocation(npc.npcId)
+    getNpcCampaignStore().deleteNpc(npc.npcId)
   }
+}
+
+export function getNpcCampaignStore(): NpcCampaignStore {
+  return activeStore
+}
+
+export function bindNpcCampaignStore(store: NpcCampaignStore): void {
+  activeStore = store
+  campaignBound = true
+}
+
+export function unbindNpcCampaignStore(): void {
+  activeStore = createMemoryNpcCampaignStore()
+  campaignBound = false
+}
+
+export function isNpcCampaignStoreBound(): boolean {
+  return campaignBound
 }
 
 function copyNpc(npc: NpcRecord): NpcRecord {
@@ -122,4 +417,72 @@ function copyWorldFact(fact: WorldFact): WorldFact {
     ...(fact.factionIds === undefined ? {} : { factionIds: [...fact.factionIds] }),
     ...(fact.npcIds === undefined ? {} : { npcIds: [...fact.npcIds] })
   }
+}
+
+function copyFaction(faction: FactionRecord): FactionRecord {
+  return {
+    ...faction,
+    memberships: faction.memberships.map((membership) => ({ ...membership }))
+  }
+}
+
+function copyRelation(relation: FactionRelation): FactionRelation {
+  return { ...relation }
+}
+
+function copyStanding(standing: ReputationStanding): ReputationStanding {
+  return {
+    ...standing,
+    ...(standing.lastProvenance === undefined
+      ? {}
+      : { lastProvenance: { ...standing.lastProvenance } })
+  }
+}
+
+function copyOpinion(opinion: NpcOpinion): NpcOpinion {
+  return {
+    ...opinion,
+    ...(opinion.provenance === undefined ? {} : { provenance: { ...opinion.provenance } })
+  }
+}
+
+function copyLocation(record: NpcLocation): NpcLocation {
+  return {
+    npcId: record.npcId,
+    campaignId: record.campaignId,
+    regionId: record.regionId,
+    locationKind: record.locationKind,
+    ...(record.placeId === undefined ? {} : { placeId: record.placeId }),
+    ...(record.updatedDay === undefined ? {} : { updatedDay: record.updatedDay })
+  }
+}
+
+function listLocations(
+  locations: ReadonlyMap<string, NpcLocation>,
+  campaignId: string | undefined
+): NpcLocation[] {
+  const records = [...locations.values()].map(copyLocation)
+  const filtered =
+    campaignId === undefined ? records : records.filter((record) => record.campaignId === campaignId)
+  return filtered.sort((left, right) => left.npcId.localeCompare(right.npcId))
+}
+
+function relationKey(sourceFactionId: string, targetFactionId: string): string {
+  return `${sourceFactionId}->${targetFactionId}`
+}
+
+function reputationKey(characterId: string, factionId: string): string {
+  return `${characterId}->${factionId}`
+}
+
+function opinionKey(holderNpcId: string, subjectId: string): string {
+  return `${holderNpcId}->${subjectId}`
+}
+
+function dmOpinionKey(campaignId: string, npcId: string): string {
+  return `${campaignId}:${npcId}`
+}
+
+function copyOptional<T>(value: T | undefined, copy: (value: T) => T): T | undefined {
+  return value === undefined ? undefined : copy(value)
 }

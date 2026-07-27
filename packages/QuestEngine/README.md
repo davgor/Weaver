@@ -23,6 +23,9 @@ id pools and optional lookups; QuestEngine does not invent geography, NPCs, or p
 - **No Electron** — library only.
 - Seeded `questId`s are plain strings usable with CharacterEngine `upsertQuest` / DMEngine
   `proposeQuest` without QuestEngine writing the PC log.
+- Quest templates and seeded world instances default to in-memory for unit tests.
+  Production play binds SQLite quest stores via DMEngine campaign sessions
+  ([106](../../board/done/106-DMEngine-Production-Campaign-Stores.md)).
 
 ## Public API
 

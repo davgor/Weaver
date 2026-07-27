@@ -5,18 +5,23 @@ export { QuestEngineError } from './errors.js'
 export type { QuestEngineErrorCode } from './errors.js'
 export { seedWorldQuests } from './seed.js'
 export {
+  bindQuestCampaignStore,
   clearQuestStores,
   clearWorldQuestsForCampaign,
+  createMemoryQuestCampaignStore,
   defineQuestTemplate,
   deleteWorldQuest,
   getQuestTemplate,
   getWorldQuest,
+  isQuestCampaignStoreBound,
   listQuestTemplates,
   listWorldQuests,
   putWorldQuest,
   restoreWorldQuests,
+  unbindQuestCampaignStore,
   validateObjectiveRefs
 } from './store.js'
+export type { QuestCampaignStore } from './store.js'
 export type {
   DefineQuestTemplateInput,
   ObjectiveKind,

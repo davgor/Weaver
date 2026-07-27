@@ -8,6 +8,7 @@ import {
 } from './dying.js'
 import { CharacterEngineError } from './errors.js'
 import { rollD20, type D20Roller } from './abilities.js'
+import { getCharacterFactStore } from './campaignFactStore.js'
 
 export type CharacterStats = {
   characterId: string
@@ -28,8 +29,6 @@ export type PersistCharacterMaxHpInput = {
 export type CharacterDyingSaveResult = DyingSaveApplication & {
   stats: CharacterStats
 }
-
-const characterStats = new Map<string, CharacterStats>()
 
 export function computeMaxHp(
   hitDie: number,
@@ -56,17 +55,16 @@ export function persistCharacterMaxHp(input: PersistCharacterMaxHpInput): Charac
     conditions: [],
     dying: null
   }
-  characterStats.set(input.characterId, stats)
+  getCharacterFactStore().setStats(stats)
   return copyStats(stats)
 }
 
 export function getCharacterStats(characterId: string): CharacterStats | undefined {
-  const stats = characterStats.get(characterId)
-  return stats === undefined ? undefined : copyStats(stats)
+  return getCharacterFactStore().getStats(characterId)
 }
 
 export function clearCharacterStatsStore(): void {
-  characterStats.clear()
+  getCharacterFactStore().clearStats()
 }
 
 export function restoreCharacterStats(stats: CharacterStats): CharacterStats {
@@ -158,7 +156,7 @@ function withImpliedConditions(conditions: readonly Condition[]): Condition[] {
 }
 
 function requireStats(characterId: string): CharacterStats {
-  const stats = characterStats.get(characterId)
+  const stats = getCharacterFactStore().getStats(characterId)
   if (stats === undefined) {
     throw new CharacterEngineError('HP_INPUT_INVALID', `Unknown characterId: ${characterId}`)
   }
@@ -166,7 +164,7 @@ function requireStats(characterId: string): CharacterStats {
 }
 
 function writeStats(stats: CharacterStats): CharacterStats {
-  characterStats.set(stats.characterId, stats)
+  getCharacterFactStore().setStats(stats)
   return copyStats(stats)
 }
 

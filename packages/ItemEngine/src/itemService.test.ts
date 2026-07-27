@@ -103,6 +103,27 @@ describe('item service equipment', () => {
   })
 })
 
+describe('item service transfers', () => {
+  it('moves ownership, unequips from the source, and rejects dual ownership', () => {
+    const service = seededService()
+    service.createInventory('character.a')
+    service.createInventory('character.b')
+    const sword = service.addItem('character.a', 'template.longsword', {
+      durability: 7,
+      customName: 'Gatekeeper'
+    })
+
+    service.equip('character.a', sword.id, 'mainHand')
+    const transferred = service.transferItem('character.a', 'character.b', sword.id)
+
+    expect(transferred.held.map((item) => item.instance.id)).toEqual([sword.id])
+    expect(transferred.held[0]?.instance).toMatchObject({ durability: 7, customName: 'Gatekeeper' })
+    expect(service.listInventory('character.a').held).toEqual([])
+    expect(service.getEquipped('character.a').mainHand).toBeUndefined()
+    expect(() => service.transferItem('character.a', 'character.b', sword.id)).toThrow(/not owned/i)
+  })
+})
+
 describe('item service enchantments', () => {
   it('applies and removes enchantment overlays through the service mutation API', () => {
     const service = createItemService()

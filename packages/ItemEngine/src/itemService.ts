@@ -26,6 +26,19 @@ type InventoryRecord = {
   equipped: EquippedItems
 }
 
+export type ItemInventorySeed = {
+  characterId: string
+  heldItemIds: string[]
+  equipped: EquippedItems
+}
+
+export type ItemServiceSeed = {
+  templates?: readonly ItemTemplate[]
+  instances?: readonly ItemInstance[]
+  inventories?: readonly ItemInventorySeed[]
+  nextInstanceNumber?: number
+}
+
 export type ItemService = {
   defineTemplate: (template: ItemTemplate) => ItemTemplate
   getTemplate: (templateId: string) => ItemTemplate
@@ -35,6 +48,7 @@ export type ItemService = {
   getEquipped: (characterId: string) => EquippedItemViews
   equip: (characterId: string, instanceId: string, slot: EquipmentSlot) => InventorySnapshot
   unequip: (characterId: string, target: string) => InventorySnapshot
+  transferItem: (fromCharacterId: string, toCharacterId: string, instanceId: string) => InventorySnapshot
   getItemInstance: (instanceId: string) => ItemInstance
   applyEnchantment: (instanceId: string, overlay: EnchantmentOverlay) => ItemInstance
   removeEnchantment: (instanceId: string, overlayId: string) => ItemInstance
@@ -64,6 +78,14 @@ function cloneInstance(instance: ItemInstance): ItemInstance {
   if (instance.customName !== undefined) copy.customName = instance.customName
   if (instance.enchantmentOverlays !== undefined) {
     copy.enchantmentOverlays = listEnchantmentOverlays(instance)
+  }
+  return copy
+}
+
+function cloneEquippedItems(equipped: EquippedItems): EquippedItems {
+  const copy: EquippedItems = { accessories: [...equipped.accessories] }
+  for (const slot of ['mainHand', 'offHand', 'shield', 'armor'] as const) {
+    if (equipped[slot] !== undefined) copy[slot] = equipped[slot]
   }
   return copy
 }
@@ -107,7 +129,26 @@ class InMemoryItemService implements ItemService {
   private readonly templates = new Map<string, ItemTemplate>()
   private readonly inventories = new Map<string, InventoryRecord>()
   private readonly instances = new Map<string, ItemInstance>()
-  private nextInstanceNumber = 1
+  private nextInstanceNumber: number
+
+  constructor(seed: ItemServiceSeed = {}) {
+    this.nextInstanceNumber = seed.nextInstanceNumber ?? 1
+    for (const template of seed.templates ?? []) {
+      const normalized = normalizeTemplate(template)
+      this.templates.set(normalized.id, normalized)
+    }
+    for (const instance of seed.instances ?? []) {
+      this.instances.set(instance.id, cloneInstance(instance))
+    }
+    for (const inventory of seed.inventories ?? []) {
+      requireId(inventory.characterId, 'Character id')
+      this.inventories.set(inventory.characterId, {
+        characterId: inventory.characterId,
+        heldItemIds: [...inventory.heldItemIds],
+        equipped: cloneEquippedItems(inventory.equipped)
+      })
+    }
+  }
 
   defineTemplate(template: ItemTemplate): ItemTemplate {
     const normalized = normalizeTemplate(template)
@@ -178,6 +219,15 @@ class InMemoryItemService implements ItemService {
     return this.listInventory(characterId)
   }
 
+  transferItem(fromCharacterId: string, toCharacterId: string, instanceId: string): InventorySnapshot {
+    const source = this.getInventory(fromCharacterId)
+    const target = this.getInventory(toCharacterId)
+    this.requireInstance(instanceId)
+    this.detachOwnedItem(source, instanceId)
+    target.heldItemIds.push(instanceId)
+    return this.listInventory(toCharacterId)
+  }
+
   getItemInstance(instanceId: string): ItemInstance {
     return cloneInstance(this.requireInstance(instanceId))
   }
@@ -238,6 +288,23 @@ class InMemoryItemService implements ItemService {
     inventory.equipped.accessories.push(instanceId)
   }
 
+  private detachOwnedItem(inventory: InventoryRecord, instanceId: string): void {
+    if (inventory.heldItemIds.includes(instanceId)) {
+      removeHeld(inventory, instanceId)
+      return
+    }
+    const fixedSlot = findFixedSlot(inventory.equipped, instanceId)
+    if (fixedSlot !== null) {
+      delete inventory.equipped[fixedSlot]
+      return
+    }
+    const nextAccessories = inventory.equipped.accessories.filter((id) => id !== instanceId)
+    if (nextAccessories.length === inventory.equipped.accessories.length) {
+      throw new Error(`Item not owned by character: ${instanceId}`)
+    }
+    inventory.equipped.accessories = nextAccessories
+  }
+
   private unequipFixedSlot(inventory: InventoryRecord, slot: FixedEquipmentSlot): void {
     const instanceId = inventory.equipped[slot]
     if (instanceId === undefined) throw new Error(`Slot empty: ${slot}`)
@@ -263,6 +330,6 @@ class InMemoryItemService implements ItemService {
   }
 }
 
-export function createItemService(): ItemService {
-  return new InMemoryItemService()
+export function createItemService(seed: ItemServiceSeed = {}): ItemService {
+  return new InMemoryItemService(seed)
 }

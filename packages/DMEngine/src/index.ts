@@ -12,6 +12,11 @@ import {
   type CampaignHandle,
   type CampaignOpenOptions
 } from './persistence/campaignPersistence.js'
+import {
+  createCampaignSession,
+  openCampaignSession,
+  type CampaignSession
+} from './persistence/campaignSession.js'
 
 export {
   CURRENT_CAMPAIGN_SCHEMA_VERSION,
@@ -31,6 +36,15 @@ export type {
   CatalogSeedHook,
   CatalogSeedWriter
 } from './persistence/campaignPersistence.js'
+
+export {
+  assertCampaignStoresBound,
+  createCampaignSession,
+  getActiveCampaignSession,
+  openCampaignSession
+} from './persistence/campaignSession.js'
+
+export type { CampaignSession } from './persistence/campaignSession.js'
 
 export { DmIntentError } from './intents/errors.js'
 export { classifyPlayerIntent } from './intents/classifyIntent.js'
@@ -335,11 +349,13 @@ export type DmEngineApi = {
   health: () => { ok: true; package: string; version: string }
   createCampaign: (options: CampaignOpenOptions) => CampaignHandle
   openCampaign: (options: CampaignOpenOptions) => CampaignHandle
+  createCampaignSession: (options: CampaignOpenOptions) => CampaignSession
+  openCampaignSession: (options: CampaignOpenOptions) => CampaignSession
   listEndpoints: () => EngineEndpoint[]
   call: (endpoint: string, payload?: unknown) => Promise<unknown>
 }
 
-type CampaignEndpointResult = Omit<CampaignHandle, 'close'>
+type CampaignEndpointResult = Omit<CampaignHandle, 'close' | 'getDb'>
 
 const PACKAGE_NAME = '@weaver/dm-engine'
 const VERSION = '0.1.0'
@@ -393,6 +409,12 @@ export const dmEngine: DmEngineApi = {
   },
   openCampaign(options: CampaignOpenOptions) {
     return openCampaign(options)
+  },
+  createCampaignSession(options: CampaignOpenOptions) {
+    return createCampaignSession(options)
+  },
+  openCampaignSession(options: CampaignOpenOptions) {
+    return openCampaignSession(options)
   },
   listEndpoints() {
     return buildEndpoints()

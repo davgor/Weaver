@@ -96,7 +96,12 @@ export type {
   DamageModifierInput,
   ResolvedWeaponDamage
 } from './weaponDamage.js'
-export { itemEngine } from './engineApi.js'
+export {
+  bindItemCampaignStores,
+  isItemCampaignStoreBound,
+  itemEngine,
+  unbindItemCampaignStores
+} from './engineApi.js'
 export type { ItemEngineApi } from './engineApi.js'
 export {
   exportCampaignSlice as exportItemCampaignSlice,

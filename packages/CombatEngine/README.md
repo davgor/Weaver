@@ -11,10 +11,13 @@ Owns turn order, hit/damage resolution, combatant state, and related combat fact
 - **LLM-free** — no model calls, no story invention
 - **No Electron** — library only; UI shells call through published exports
 - Consumers that call this package need `*.contract.test.ts` against the real API
+- Engine-local stores own encounter snapshots only; production campaign-wide
+  persistence belongs to the DMEngine campaign-store path in
+  [106](../../board/done/106-DMEngine-Production-Campaign-Stores.md)
 
 ## Status
 
-Encounter lifecycle ([048](../../board/done/048-CombatEngine-Encounter-Lifecycle.md)), flee/surrender/non-lethal/execute ([050](../../board/done/050-CombatEngine-Flee-Surrender-Nonlethal.md)), and ad-hoc dynamic start ([051](../../board/done/051-CombatEngine-Dynamic-Start-And-Triggers.md)) are implemented. Remaining hit/damage/crit/conditions design lives in epic [049](../../board/backlog/049-CombatEngine-Hit-Damage-Crit-Conditions.md).
+Encounter lifecycle ([048](../../board/done/048-CombatEngine-Encounter-Lifecycle.md)), hit/damage/crit/conditions ([049](../../board/done/049-CombatEngine-Hit-Damage-Crit-Conditions.md)), flee/surrender/non-lethal/execute ([050](../../board/done/050-CombatEngine-Flee-Surrender-Nonlethal.md)), and ad-hoc dynamic start ([051](../../board/done/051-CombatEngine-Dynamic-Start-And-Triggers.md)) are implemented. ActionEngine use/lockout integration is tracked by peer epic [084](../../board/done/084-ActionEngine-Use-Resolution-And-Lockout.md); CombatEngine does not own ability definitions.
 
 ## Public API
 
@@ -78,10 +81,10 @@ submitCombatAction({
 | Epic | Intent |
 |------|--------|
 | [048](../../board/done/048-CombatEngine-Encounter-Lifecycle.md) | Encounter lifecycle: initiative (`d20 + Agility`), Action + Movement turns |
-| [049](../../board/backlog/049-CombatEngine-Hit-Damage-Crit-Conditions.md) | Hit/damage/crit resolution, condition application |
+| [049](../../board/done/049-CombatEngine-Hit-Damage-Crit-Conditions.md) | Hit/damage/crit resolution, condition application |
 | [050](../../board/done/050-CombatEngine-Flee-Surrender-Nonlethal.md) | Flee, surrender, non-lethal victory, execute |
 | [051](../../board/done/051-CombatEngine-Dynamic-Start-And-Triggers.md) | Dynamic combat start without a pre-placed hostile |
-| [084](../../board/backlog/084-ActionEngine-Use-Resolution-And-Lockout.md) *(peer)* | ActionEngine use/lockout — Combat does not own ability definitions |
+| [084](../../board/done/084-ActionEngine-Use-Resolution-And-Lockout.md) *(peer)* | ActionEngine use/lockout — Combat does not own ability definitions |
 
 ## Scripts
 

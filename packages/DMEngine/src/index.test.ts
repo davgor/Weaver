@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import {
   CAMPAIGN_GENERATION_STAGES,
+  CURRENT_CAMPAIGN_SCHEMA_VERSION,
   dmEngine,
   runCampaignGeneration,
   startGuidedIdentity
@@ -41,12 +42,18 @@ describe('@weaver/dm-engine core API', () => {
   it('exposes typed campaign create/open APIs', () => {
     expect(typeof dmEngine.createCampaign).toBe('function')
     expect(typeof dmEngine.openCampaign).toBe('function')
+    expect(typeof dmEngine.createCampaignSession).toBe('function')
+    expect(typeof dmEngine.openCampaignSession).toBe('function')
   })
 
 })
 
 describe('@weaver/dm-engine campaign endpoints', () => {
   const tempRoots: string[] = []
+  const expectedFreshMigrations = Array.from(
+    { length: CURRENT_CAMPAIGN_SCHEMA_VERSION },
+    (_, index) => index + 1
+  )
 
   afterEach(() => {
     for (const root of tempRoots) {
@@ -64,7 +71,11 @@ describe('@weaver/dm-engine campaign endpoints', () => {
       .map((endpoint) => `${endpoint.name} ${endpoint.description}`)
       .join('\n')
 
-    expect(createResult).toMatchObject({ campaignId: 'admin', filePath, appliedMigrations: [1] })
+    expect(createResult).toMatchObject({
+      campaignId: 'admin',
+      filePath,
+      appliedMigrations: expectedFreshMigrations
+    })
     expect(openResult).toMatchObject({ campaignId: 'admin', filePath, appliedMigrations: [] })
     expect(endpointText).not.toMatch(/sql/i)
   })

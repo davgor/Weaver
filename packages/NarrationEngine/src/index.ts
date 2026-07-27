@@ -128,12 +128,24 @@ export { validateProse } from './proseValidate.js'
 export type { ProseValidationResult } from './proseValidate.js'
 export { decideSilentResolve } from './silentResolve.js'
 export {
+  appendSceneBlock,
+  appendSocialLine,
+  bindNarrationCampaignStore,
   clearNarrationStore,
+  createMemoryNarrationProjectionStore,
   generateScene,
+  isNarrationCampaignStoreBound,
   projectScene,
   projectSocial,
   recordPlayerSocial,
-  streamSocial
+  streamSocial,
+  unbindNarrationCampaignStore
+} from './proseApi.js'
+export type {
+  AppendSceneBlockInput,
+  AppendSocialLineInput,
+  MemoryNarrationProjectionStoreOptions,
+  NarrationProjectionStore
 } from './proseApi.js'
 export { createRagIndex, DEFAULT_RAG_MAX_CHARS, RAG_REINDEX_NOTE } from './rag/ragIndex.js'
 export type {

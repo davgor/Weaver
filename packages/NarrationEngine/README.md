@@ -14,6 +14,11 @@ The **only** package allowed to invent narrative prose or generated portrait tok
 - Must **not** invent durable game facts — peers own those
 - Must **not** contain Electron UI
 - Consumers need `*.contract.test.ts` against the real API
+- Social/Scene projections default to in-memory for unit tests. Production play
+  binds campaign-scoped SQLite projection stores via DMEngine campaign sessions
+  ([106](../../board/done/106-DMEngine-Production-Campaign-Stores.md));
+  live RAG wiring is tracked separately in
+  [111](../../board/backlog/111-DMEngine-Live-Rag-And-Context-Integration.md)
 
 ## Status
 
