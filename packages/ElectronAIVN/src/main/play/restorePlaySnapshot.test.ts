@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { VnPlayCursor, VnStoryCastMember, VnStoryOverview } from '@weaver/dm-engine'
 import { assemblePlaySnapshot, restorePlaySnapshot } from './restorePlaySnapshot.js'
 
-describe('restorePlaySnapshot', () => {
+describe('restorePlaySnapshot scene-mode from cursor', () => {
   it('restores a scene-mode snapshot from a cursor, synthesizing scene from beat text', () => {
     const snapshot = restorePlaySnapshot({
       cursor: sceneCursor(),
@@ -21,7 +21,9 @@ describe('restorePlaySnapshot', () => {
     ])
     expect(snapshot.placeholders.some((row) => row.slot === 'mc')).toBe(true)
   })
+})
 
+describe('restorePlaySnapshot npc-mode with freeplay flags', () => {
   it('restores an npc-mode snapshot with speaker name and freeplay flags', () => {
     const snapshot = restorePlaySnapshot({
       cursor: {
@@ -44,7 +46,9 @@ describe('restorePlaySnapshot', () => {
     expect(snapshot.actIndex).toBe(3)
     expect(snapshot.placeholders.some((row) => row.slot === 'npc')).toBe(true)
   })
+})
 
+describe('restorePlaySnapshot prefers provided projections', () => {
   it('prefers provided scene/social projections over synthesized ones', () => {
     const scene = [{ id: 's-prior', text: 'Prior beat.', at: 1 }]
     const social = [{ id: 'l1', kind: 'npc' as const, speakerId: 'npc-1', text: 'Hi.', at: 1 }]
@@ -60,7 +64,7 @@ describe('restorePlaySnapshot', () => {
   })
 })
 
-describe('assemblePlaySnapshot', () => {
+describe('assemblePlaySnapshot carries phase fields', () => {
   it('builds a snapshot carrying phase/storyComplete/actIndex', () => {
     const snapshot = assemblePlaySnapshot({
       campaignId: 'vn-1',

@@ -1,7 +1,5 @@
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import type {
-  GenerateVnBackgroundDeps,
-  GenerateVnSpriteDeps,
   ImageGenerationSettings,
   VnBackgroundGenerateRequest,
   VnBackgroundGenerateResult,
@@ -20,7 +18,7 @@ function flush(): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, 0))
 }
 
-describe('vnAssetService', () => {
+describe('vnAssetService queueFromSnapshot loading set', () => {
   it('queueFromSnapshot returns synchronously and emits an initial loading set', () => {
     const updates: VnAssetsUpdate[] = []
     const service = createVnAssetService(baseDeps({ onUpdate: (u) => updates.push(u) }))
@@ -33,7 +31,9 @@ describe('vnAssetService', () => {
     expect(updates[0]?.assets.every((a) => a.status === 'loading')).toBe(true)
     expect(updates[0]?.assets.map((a) => a.slot).sort()).toEqual(['background', 'mc'])
   })
+})
 
+describe('vnAssetService emits ready with imagePath', () => {
   it('eventually emits ready with imagePath as slots resolve', async () => {
     const updates: VnAssetsUpdate[] = []
     const service = createVnAssetService(
@@ -55,7 +55,9 @@ describe('vnAssetService', () => {
     expect(mc && mc.status === 'ready' ? mc.imagePath : null).toBe('/img/mc.png')
     expect(bg && bg.status === 'ready' ? bg.imagePath : null).toBe('/img/bg.png')
   })
+})
 
+describe('vnAssetService degraded becomes failed', () => {
   it('degraded provider result becomes failed while preserving label + fullPrompt', async () => {
     const updates: VnAssetsUpdate[] = []
     const service = createVnAssetService(
@@ -75,7 +77,9 @@ describe('vnAssetService', () => {
     expect(mc?.label).toContain('MC label')
     expect(mc?.fullPrompt).toContain('mc full prompt')
   })
+})
 
+describe('vnAssetService generation throw marks failed', () => {
   it('does not throw from queueFromSnapshot when generation throws, and marks slot failed', async () => {
     const updates: VnAssetsUpdate[] = []
     const service = createVnAssetService(
@@ -97,7 +101,9 @@ describe('vnAssetService', () => {
     expect(latest?.assets.every((a) => a.status === 'failed')).toBe(true)
     expect(latest?.assets.find((a) => a.slot === 'mc')?.fullPrompt).toContain('mc full prompt')
   })
+})
 
+describe('vnAssetService cancel prevents late updates', () => {
   it('cancel() prevents late updates from being emitted', async () => {
     const updates: VnAssetsUpdate[] = []
     let resolveSprite: (result: VnSpriteGenerateResult) => void = () => undefined
@@ -121,7 +127,9 @@ describe('vnAssetService', () => {
     expect(updates.length).toBe(afterQueue)
     expect(updates.every((u) => u.assets.every((a) => a.status !== 'ready'))).toBe(true)
   })
+})
 
+describe('vnAssetService generates npc sprite', () => {
   it('generates an npc sprite when the snapshot carries a speaker', async () => {
     const captured: VnSpriteGenerateRequest[] = []
     const service = createVnAssetService(
@@ -143,7 +151,9 @@ describe('vnAssetService', () => {
     expect(npc?.identity.displayName).toBe('Harbor Warden')
     expect(captured.some((r) => r.identity.characterKey === 'vn-1-vn-mc')).toBe(true)
   })
+})
 
+describe('vnAssetService newer queue invalidates prior work', () => {
   it('starting a newer queue invalidates in-flight work from the previous snapshot', async () => {
     const updates: VnAssetsUpdate[] = []
     let resolveFirst: (result: VnSpriteGenerateResult) => void = () => undefined

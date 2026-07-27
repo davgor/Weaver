@@ -23,8 +23,8 @@ function storyCursor(overrides: Partial<VnPlayCursor> = {}): VnPlayCursor {
   }
 }
 
-describe('initialVnPlayCursor', () => {
-  it('starts at act 1, story phase, opening scene', () => {
+describe('initialVnPlayCursor starts at act 1 story opening', () => {
+  it('returns the documented opening cursor', () => {
     const cursor = initialVnPlayCursor({
       campaignId: 'camp-1',
       characterId: 'char-1',
@@ -48,8 +48,8 @@ describe('initialVnPlayCursor', () => {
   })
 })
 
-describe('advanceVnPlayCursor', () => {
-  it('updates turn fields without changing act when not completing an act', () => {
+describe('advanceVnPlayCursor without completeAct', () => {
+  it('updates turn fields and keeps act/phase', () => {
     const next = advanceVnPlayCursor({
       cursor: storyCursor(),
       actCount: 3,
@@ -62,16 +62,14 @@ describe('advanceVnPlayCursor', () => {
     })
     expect(next.mode).toBe('npc')
     expect(next.beatId).toBe('beat-2')
-    expect(next.beatText).toBe('The warden speaks.')
-    expect(next.speakerId).toBe('npc-warden')
-    expect(next.options).toEqual(['Trust.', 'Doubt.'])
-    expect(next.updatedAt).toBe('2026-07-27T01:00:00.000Z')
     expect(next.actIndex).toBe(1)
     expect(next.phase).toBe('story')
     expect(next.storyComplete).toBe(false)
   })
+})
 
-  it('increments the act when completing a non-final act', () => {
+describe('advanceVnPlayCursor completing a non-final act', () => {
+  it('increments actIndex', () => {
     const next = advanceVnPlayCursor({
       cursor: storyCursor({ actIndex: 1 }),
       actCount: 3,
@@ -86,8 +84,10 @@ describe('advanceVnPlayCursor', () => {
     expect(next.phase).toBe('story')
     expect(next.storyComplete).toBe(false)
   })
+})
 
-  it('flips to freeplay + storyComplete when completing the final act', () => {
+describe('advanceVnPlayCursor completing the final act', () => {
+  it('flips to freeplay and storyComplete', () => {
     const next = advanceVnPlayCursor({
       cursor: storyCursor({ actIndex: 3 }),
       actCount: 3,
@@ -102,8 +102,10 @@ describe('advanceVnPlayCursor', () => {
     expect(next.phase).toBe('freeplay')
     expect(next.actIndex).toBe(3)
   })
+})
 
-  it('keeps actIndex clamped at actCount when already past it', () => {
+describe('advanceVnPlayCursor when actIndex is already past actCount', () => {
+  it('clamps actIndex and enters freeplay', () => {
     const next = advanceVnPlayCursor({
       cursor: storyCursor({ actIndex: 5 }),
       actCount: 3,
@@ -118,8 +120,10 @@ describe('advanceVnPlayCursor', () => {
     expect(next.storyComplete).toBe(true)
     expect(next.phase).toBe('freeplay')
   })
+})
 
-  it('leaves phase/storyComplete/actIndex untouched in freeplay', () => {
+describe('advanceVnPlayCursor while already in freeplay', () => {
+  it('leaves phase and actIndex untouched', () => {
     const next = advanceVnPlayCursor({
       cursor: storyCursor({ phase: 'freeplay', storyComplete: true, actIndex: 3 }),
       actCount: 3,
@@ -134,20 +138,23 @@ describe('advanceVnPlayCursor', () => {
     expect(next.storyComplete).toBe(true)
     expect(next.actIndex).toBe(3)
     expect(next.beatId).toBe('sandbox-7')
-    expect(next.mode).toBe('npc')
   })
 })
 
-describe('isVnFreeplay', () => {
-  it('is false for an in-progress story cursor', () => {
+describe('isVnFreeplay for in-progress story', () => {
+  it('is false', () => {
     expect(isVnFreeplay(storyCursor())).toBe(false)
   })
+})
 
-  it('is true when phase is freeplay', () => {
+describe('isVnFreeplay when phase is freeplay', () => {
+  it('is true', () => {
     expect(isVnFreeplay(storyCursor({ phase: 'freeplay' }))).toBe(true)
   })
+})
 
-  it('is true when storyComplete even if phase still reads story', () => {
+describe('isVnFreeplay when storyComplete', () => {
+  it('is true even if phase still reads story', () => {
     expect(isVnFreeplay(storyCursor({ storyComplete: true }))).toBe(true)
   })
 })

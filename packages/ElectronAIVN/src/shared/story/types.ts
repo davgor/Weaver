@@ -1,17 +1,13 @@
-import {
-  VN_STORY_ACT_COUNT_DEFAULT,
-  VN_STORY_ACT_COUNT_MAX,
-  VN_STORY_ACT_COUNT_MIN,
-  type VnMainCharacterBrief,
-  type VnStoryActOverview,
-  type VnStoryCastMember
+import type {
+  VnMainCharacterBrief,
+  VnStoryActOverview,
+  VnStoryCastMember
 } from '@weaver/dm-engine'
 
-export {
-  VN_STORY_ACT_COUNT_DEFAULT,
-  VN_STORY_ACT_COUNT_MAX,
-  VN_STORY_ACT_COUNT_MIN
-}
+/** Mirrored from DMEngine vnStory types — keep in sync via types.test.ts contract assert. */
+export const VN_STORY_ACT_COUNT_MIN = 1
+export const VN_STORY_ACT_COUNT_MAX = 7
+export const VN_STORY_ACT_COUNT_DEFAULT = 3
 
 export type VnStoryDraft = {
   premise: string

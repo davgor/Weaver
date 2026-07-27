@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
+  VN_STORY_ACT_COUNT_DEFAULT as DmDefault,
+  VN_STORY_ACT_COUNT_MAX as DmMax,
+  VN_STORY_ACT_COUNT_MIN as DmMin
+} from '@weaver/dm-engine'
+import {
   VN_STORY_ACT_COUNT_DEFAULT,
   VN_STORY_ACT_COUNT_MAX,
   VN_STORY_ACT_COUNT_MIN,
@@ -7,15 +12,23 @@ import {
   validateVnStoryDraft
 } from './types.js'
 
-describe('validateVnStoryDraft', () => {
-  it('accepts a complete draft with default act count bounds', () => {
+describe('VN act-count constants stay aligned with DMEngine', () => {
+  it('mirrors DMEngine min/max/default', () => {
+    expect(VN_STORY_ACT_COUNT_MIN).toBe(DmMin)
+    expect(VN_STORY_ACT_COUNT_MAX).toBe(DmMax)
+    expect(VN_STORY_ACT_COUNT_DEFAULT).toBe(DmDefault)
+  })
+})
+
+describe('validateVnStoryDraft accepts a complete draft', () => {
+  it('uses the default act count bounds', () => {
     expect(() => validateVnStoryDraft(validDraft())).not.toThrow()
     expect(buildDefaultVnStoryDraft().actCount).toBe(VN_STORY_ACT_COUNT_DEFAULT)
-    expect(VN_STORY_ACT_COUNT_MIN).toBe(1)
-    expect(VN_STORY_ACT_COUNT_MAX).toBe(7)
   })
+})
 
-  it('rejects missing premise and main-character fields', () => {
+describe('validateVnStoryDraft rejects incomplete fields', () => {
+  it('requires premise and main-character fields', () => {
     expect(() => validateVnStoryDraft({ ...validDraft(), premise: '  ' })).toThrow(
       /premise is required/i
     )
@@ -38,8 +51,10 @@ describe('validateVnStoryDraft', () => {
       })
     ).toThrow(/appearance is required/i)
   })
+})
 
-  it('rejects act counts outside the documented range', () => {
+describe('validateVnStoryDraft rejects invalid act counts', () => {
+  it('enforces the documented integer range', () => {
     expect(() => validateVnStoryDraft({ ...validDraft(), actCount: 0 })).toThrow(/act count/i)
     expect(() => validateVnStoryDraft({ ...validDraft(), actCount: 8 })).toThrow(/act count/i)
     expect(() => validateVnStoryDraft({ ...validDraft(), actCount: 1.5 })).toThrow(/act count/i)

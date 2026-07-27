@@ -45,14 +45,11 @@ function usePlaySession(campaignId: string) {
   const [freeText, setFreeText] = useState('')
   const [busy, setBusy] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [assets, setAssets] = useState<readonly VnSlotAssetState[]>([])
+  const assets = usePlayAssets(campaignId)
 
   useEffect(() => {
     let cancelled = false
     setBusy(true)
-    // New campaign: drop any assets carried over from a prior session so the stage
-    // does not briefly show stale images while the next beat's assets load.
-    setAssets([])
     void window.aivn.play
       .open(campaignId)
       .then((next) => {
@@ -74,16 +71,6 @@ function usePlaySession(campaignId: string) {
     }
   }, [campaignId])
 
-  useEffect(() => {
-    // Asset updates are advisory only — they never toggle `busy`, so turn input
-    // stays available while images load (epic 126.4).
-    const unsubscribe = window.aivn.play.onAssets((update) => {
-      if (update.campaignId !== campaignId) return
-      setAssets(update.assets)
-    })
-    return unsubscribe
-  }, [campaignId])
-
   return {
     snapshot,
     freeText,
@@ -96,6 +83,17 @@ function usePlaySession(campaignId: string) {
       void chooseAction({ text, snapshot, setSnapshot, setFreeText, setBusy, setError })
     }
   }
+}
+
+function usePlayAssets(campaignId: string): readonly VnSlotAssetState[] {
+  const [assets, setAssets] = useState<readonly VnSlotAssetState[]>([])
+  useEffect(() => {
+    setAssets([])
+    return window.aivn.play.onAssets((update) => {
+      if (update.campaignId === campaignId) setAssets(update.assets)
+    })
+  }, [campaignId])
+  return assets
 }
 
 async function chooseAction(args: {

@@ -10,7 +10,7 @@ import { serializeVnPlayCursor } from '@weaver/dm-engine'
 import type { TextCompleter } from '@weaver/narration-engine'
 import { createVnPlayService, type VnPlayServiceDeps } from './playService.js'
 
-describe('vnPlayService', () => {
+describe('vnPlayService opens from overview opening beat', () => {
   it('opens from overview opening beat in scene mode with two choices', async () => {
     const service = createVnPlayService(testDeps())
     const snapshot = await service.open('vn-1')
@@ -23,7 +23,9 @@ describe('vnPlayService', () => {
       "Ryn Vale's character"
     )
   })
+})
 
+describe('vnPlayService submits a turn through resolveTurn', () => {
   it('submits a turn through resolveTurn and updates mode from narration kind', async () => {
     const resolveTurnFn = vi.fn(async (): Promise<ResolveTurnResult> => socialResult())
     const service = createVnPlayService(testDeps({ resolveTurnFn }))
@@ -39,14 +41,18 @@ describe('vnPlayService', () => {
     expect(next.speakerName).toBe('Harbor Warden')
     expect(next.placeholders.some((row) => row.slot === 'npc')).toBe(true)
   })
+})
 
+describe('vnPlayService rejects submit without session', () => {
   it('rejects submit when no session is open for the campaign', async () => {
     const service = createVnPlayService(testDeps())
     await expect(
       service.submitAction({ campaignId: 'vn-1', text: 'look around' })
     ).rejects.toThrow(/no active vn play session/i)
   })
+})
 
+describe('vnPlayService uses scene prose when projections empty', () => {
   it('uses scene prose when projections are empty after a scene turn', async () => {
     const resolveTurnFn = vi.fn(async (): Promise<ResolveTurnResult> => ({
       route: 'narration',
@@ -61,7 +67,9 @@ describe('vnPlayService', () => {
     expect(next.mode).toBe('scene')
     expect(next.beatText).toBe('Lanterns flicker.')
   })
+})
 
+describe('vnPlayService persists play cursor', () => {
   it('persists a fresh play cursor on open and again on submit', async () => {
     const session = fakeSession()
     const service = createVnPlayService(testDeps({}, session))
@@ -74,7 +82,9 @@ describe('vnPlayService', () => {
     await service.submitAction({ campaignId: 'vn-1', text: 'look around' })
     expect(writeCount(session)).toBeGreaterThan(openWrites)
   })
+})
 
+describe('vnPlayService resumes from persisted cursor', () => {
   it('resumes from a persisted cursor without regenerating opening choices', async () => {
     const completer = choiceCompleter()
     const completeSpy = vi.spyOn(completer, 'completeText')
@@ -89,7 +99,9 @@ describe('vnPlayService', () => {
     expect(opened.phase).toBe('story')
     expect(opened.actIndex).toBe(2)
   })
+})
 
+describe('vnPlayService marks resumed freeplay as complete', () => {
   it('marks a resumed freeplay cursor as story complete', async () => {
     const session = fakeSession(() =>
       serializeVnPlayCursor({ ...savedCursor(), phase: 'freeplay', storyComplete: true, actIndex: 3 })
@@ -99,7 +111,9 @@ describe('vnPlayService', () => {
     expect(opened.storyComplete).toBe(true)
     expect(opened.phase).toBe('freeplay')
   })
+})
 
+describe('vnPlayService queues assets fire-and-forget', () => {
   it('queues assets fire-and-forget after open and submit without blocking the turn', async () => {
     const queueFromSnapshot = vi.fn()
     const cancel = vi.fn()
@@ -117,7 +131,9 @@ describe('vnPlayService', () => {
     expect(queueFromSnapshot).toHaveBeenCalledWith(next)
     expect(queueFromSnapshot).toHaveBeenCalledTimes(2)
   })
+})
 
+describe('vnPlayService cancels assets on new session', () => {
   it('cancels prior asset work when opening a new session', async () => {
     const cancel = vi.fn()
     const service = createVnPlayService(
@@ -127,7 +143,9 @@ describe('vnPlayService', () => {
     await service.open('vn-1')
     expect(cancel).toHaveBeenCalled()
   })
+})
 
+describe('vnPlayService open tolerates asset throw', () => {
   it('open still resolves even when the asset service throws synchronously', async () => {
     const service = createVnPlayService(
       testDeps({

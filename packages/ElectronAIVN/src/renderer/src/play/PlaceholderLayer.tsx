@@ -24,11 +24,7 @@ export function PlaceholderLayer(props: PlaceholderLayerProps): JSX.Element {
       />
       <div className="vn-placeholder-sprites">
         {mc ? (
-          <SlotBox
-            className="vn-placeholder vn-placeholder-mc"
-            placeholder={mc}
-            asset={assetFor('mc')}
-          />
+          <SlotBox className="vn-placeholder vn-placeholder-mc" placeholder={mc} asset={assetFor('mc')} />
         ) : null}
         {props.mode === 'npc' && npc ? (
           <SlotBox
@@ -50,22 +46,31 @@ type SlotBoxProps = {
 }
 
 function SlotBox(props: SlotBoxProps): JSX.Element {
-  const label = props.asset?.label ?? props.placeholder?.label ?? props.fallbackLabel ?? ''
-  const fullPrompt = props.asset?.fullPrompt ?? props.placeholder?.fullPrompt ?? ''
   if (props.asset?.status === 'ready') {
-    return (
-      <div className={props.className} data-status="ready">
-        <img className="vn-placeholder-image" src={fileUrl(props.asset.imagePath)} alt={label} />
-      </div>
-    )
+    return <ReadySlot className={props.className} label={slotLabel(props)} imagePath={props.asset.imagePath} />
   }
-  const status = props.asset?.status ?? 'placeholder'
   return (
-    <div className={props.className} data-status={status}>
-      <span className="vn-placeholder-label">{label}</span>
-      <span className="vn-placeholder-prompt">{fullPrompt}</span>
+    <div className={props.className} data-status={props.asset?.status ?? 'placeholder'}>
+      <span className="vn-placeholder-label">{slotLabel(props)}</span>
+      <span className="vn-placeholder-prompt">{slotPrompt(props)}</span>
     </div>
   )
+}
+
+function ReadySlot(props: { className: string; label: string; imagePath: string }): JSX.Element {
+  return (
+    <div className={props.className} data-status="ready">
+      <img className="vn-placeholder-image" src={fileUrl(props.imagePath)} alt={props.label} />
+    </div>
+  )
+}
+
+function slotLabel(props: SlotBoxProps): string {
+  return props.asset?.label ?? props.placeholder?.label ?? props.fallbackLabel ?? ''
+}
+
+function slotPrompt(props: SlotBoxProps): string {
+  return props.asset?.fullPrompt ?? props.placeholder?.fullPrompt ?? ''
 }
 
 function fileUrl(imagePath: string): string {

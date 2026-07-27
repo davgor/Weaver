@@ -15,7 +15,7 @@ import { createVnAssetService } from './vnAssetService.js'
  * `generateVnBackground` (no mocking of the provider's public API) through the
  * ElectronAIVN `vnAssetService`, using a fake `ImageProvider` that returns a path.
  */
-describe('narrationEngine VN image contract via vnAssetService', () => {
+describe('narrationEngine VN image contract emits ready updates', () => {
   it('drives real sprite + background generation and emits ready updates with the provider path', async () => {
     const campaignId = uniqueCampaign()
     const provider = fakeLocalProvider()
@@ -40,7 +40,9 @@ describe('narrationEngine VN image contract via vnAssetService', () => {
     expect(provider.requests.some((r) => r.subjectKind === 'vn_sprite')).toBe(true)
     expect(provider.requests.some((r) => r.subjectKind === 'vn_background')).toBe(true)
   })
+})
 
+describe('narrationEngine VN image contract caches sprites', () => {
   it('caches sprites by identity/stance/expression so the provider is not called twice', async () => {
     const campaignId = uniqueCampaign()
     const provider = fakeLocalProvider()
