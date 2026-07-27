@@ -22,7 +22,7 @@ function withWorld(run: (dataRoot: string, worldId: string) => void): void {
 }
 
 describe('applyWeatherField', () => {
-  // Windows CI + better-sqlite3 world bootstrap/cell reads can exceed the default 30s.
+  // Windows CI + better-sqlite3 world bootstrap/cell reads can exceed 60s.
   it(
     'writes weather overlays and mutates WorldEngine landType where rules apply',
     () => {
@@ -59,6 +59,6 @@ describe('applyWeatherField', () => {
       }
     })
   },
-    60_000
+    120_000
   )
 })
