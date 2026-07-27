@@ -19,12 +19,12 @@ Stand up `packages/ElectronAIVN` (`@weaver/electron-aivn`) as the **AI Visual No
 
 ## Acceptance criteria
 
-- [ ] `packages/ElectronAIVN` exists as `@weaver/electron-aivn` with electron-vite main/preload/renderer layout
-- [ ] Product display name is `AI Visual Novel`; in-app shell uses `@weaver/electron-ui` loading/titlebar primitives
-- [ ] Package depends on Weaver engine workspaces + `@weaver/electron-ui` (no business rules in this package)
-- [ ] Root `npm run aivn` runs ensure-dev then launches the app (parity with `ai-ttrpg`)
-- [ ] Root README package table documents the new client vs AI TTRPG / Admin
-- [ ] Unit tests cover branding constants; `npm test` / `lint` / `build` / `deadcode` pass; cloud gate: PR checks green + PR marked ready
+- [x] `packages/ElectronAIVN` exists as `@weaver/electron-aivn` with electron-vite main/preload/renderer layout
+- [x] Product display name is `AI Visual Novel`; in-app shell uses `@weaver/electron-ui` loading/titlebar primitives
+- [x] Package depends on Weaver engine workspaces + `@weaver/electron-ui` (no business rules in this package)
+- [x] Root `npm run aivn` runs ensure-dev then launches the app (parity with `ai-ttrpg`)
+- [x] Root README package table documents the new client vs AI TTRPG / Admin
+- [x] Unit tests cover branding constants; `npm test` / `lint` / `build` / `deadcode` pass; cloud gate: PR checks green + PR marked ready
 
 ## Sub-tickets
 
@@ -34,8 +34,8 @@ Stand up `packages/ElectronAIVN` (`@weaver/electron-aivn`) as the **AI Visual No
 
 #### Acceptance criteria
 
-- [ ] Workspace package builds; contextIsolation + sandbox baseline matches ElectronAITTRPG
-- [ ] Typed preload bridge stub exists (`window.aivn` or equivalent)
+- [x] Workspace package builds; contextIsolation + sandbox baseline matches ElectronAITTRPG
+- [x] Typed preload bridge stub exists (`window.aivn` or equivalent)
 
 ### 119.2 — Branding + empty shell
 
@@ -43,8 +43,8 @@ Stand up `packages/ElectronAIVN` (`@weaver/electron-aivn`) as the **AI Visual No
 
 #### Acceptance criteria
 
-- [ ] App shows branded empty home with a disabled or placeholder "Tell a story" affordance (wired in `122`)
-- [ ] Icons / brand mark present under `build/` (can start as placeholders documented in README)
+- [x] App shows branded empty home with a disabled or placeholder "Tell a story" affordance (wired in `122`)
+- [x] Icons / brand mark present under `build/` (can start as placeholders documented in README)
 
 ### 119.3 — Root script + docs
 
@@ -52,8 +52,8 @@ Stand up `packages/ElectronAIVN` (`@weaver/electron-aivn`) as the **AI Visual No
 
 #### Acceptance criteria
 
-- [ ] `preaivn` / `aivn` scripts in root `package.json`
-- [ ] README documents how to run AI Visual Novel locally
+- [x] `preaivn` / `aivn` scripts in root `package.json`
+- [x] README documents how to run AI Visual Novel locally
 
 ### 119.4 — Engine catalog stub
 
@@ -61,5 +61,5 @@ Stand up `packages/ElectronAIVN` (`@weaver/electron-aivn`) as the **AI Visual No
 
 #### Acceptance criteria
 
-- [ ] Main process can report engine package presence/health without invoking story pipelines
-- [ ] Contract or unit test covers catalog shape (same pattern as ElectronAITTRPG engine catalog)
+- [x] Main process can report engine package presence/health without invoking story pipelines
+- [x] Contract or unit test covers catalog shape (same pattern as ElectronAITTRPG engine catalog)

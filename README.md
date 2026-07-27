@@ -40,17 +40,19 @@ Package names encode where code belongs. Follow these conventions on every chang
 | `packages/LLMEngine` | `@weaver/llm-engine` | **Local LLM runtime controller.** Pins Qwen2.5 7B Instruct (Q4_K_M); prefers Vulkan, falls back to CPU. Exposes install status/`install`/`completeText` raw text passthrough so Electron UI can prompt download and exercise generation — no game invention, structured output, or tool calling here. |
 | `packages/ElectronAdmin` | `@weaver/electron-admin` | **AI ADMIN** Electron app (`npm run admin`). DEV panel for app/LLM metrics, exercising engine endpoints, and related tooling. UI + IPC only; no game business logic. Releasable alongside AI TTRPG. |
 | `packages/ElectronAITTRPG` | `@weaver/electron-aittrpg` | **AI TTRPG** releasable Electron game client (`npm run ai-ttrpg`; Win/Mac packaging). Product chrome/icons; wires UI to engines. No business rules in this package — call engines instead. |
+| `packages/ElectronAIVN` | `@weaver/electron-aivn` | **AI Visual Novel** Electron game client (`npm run aivn`). Tell-a-Story → VN play chrome; wires UI to engines via `@weaver/electron-ui`. No business rules in this package — call engines instead. |
 | `packages/ElectronUi` | `@weaver/electron-ui` | **Shared Electron game chrome.** Renderer-safe React presentation primitives, theme tokens, loading/titlebar/local-model/first-run shells reused by Electron game clients. No Electron main imports or engine wiring. |
 
 ## Setup
 
-Game app (same ergonomics as AI-DND-Matrix `npm run dev`):
+Game apps (same ergonomics as AI-DND-Matrix `npm run dev`):
 
 ```bash
 npm run ai-ttrpg
+npm run aivn
 ```
 
-That command bootstraps via `scripts/ensure-dev.mjs` (install / Electron binary / engines / migrate) then launches the AI TTRPG Electron UI.
+Those commands bootstrap via `scripts/ensure-dev.mjs` (install / Electron binary / engines / migrate) then launch the AI TTRPG or AI Visual Novel Electron UI.
 
 Admin panel (metrics, LLM review, test functions):
 
@@ -65,6 +67,7 @@ Manual pieces if you need them alone: `npm install`, `npm run build:engines`, `n
 | Command | Purpose |
 |---------|---------|
 | `npm run ai-ttrpg` | Bootstrap + AI TTRPG game app |
+| `npm run aivn` | Bootstrap + AI Visual Novel game app |
 | `npm run admin` | Bootstrap + AI ADMIN (metrics / test functions) |
 | `npm run migrate` | Apply pending migrations (currently none) |
 | `npm test` | Full Vitest suite (packages + CI scripts) |

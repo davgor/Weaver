@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "outDir": "out-tsc/node",
+    "tsBuildInfoFile": "out-tsc/node/tsconfig.node.tsbuildinfo",
+    "types": ["node"],
+    "lib": ["ES2022"]
+  },
+  "include": [
+    "src/main/**/*.ts",
+    "src/preload/**/*.ts",
+    "src/shared/**/*.ts"
+  ]
+}
