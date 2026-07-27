@@ -4,7 +4,7 @@
 
 ## Acceptance criteria
 
-- [ ] `peerPersistence.contract.test.ts` timeout raised above Windows CI worst-case observed (~35s)
-- [ ] Nearby heavy DMEngine peer/campaign contract tests at the same 30s cliff get matching headroom (`peerPipeline`, `draftPersistence`)
-- [ ] Named test still passes locally
-- [ ] PR CI `test (2)` (or full checks) green
+- [x] `peerPersistence.contract.test.ts` timeout raised above Windows CI worst-case observed (~35s)
+- [x] Nearby heavy DMEngine peer/campaign contract tests at the same 30s cliff get matching headroom (`peerPipeline`, `draftPersistence`)
+- [x] Named test still passes locally
+- [x] PR CI `test (2)` (or full checks) green
