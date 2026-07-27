@@ -18,14 +18,14 @@ Ship the home-screen **Tell a story** flow: collect premise + main-character det
 
 ## Acceptance criteria
 
-- [ ] Home shows **Tell a story** once LLM first-run gate is satisfied
-- [ ] Form collects premise, main-character details, and configurable act count (default 3)
-- [ ] After generation, overview review is required before Play
-- [ ] Play marks the story/game permanent and navigates into the VN play surface (or a stub route until `124` lands)
-- [ ] Permanent games appear on subsequent boots in a saved-games list
-- [ ] UI calls DMEngine published APIs only — no story-generation logic in the Electron package
-- [ ] Consumer `*.contract.test.ts` covers ElectronAIVN → DMEngine story APIs
-- [ ] Gates pass; cloud gate: PR checks green + PR marked ready
+- [x] Home shows **Tell a story** once LLM first-run gate is satisfied
+- [x] Form collects premise, main-character details, and configurable act count (default 3)
+- [x] After generation, overview review is required before Play
+- [x] Play marks the story/game permanent and navigates into the VN play surface (or a stub route until `124` lands)
+- [x] Permanent games appear on subsequent boots in a saved-games list
+- [x] UI calls DMEngine published APIs only — no story-generation logic in the Electron package
+- [x] Consumer `*.contract.test.ts` covers ElectronAIVN → DMEngine story APIs
+- [x] Gates pass; cloud gate: PR checks green + PR marked ready
 
 ## Sub-tickets
 
@@ -35,8 +35,8 @@ Ship the home-screen **Tell a story** flow: collect premise + main-character det
 
 #### Acceptance criteria
 
-- [ ] Form validates required fields client-side and via main-process service
-- [ ] Act count control defaults to 3 and documents allowed range
+- [x] Form validates required fields client-side and via main-process service
+- [x] Act count control defaults to 3 and documents allowed range
 
 ### 122.2 — Overview review
 
@@ -44,8 +44,8 @@ Ship the home-screen **Tell a story** flow: collect premise + main-character det
 
 #### Acceptance criteria
 
-- [ ] Review shows acts, cast, premise summary; Play disabled until explicit continue/confirm
-- [ ] Regenerate or back-to-edit policy documented and implemented (at least back-to-edit)
+- [x] Review shows acts, cast, premise summary; Play disabled until explicit continue/confirm
+- [x] Regenerate or back-to-edit policy documented and implemented (at least back-to-edit)
 
 ### 122.3 — Permanentize on Play
 
@@ -53,8 +53,8 @@ Ship the home-screen **Tell a story** flow: collect premise + main-character det
 
 #### Acceptance criteria
 
-- [ ] Play flips draft → permanent/active game record
-- [ ] Restart simulation still lists the game
+- [x] Play flips draft → permanent/active game record
+- [x] Restart simulation still lists the game
 
 ### 122.4 — Saved games on home
 
@@ -62,8 +62,8 @@ Ship the home-screen **Tell a story** flow: collect premise + main-character det
 
 #### Acceptance criteria
 
-- [ ] Home lists permanent games with resume affordance
-- [ ] Empty state still highlights Tell a story
+- [x] Home lists permanent games with resume affordance
+- [x] Empty state still highlights Tell a story
 
 ### 122.5 — Contract tests
 
@@ -71,4 +71,4 @@ Ship the home-screen **Tell a story** flow: collect premise + main-character det
 
 #### Acceptance criteria
 
-- [ ] Main-process service tests: create draft → review payload → permanentize → list
+- [x] Main-process service tests: create draft → review payload → permanentize → list

@@ -38,6 +38,23 @@ export type BootProgressUpdate = {
   statusText: string
 }
 
+export type {
+  PlayVnStoryResult,
+  VnSavedGameSummary,
+  VnStoryApi,
+  VnStoryDraft,
+  VnStoryReviewSnapshot
+} from './story/types.js'
+
+export type {
+  SubmitVnPlayActionRequest,
+  VnPlayApi,
+  VnPlaySnapshot
+} from './play/types.js'
+
+import type { VnStoryApi } from './story/types.js'
+import type { VnPlayApi } from './play/types.js'
+
 export type AivnApi = {
   windowControls: {
     minimize: () => void
@@ -59,6 +76,8 @@ export type AivnApi = {
     get: () => Promise<FirstRunSnapshot>
     dismiss: () => Promise<FirstRunSnapshot>
   }
+  story: VnStoryApi
+  play: VnPlayApi
   app: {
     getVersion: () => Promise<string>
   }

@@ -1,9 +1,24 @@
 import { useEffect, useState } from 'react'
 import { LoadingScreen, Titlebar } from '@weaver/electron-ui'
 import { APP_DISPLAY_NAME, BOOT_BRAND_TITLE } from '../../shared/appBranding'
-import type { BootProgressUpdate, FirstRunSnapshot, StartupBootSnapshot } from '../../shared/gameApi'
-import { EmptyHome } from './home/EmptyHome'
+import type {
+  BootProgressUpdate,
+  FirstRunSnapshot,
+  StartupBootSnapshot,
+  VnSavedGameSummary,
+  VnStoryReviewSnapshot
+} from '../../shared/gameApi'
+import { HomeScreen } from './home/HomeScreen'
 import { FirstRunOverlay } from './firstRun/FirstRunOverlay'
+import { TellStoryForm } from './story/TellStoryForm'
+import { StoryReview } from './story/StoryReview'
+import {
+  createTellStoryFormState,
+  draftFromForm,
+  type TellStoryFormState,
+  validateTellStoryForm
+} from './story/tellStoryFormState'
+import { PlaySession } from './play/PlaySession'
 
 const INITIAL_BOOT: StartupBootSnapshot = {
   phase: 'booting',
@@ -14,9 +29,17 @@ const INITIAL_BOOT: StartupBootSnapshot = {
   failureMessage: null
 }
 
+type Screen =
+  | { id: 'home' }
+  | { id: 'form' }
+  | { id: 'generating' }
+  | { id: 'review'; review: VnStoryReviewSnapshot }
+  | { id: 'play'; campaignId: string }
+
 export function App(): JSX.Element {
   const { boot, retry } = useBootSnapshot()
   const gate = useStoryGate(boot.phase === 'ready')
+  const nav = useAppNavigation(boot.phase === 'ready' && gate.canTellStory)
 
   return (
     <div className="app-root">
@@ -37,12 +60,143 @@ export function App(): JSX.Element {
         />
       ) : (
         <>
-          <EmptyHome canTellStory={gate.canTellStory} />
+          <AppScreen gate={gate} nav={nav} />
           {gate.showFirstRun ? <FirstRunOverlay onComplete={gate.refresh} /> : null}
         </>
       )}
     </div>
   )
+}
+
+type Nav = ReturnType<typeof useAppNavigation>
+
+function AppScreen(props: {
+  gate: { canTellStory: boolean }
+  nav: Nav
+}): JSX.Element {
+  const { screen, form, setForm, savedGames, busy, actions } = props.nav
+  if (screen.id === 'play') {
+    return <PlaySession campaignId={screen.campaignId} onHome={actions.goHome} />
+  }
+  if (screen.id === 'generating') {
+    return (
+      <LoadingScreen
+        brandTitle={BOOT_BRAND_TITLE}
+        stageLabel="Generating story"
+        statusText="Drafting acts, cast, and opening beat…"
+        progress={55}
+      />
+    )
+  }
+  if (screen.id === 'form') {
+    return (
+      <TellStoryForm
+        state={form}
+        onChange={setForm}
+        busy={busy}
+        onCancel={actions.goHome}
+        onSubmit={actions.submitForm}
+      />
+    )
+  }
+  if (screen.id === 'review') {
+    return (
+      <StoryReview
+        review={screen.review}
+        busy={busy}
+        onConfirm={actions.confirmReview}
+        onPlay={actions.playStory}
+        onBackToEdit={actions.backToEdit}
+      />
+    )
+  }
+  return (
+    <HomeScreen
+      canTellStory={props.gate.canTellStory}
+      savedGames={savedGames}
+      onTellStory={actions.startForm}
+      onResume={actions.resume}
+    />
+  )
+}
+
+function useAppNavigation(canLoadSaves: boolean) {
+  const [screen, setScreen] = useState<Screen>({ id: 'home' })
+  const [form, setForm] = useState<TellStoryFormState>(createTellStoryFormState)
+  const [savedGames, setSavedGames] = useState<VnSavedGameSummary[]>([])
+  const [busy, setBusy] = useState(false)
+
+  useEffect(() => {
+    if (!canLoadSaves) return
+    void window.aivn.story.listSavedGames().then(setSavedGames)
+  }, [canLoadSaves, screen.id])
+
+  return {
+    screen,
+    form,
+    setForm,
+    savedGames,
+    busy,
+    actions: {
+      goHome: () => setScreen({ id: 'home' }),
+      startForm: () => {
+        setForm(createTellStoryFormState())
+        setScreen({ id: 'form' })
+      },
+      resume: (campaignId: string) => setScreen({ id: 'play', campaignId }),
+      submitForm: () => void submitForm({ form, setForm, setBusy, setScreen }),
+      confirmReview: () => void confirmReview(setScreen),
+      playStory: () => void playStory(setBusy, setScreen),
+      backToEdit: () => void backToEdit(setScreen)
+    }
+  }
+}
+
+async function submitForm(args: {
+  form: TellStoryFormState
+  setForm: (next: TellStoryFormState) => void
+  setBusy: (busy: boolean) => void
+  setScreen: (screen: Screen) => void
+}): Promise<void> {
+  const validated = validateTellStoryForm(args.form)
+  args.setForm(validated)
+  if (validated.error !== null) return
+  args.setBusy(true)
+  args.setScreen({ id: 'generating' })
+  try {
+    const review = await window.aivn.story.startGeneration(draftFromForm(validated))
+    if (review.status === 'error') {
+      args.setForm({ ...validated, error: review.errorMessage ?? 'Generation failed' })
+      args.setScreen({ id: 'form' })
+      return
+    }
+    args.setScreen({ id: 'review', review })
+  } finally {
+    args.setBusy(false)
+  }
+}
+
+async function confirmReview(setScreen: (screen: Screen) => void): Promise<void> {
+  const review = await window.aivn.story.confirmReview()
+  setScreen({ id: 'review', review })
+}
+
+async function playStory(
+  setBusy: (busy: boolean) => void,
+  setScreen: (screen: Screen) => void
+): Promise<void> {
+  setBusy(true)
+  try {
+    const played = await window.aivn.story.play()
+    setScreen({ id: 'play', campaignId: played.campaignId })
+  } finally {
+    setBusy(false)
+  }
+}
+
+async function backToEdit(setScreen: (screen: Screen) => void): Promise<void> {
+  await window.aivn.story.backToEdit()
+  setScreen({ id: 'form' })
 }
 
 function useBootSnapshot(): {
