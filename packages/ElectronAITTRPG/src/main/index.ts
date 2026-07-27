@@ -1,12 +1,5 @@
 import { app, BrowserWindow, ipcMain, Menu } from 'electron'
 import { join } from 'node:path'
-import {
-  buildSessionRecap,
-  getCharacterSessionCursor,
-  listCausalEvents,
-  recordCharacterSessionCursor
-} from '@weaver/dm-engine'
-import { listCompanions } from '@weaver/character-engine'
 import { resolveBrowserWindowIconPath } from './appIcon.js'
 import { buildStartupBoot } from './engineCatalog.js'
 import { initAutoUpdate, registerAutoUpdateHandlers } from './autoUpdate.js'
@@ -14,15 +7,11 @@ import { registerCharacterSheetHandlers } from './characterSheet/registerHandler
 import { registerNpcDossierHandlers } from './npcDossier/registerHandlers.js'
 import { registerSettingsHandlers } from './settings/registerHandlers.js'
 import { registerCampaignCreateHandlers } from './campaignCreate/registerHandlers.js'
-import { createCampaignCreateService } from './campaignCreate/campaignCreateService.js'
-import { createLiveGenerationPort } from './campaignCreate/runGeneration.js'
-import { createCampaignsService } from './campaigns/campaignsService.js'
 import { registerCampaignsHandlers } from './campaigns/registerHandlers.js'
-import { createCampaignHubService } from './campaignHub/campaignHubService.js'
 import { registerCampaignHubHandlers } from './campaignHub/registerHandlers.js'
 import { registerOnboardingHandlers } from './onboarding/registerHandlers.js'
-import { createLiveOnboardingPorts, createOnboardingService } from './onboarding/onboardingService.js'
 import { registerPlayHandlers } from './play/registerHandlers.js'
+import { createGameServices, resolveCampaignsRoot } from './gameServices.js'
 import { setupGlobalErrorLogging } from './logger.js'
 import { APP_DISPLAY_NAME } from '../shared/appBranding.js'
 
@@ -79,41 +68,17 @@ function registerWindowControlHandlers(): void {
 }
 
 function registerGameHandlers(): void {
-  const services = createGameServices()
+  const services = createGameServices(resolveCampaignsRoot(app.getPath('userData')))
   ipcMain.handle('startup:getBoot', () => buildStartupBoot())
   ipcMain.handle('app:getVersion', () => app.getVersion())
   registerCampaignsHandlers({ service: services.campaigns })
   registerCharacterSheetHandlers()
   registerNpcDossierHandlers()
-  registerSettingsHandlers()
+  registerSettingsHandlers(services.settingsHandlers)
   registerCampaignCreateHandlers({ service: services.campaignCreate })
   registerOnboardingHandlers({ service: services.onboarding })
   registerCampaignHubHandlers({ service: services.campaignHub })
-  registerPlayHandlers()
-}
-
-function createGameServices() {
-  const campaignsRoot = join(app.getPath('userData'), 'campaigns')
-  const campaignCreate = createCampaignCreateService(createLiveGenerationPort(campaignsRoot))
-  const onboarding = createOnboardingService(createLiveOnboardingPorts())
-  return {
-    campaignCreate,
-    onboarding,
-    campaigns: createCampaignsService({
-      getReview: campaignCreate.getReview,
-      listCharacters: onboarding.listCharacters
-    }),
-    campaignHub: createCampaignHubService({
-      getReview: campaignCreate.getReview,
-      listCompletedCharacters: onboarding.listCompletedCharacters,
-      listCharacters: onboarding.listCharacters,
-      listCompanions,
-      listCausalEvents,
-      getCharacterSessionCursor,
-      recordCharacterSessionCursor,
-      buildSessionRecap
-    })
-  }
+  registerPlayHandlers(services.play)
 }
 
 app.whenReady().then(() => {

@@ -31,7 +31,7 @@ import type { CampaignCreateGenerationPort } from './campaignCreateService.js'
 export type RunGenerationDeps = CampaignGenerationDeps
 
 export function createLiveGenerationDeps(
-  completer: CampaignGenerationDeps['completer'] = scriptedCompleter()
+  completer: CampaignGenerationDeps['completer']
 ): CampaignGenerationDeps {
   return {
     narration: { fillAndValidate },
@@ -54,7 +54,7 @@ export function createLiveGenerationDeps(
 
 export function createLiveGenerationPort(
   campaignsRoot: string,
-  deps: CampaignGenerationDeps = createLiveGenerationDeps()
+  deps: CampaignGenerationDeps
 ): CampaignCreateGenerationPort {
   return {
     generate: (input) => invokeRunCampaignGeneration(input, deps),
@@ -90,7 +90,8 @@ export function resolveCampaignPaths(
   }
 }
 
-function scriptedCompleter(): CampaignGenerationDeps['completer'] {
+/** Deterministic labeled-block completer for contract/unit tests only. */
+export function scriptedCampaignCompleter(): CampaignGenerationDeps['completer'] {
   return {
     async completeText() {
       return {

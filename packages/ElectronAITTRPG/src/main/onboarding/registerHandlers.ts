@@ -1,23 +1,12 @@
 import { ipcMain } from 'electron'
 import type { OnboardingApi } from '../../shared/onboarding/types.js'
-import {
-  createLiveOnboardingPorts,
-  createOnboardingService,
-  type OnboardingPorts,
-  type OnboardingService
-} from './onboardingService.js'
+import { type OnboardingPorts, type OnboardingService } from './onboardingService.js'
 
 type OnboardingHandlerDeps = {
   service: OnboardingService
 }
 
-function createLiveOnboardingHandlerDeps(): OnboardingHandlerDeps {
-  return { service: createOnboardingService(createLiveOnboardingPorts()) }
-}
-
-export function registerOnboardingHandlers(
-  deps: OnboardingHandlerDeps = createLiveOnboardingHandlerDeps()
-): void {
+export function registerOnboardingHandlers(deps: OnboardingHandlerDeps): void {
   const api = buildOnboardingApi(deps.service)
   ipcMain.handle('onboarding:begin', (_event, request) => api.begin(request))
   ipcMain.handle('onboarding:getState', (_event, request) => api.getState(request))

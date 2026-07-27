@@ -85,16 +85,20 @@ Optional: import minimal layout classes from existing `modal-overlay` / `modal-p
 
 `generativeTokensEnabled` is accepted only on `CampaignCreateDraft` at `startGeneration`. The service rejects `updateReviewField` attempts to change it mid-campaign.
 
-For production LLM calls, pass a real `TextCompleter` when constructing handler deps:
+Production LLM calls use the shared Settings-backed `TextCompleter` from `createGameServices()` / `createSharedSettingsServices()`:
 
 ```ts
+const settings = createSharedSettingsServices()
 registerCampaignCreateHandlers({
   service: createCampaignCreateService(
-    createLiveGenerationPort(campaignsRoot, createLiveGenerationDeps(textCompleterFromSettings))
+    createLiveGenerationPort(
+      campaignsRoot,
+      createLiveGenerationDeps(settings.textCompleter)
+    )
   )
 })
 ```
 
-If omitted, `createLiveGenerationDeps()` falls back to the scripted contract completer (suitable for deterministic tests only).
+`createLiveGenerationDeps(completer)` requires an explicit completer — there is no silent scripted default on the production path. Deterministic contract/unit tests pass `scriptedCampaignCompleter()` instead.
 
 `deathMode` is stored on the draft/review snapshot for the parent to apply via CharacterEngine (`setCampaignDeathMode`) when persisting the campaign after confirmation.

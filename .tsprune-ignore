@@ -721,11 +721,11 @@ packages/ElectronAITTRPG/src/main/campaigns/campaignsService.ts:22 - CampaignsPo
 packages/ElectronAITTRPG/src/main/campaigns/campaignsService.ts:30 - CampaignsServiceDeps
 packages/ElectronAITTRPG/src/main/characterSheet/demoSeed.ts:17 - DEMO_SHEET_CHARACTER_NAME
 packages/ElectronAITTRPG/src/main/characterSheet/demoSeed.ts:18 - DEMO_SHEET_SCORES
-packages/ElectronAITTRPG/src/main/onboarding/onboardingService.ts:247 - listOnboardingCharacters
-packages/ElectronAITTRPG/src/main/onboarding/onboardingService.ts:253 - listCompletedOnboardingCharacters
-packages/ElectronAITTRPG/src/main/onboarding/onboardingService.ts:62 - OnboardingCharacterSummary
-packages/ElectronAITTRPG/src/main/onboarding/registerHandlers.ts:52 - buildOnboardingApi
-packages/ElectronAITTRPG/src/main/onboarding/registerHandlers.ts:73 - OnboardingPorts
+packages/ElectronAITTRPG/src/main/onboarding/onboardingService.ts:248 - listOnboardingCharacters
+packages/ElectronAITTRPG/src/main/onboarding/onboardingService.ts:254 - listCompletedOnboardingCharacters
+packages/ElectronAITTRPG/src/main/onboarding/onboardingService.ts:61 - OnboardingCharacterSummary
+packages/ElectronAITTRPG/src/main/onboarding/registerHandlers.ts:41 - buildOnboardingApi
+packages/ElectronAITTRPG/src/main/onboarding/registerHandlers.ts:62 - OnboardingPorts
 packages/ElectronAITTRPG/src/main/play/askDmService.ts:9 - AskDmServiceDeps
 packages/ElectronAITTRPG/src/main/play/characterDeathLifecycle.ts:28 - HandleCharacterLifecycleInput
 packages/ElectronAITTRPG/src/renderer/src/onboarding/steps/MechanicalSetupStep.tsx:187 - defaultAbilityScores
