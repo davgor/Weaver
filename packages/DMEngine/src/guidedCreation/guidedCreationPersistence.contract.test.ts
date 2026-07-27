@@ -38,7 +38,7 @@ describe('guided creation campaign-session persistence', () => {
       })
       created.close()
 
-      openCampaignSession({ campaignId: 'guided-campaign', filePath })
+      const opened = openCampaignSession({ campaignId: 'guided-campaign', filePath })
       expect(getGuidedCreationState('pc-guided')).toMatchObject({
         guidedCreationPhase: 'opening_scene',
         openingScene: 'Rain gathers at the inn door.',
@@ -47,6 +47,7 @@ describe('guided creation campaign-session persistence', () => {
           { speaker: 'dm', phase: 'why', text: 'The old bell answers.' }
         ]
       })
+      opened.close()
     })
   })
 })
@@ -56,6 +57,11 @@ function withCampaignPath(run: (filePath: string) => void): void {
   try {
     run(join(root, 'campaign.sqlite'))
   } finally {
-    rmSync(root, { force: true, recursive: true })
+    getActiveCampaignSession()?.close()
+    try {
+      rmSync(root, { force: true, recursive: true })
+    } catch {
+      // Windows CI can briefly lock sqlite after close.
+    }
   }
 }
