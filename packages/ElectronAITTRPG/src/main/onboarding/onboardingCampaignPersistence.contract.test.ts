@@ -111,10 +111,24 @@ function characterPorts(): OnboardingCharacterPorts {
     rollAbilityScoreDraft: () => ({ scores: SCORES, rolls: rolls(), confirmed: false }),
     confirmRolledAbilityScores: (draft) => draft.scores,
     listArchetypes: () => [{ id: 'Ranger', name: 'Ranger', minLevel: 1, maxLevel: 20, hitDie: 10 }],
-    listCampaignRaces: () => [{ raceId: 'elf', name: 'Elf' }],
-    listCampaignBackgrounds: () => [{ backgroundId: 'outlander', name: 'Outlander' }],
-    selectRace: (input) => ({ ...input, name: 'Elf' }),
-    selectBackground: (input) => ({ ...input, name: 'Outlander' }),
+    listCampaignRaces: () => [{ raceId: 'elf', name: 'Elf', lore: 'forest kin' }],
+    listCampaignBackgrounds: () => [
+      { backgroundId: 'outlander', name: 'Outlander', description: 'wilderness survivor' }
+    ],
+    selectRace: (input) => ({
+      campaignId: input.campaignId,
+      characterId: input.characterId,
+      raceId: input.raceId,
+      name: 'Elf',
+      lore: input.lore ?? 'forest kin'
+    }),
+    selectBackground: (input) => ({
+      campaignId: input.campaignId,
+      characterId: input.characterId,
+      backgroundId: input.backgroundId,
+      name: 'Outlander',
+      description: 'wilderness survivor'
+    }),
     selectStartingLoadout: (characterId, archetype) => ({
       characterId,
       archetype,
@@ -205,6 +219,11 @@ function ctx() {
 function withCampaignPath(run: (filePath: string) => Promise<void>): Promise<void> {
   const root = mkdtempSync(join(tmpdir(), 'aittrpg-onboarding-restart-'))
   return run(join(root, 'campaign.sqlite')).finally(() => {
-    rmSync(root, { force: true, recursive: true })
+    getActiveCampaignSession()?.close()
+    try {
+      rmSync(root, { force: true, recursive: true })
+    } catch {
+      // Windows CI can briefly lock sqlite files after close; leave temp dir for OS cleanup.
+    }
   })
 }
