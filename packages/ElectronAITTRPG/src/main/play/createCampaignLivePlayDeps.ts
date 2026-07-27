@@ -57,7 +57,7 @@ export function createCampaignLivePlayDeps(
   }
 }
 
-export function ensureOpenSession(campaignsRoot: string, campaignId: string): CampaignSession {
+function ensureOpenSession(campaignsRoot: string, campaignId: string): CampaignSession {
   const active = getActiveCampaignSession()
   if (active?.campaignId === campaignId) return active
   active?.close()
