@@ -37,6 +37,28 @@ describe('vnPlayService', () => {
     expect(next.speakerName).toBe('Harbor Warden')
     expect(next.placeholders.some((row) => row.slot === 'npc')).toBe(true)
   })
+
+  it('rejects submit when no session is open for the campaign', async () => {
+    const service = createVnPlayService(testDeps())
+    await expect(
+      service.submitAction({ campaignId: 'vn-1', text: 'look around' })
+    ).rejects.toThrow(/no active vn play session/i)
+  })
+
+  it('uses scene prose when projections are empty after a scene turn', async () => {
+    const resolveTurnFn = vi.fn(async (): Promise<ResolveTurnResult> => ({
+      route: 'narration',
+      skipLlm: false,
+      resolution: { kind: 'narration', text: 'look' },
+      narration: { kind: 'scene', status: 'persisted', prose: 'Lanterns flicker.' },
+      projections: { scene: [], social: [] }
+    }))
+    const service = createVnPlayService(testDeps({ resolveTurnFn }))
+    await service.open('vn-1')
+    const next = await service.submitAction({ campaignId: 'vn-1', text: 'look around' })
+    expect(next.mode).toBe('scene')
+    expect(next.beatText).toBe('Lanterns flicker.')
+  })
 })
 
 function testDeps(overrides: Partial<VnPlayServiceDeps> = {}): VnPlayServiceDeps {
@@ -90,7 +112,7 @@ function socialResult(): ResolveTurnResult {
           kind: 'npc',
           speakerId: 'npc-1',
           text: 'The warden scowls.',
-          at: '2026-01-01T00:00:00.000Z'
+          at: Date.now()
         }
       ]
     }
@@ -119,8 +141,8 @@ function minimalTurnDeps(): ResolveTurnDeps {
       }
     },
     currency: {
-      credit: () => undefined,
-      debit: () => undefined,
+      credit: () => ({ characterId: 'x', balance: 0 }),
+      debit: () => ({ characterId: 'x', balance: 0 }),
       getBalance: () => 0,
       clampProposedPrice: (n) => n
     },

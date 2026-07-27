@@ -36,6 +36,13 @@ describe('vnStoryService generation', () => {
     expect(snapshot.status).toBe('error')
     expect(snapshot.errorMessage).toMatch(/pipeline boom/)
   })
+
+  it('rejects invalid drafts before generation starts', async () => {
+    const service = createTestService()
+    await expect(
+      service.startGeneration({ ...validDraft(), premise: '' })
+    ).rejects.toThrow(/premise/i)
+  })
 })
 
 describe('vnStoryService review gates', () => {

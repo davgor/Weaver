@@ -2,7 +2,7 @@ import type { VnBeatPlaceholder } from '@weaver/narration-engine'
 import type { VnPlayMode } from '../../../shared/play/types'
 
 type PlaceholderLayerProps = {
-  placeholders: VnBeatPlaceholder[]
+  placeholders: readonly VnBeatPlaceholder[]
   mode: VnPlayMode
 }
 

@@ -20,7 +20,9 @@ export type BuildPlayPlaceholdersInput = {
   npcExpression?: VnExpression
 }
 
-export function buildPlayPlaceholders(input: BuildPlayPlaceholdersInput): VnBeatPlaceholder[] {
+export function buildPlayPlaceholders(
+  input: BuildPlayPlaceholdersInput
+): readonly VnBeatPlaceholder[] {
   const mc = {
     identity: {
       characterKey: `${input.campaignId}-vn-mc`,

@@ -113,7 +113,7 @@ async function openPlay(deps: VnPlayServiceDeps, campaignId: string): Promise<Ac
       {
         id: 'opening',
         text: loaded.overview.openingBeat,
-        at: new Date().toISOString()
+        at: Date.now()
       }
     ],
     social: []

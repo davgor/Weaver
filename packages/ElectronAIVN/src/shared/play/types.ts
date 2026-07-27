@@ -11,7 +11,7 @@ export type VnPlaySnapshot = {
   speakerName: string | null
   options: [string, string]
   freeText: string
-  placeholders: VnBeatPlaceholder[]
+  placeholders: readonly VnBeatPlaceholder[]
   scene: SceneBlock[]
   social: SocialLine[]
   mainCharacter: VnMainCharacterBrief
