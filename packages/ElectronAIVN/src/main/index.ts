@@ -1,10 +1,18 @@
 import { app, BrowserWindow, ipcMain, Menu } from 'electron'
 import { join } from 'node:path'
-import { resolveBrowserWindowIconPath } from './appIcon.js'
-import { buildStartupBoot } from './engineCatalog.js'
+import type { LocalBackendPreference } from '../shared/gameApi.js'
 import { APP_DISPLAY_NAME } from '../shared/appBranding.js'
+import { resolveBrowserWindowIconPath } from './appIcon.js'
+import { checkCatalogHealth } from './engineCatalog.js'
+import { createPreferredLlmEngine, defaultAivnLlmDataDir } from './llm/createPreferredEngine.js'
+import { createNodePrefsFs } from './llm/nodePrefsFs.js'
+import { readBackendPreference } from './llm/backendPreferenceStore.js'
+import { registerLlmHandlers } from './llm/registerHandlers.js'
+import type { LocalLlmEnginePort } from './llm/llmPorts.js'
 
 Menu.setApplicationMenu(null)
+
+type EngineHolder = { current: LocalLlmEnginePort }
 
 function createMainWindow(): BrowserWindow {
   const mainWindow = new BrowserWindow({
@@ -55,14 +63,34 @@ function registerWindowControlHandlers(): void {
   })
 }
 
+async function wireLlmAndStartup(): Promise<void> {
+  const prefsFs = createNodePrefsFs()
+  const prefsPath = join(app.getPath('userData'), 'aivn-llm-prefs.json')
+  const dataDir = defaultAivnLlmDataDir(app.getPath('userData'))
+  const preferred = await readBackendPreference(prefsFs, prefsPath)
+  const holder: EngineHolder = {
+    current: createPreferredLlmEngine({ dataDir, preferredBackend: preferred })
+  }
+
+  registerLlmHandlers({
+    getEngine: () => holder.current,
+    setPreferredBackend: async (backend: LocalBackendPreference) => {
+      holder.current = createPreferredLlmEngine({ dataDir, preferredBackend: backend })
+    },
+    prefsFs,
+    prefsPath,
+    checkEngines: checkCatalogHealth
+  })
+}
+
 function registerAppHandlers(): void {
-  ipcMain.handle('startup:getBoot', () => buildStartupBoot())
   ipcMain.handle('app:getVersion', () => app.getVersion())
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   registerWindowControlHandlers()
   registerAppHandlers()
+  await wireLlmAndStartup()
   createMainWindow()
 
   app.on('activate', () => {

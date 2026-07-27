@@ -15,6 +15,7 @@ import { dmEngine } from '@weaver/dm-engine'
 import { llmEngine } from '@weaver/llm-engine'
 import { summarizeEngineHealth } from '../shared/engineHealth.js'
 import type { StartupBootSnapshot } from '../shared/gameApi.js'
+import type { EngineHealthCheck } from './llm/startupBoot.js'
 
 const engines = [
   combatEngine,
@@ -34,8 +35,14 @@ const engines = [
   llmEngine
 ] as const
 
-export function buildStartupBoot(): StartupBootSnapshot {
+export function checkCatalogHealth(): EngineHealthCheck {
   const health = summarizeEngineHealth(engines.map((engine) => ({ id: engine.id })))
+  return { ready: health.ready, label: health.label }
+}
+
+/** Sync health-only boot (contract tests / catalog presence). */
+export function buildStartupBoot(): StartupBootSnapshot {
+  const health = checkCatalogHealth()
   if (!health.ready) {
     return {
       phase: 'failed',

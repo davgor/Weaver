@@ -19,12 +19,12 @@ Wire AI Visual Novel’s startup so new users pick CPU or GPU local LLM, downloa
 
 ## Acceptance criteria
 
-- [ ] New user cannot reach “Tell a story” until local model is installed and a backend (Vulkan GPU or CPU) is selected
-- [ ] First-run UI uses `@weaver/electron-ui` intro + install chrome; main process calls LLMEngine `getStatus` / `install` only
-- [ ] Returning user boot starts selected LLM headlessly alongside the branded loading screen (Matrix-parity animation via ElectronUi)
-- [ ] Backend preference persists across restarts
-- [ ] Consumer `*.contract.test.ts` covers ElectronAIVN → LLMEngine status/install APIs
-- [ ] Gates pass; cloud gate: PR checks green + PR marked ready
+- [x] New user cannot reach “Tell a story” until local model is installed and a backend (Vulkan GPU or CPU) is selected
+- [x] First-run UI uses `@weaver/electron-ui` intro + install chrome; main process calls LLMEngine `getStatus` / `install` only
+- [x] Returning user boot starts selected LLM headlessly alongside the branded loading screen (Matrix-parity animation via ElectronUi)
+- [x] Backend preference persists across restarts
+- [x] Consumer `*.contract.test.ts` covers ElectronAIVN → LLMEngine status/install APIs
+- [x] Gates pass; cloud gate: PR checks green + PR marked ready
 
 ## Sub-tickets
 
@@ -34,9 +34,9 @@ Wire AI Visual Novel’s startup so new users pick CPU or GPU local LLM, downloa
 
 #### Acceptance criteria
 
-- [ ] Intro flow offers explicit GPU (Vulkan) vs CPU choice before/with install
-- [ ] Progress events surface in UI; dismiss only when status is ready
-- [ ] Unit tests cover gate evaluation (not installed / installing / ready)
+- [x] Intro flow offers explicit GPU (Vulkan) vs CPU choice before/with install
+- [x] Progress events surface in UI; dismiss only when status is ready
+- [x] Unit tests cover gate evaluation (not installed / installing / ready)
 
 ### 120.2 — Headless runtime launch
 
@@ -44,8 +44,8 @@ Wire AI Visual Novel’s startup so new users pick CPU or GPU local LLM, downloa
 
 #### Acceptance criteria
 
-- [ ] On app start for returning users, main begins LLM runtime bring-up without a blocking settings visit
-- [ ] Failure path shows recoverable error on loading screen (retry / open settings)
+- [x] On app start for returning users, main begins LLM runtime bring-up without a blocking settings visit
+- [x] Failure path shows recoverable error on loading screen (retry / open settings)
 
 ### 120.3 — Branded loading screen
 
@@ -53,8 +53,8 @@ Wire AI Visual Novel’s startup so new users pick CPU or GPU local LLM, downloa
 
 #### Acceptance criteria
 
-- [ ] Boot UI title/stage copy includes “AI Visual Novel powered by Weaver”
-- [ ] Progress reflects LLM boot stages (not a fake indeterminate-only spinner)
+- [x] Boot UI title/stage copy includes “AI Visual Novel powered by Weaver”
+- [x] Progress reflects LLM boot stages (not a fake indeterminate-only spinner)
 
 ### 120.4 — LLMEngine contract tests
 
@@ -62,4 +62,4 @@ Wire AI Visual Novel’s startup so new users pick CPU or GPU local LLM, downloa
 
 #### Acceptance criteria
 
-- [ ] `*.contract.test.ts` pins `getStatus` / `install` against real `@weaver/llm-engine` exports (no live multi-GB download)
+- [x] `*.contract.test.ts` pins `getStatus` / `install` against real `@weaver/llm-engine` exports (no live multi-GB download)
