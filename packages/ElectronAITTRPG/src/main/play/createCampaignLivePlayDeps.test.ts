@@ -32,19 +32,12 @@ afterEach(() => {
   }
 })
 
-describe('createCampaignLivePlayDeps factory', () => {
+describe('createCampaignLivePlayDeps session', () => {
   it('opens the campaign session and injects SQLite-backed currency', () => {
     const campaignsRoot = tempRoot()
     const campaignId = 'live-play-camp'
     seedCampaign(campaignsRoot, campaignId)
-
-    const { session, resolveTurnDeps } = createCampaignLivePlayDeps({
-      campaignId,
-      characterId: 'pc-hero',
-      campaignsRoot,
-      textCompleter: completer
-    })
-
+    const { session, resolveTurnDeps } = openLiveDeps(campaignsRoot, campaignId)
     expect(session.campaignId).toBe(campaignId)
     expect(session.isStoreBound()).toBe(true)
     resolveTurnDeps.currency.credit('pc-hero', 12)
@@ -61,17 +54,14 @@ describe('createCampaignLivePlayDeps factory', () => {
       })
     ).toThrow(CampaignLivePlayError)
   })
+})
 
+describe('createCampaignLivePlayDeps peers', () => {
   it('uses real NPC and location peers instead of always-true stubs', () => {
     const campaignsRoot = tempRoot()
     const campaignId = 'peer-camp'
     seedCampaign(campaignsRoot, campaignId)
-    const deps = createCampaignLivePlayDeps({
-      campaignId,
-      characterId: 'pc-hero',
-      campaignsRoot,
-      textCompleter: completer
-    }).resolveTurnDeps
+    const deps = openLiveDeps(campaignsRoot, campaignId).resolveTurnDeps
     setCharacterLocation({
       characterId: 'pc-hero',
       campaignId,
@@ -79,24 +69,32 @@ describe('createCampaignLivePlayDeps factory', () => {
       placeId: 'docks',
       locationKind: 'settlement'
     })
-
     expect(deps.narration.npcs.getNpc('missing')).toBeUndefined()
     expect(deps.narration.locations?.isKnownLocation('docks')).toBe(true)
     expect(deps.narration.locations?.isKnownLocation('unknown-place')).toBe(false)
   })
 
+  it('consults inventory for item claims', () => {
+    const campaignsRoot = tempRoot()
+    const campaignId = 'item-camp'
+    seedCampaign(campaignsRoot, campaignId)
+    openLiveDeps(campaignsRoot, campaignId)
+    itemEngine.defineTemplate({ id: 'sword.basic', name: 'Sword' })
+    itemEngine.createInventory('pc-hero')
+    itemEngine.addItem('pc-hero', 'sword.basic')
+    const deps = openLiveDeps(campaignsRoot, campaignId).resolveTurnDeps
+    expect(deps.narration.items?.hasItem('sword.basic')).toBe(true)
+    expect(deps.narration.items?.hasItem('missing.item')).toBe(false)
+  })
+})
+
+describe('createCampaignLivePlayDeps persist', () => {
   it('persists turn records under the campaign data root', () => {
     const campaignsRoot = tempRoot()
     const campaignId = 'persist-camp'
     seedCampaign(campaignsRoot, campaignId)
-    const deps = createCampaignLivePlayDeps({
-      campaignId,
-      characterId: 'pc-hero',
-      campaignsRoot,
-      textCompleter: completer
-    }).resolveTurnDeps
-    const record = samplePersistRecord(campaignId)
-    deps.persist(record)
+    const deps = openLiveDeps(campaignsRoot, campaignId).resolveTurnDeps
+    deps.persist(samplePersistRecord(campaignId))
     const turnsDir = join(campaignsRoot, campaignId, 'data', 'turns')
     const files = readdirSync(turnsDir)
     expect(files.length).toBe(1)
@@ -104,30 +102,16 @@ describe('createCampaignLivePlayDeps factory', () => {
     expect(stored.characterId).toBe('pc-hero')
     expect(stored.route).toBe('narration')
   })
-
-  it('consults inventory for item claims', () => {
-    const campaignsRoot = tempRoot()
-    const campaignId = 'item-camp'
-    seedCampaign(campaignsRoot, campaignId)
-    createCampaignLivePlayDeps({
-      campaignId,
-      characterId: 'pc-hero',
-      campaignsRoot,
-      textCompleter: completer
-    })
-    itemEngine.defineTemplate({ id: 'sword.basic', name: 'Sword' })
-    itemEngine.createInventory('pc-hero')
-    itemEngine.addItem('pc-hero', 'sword.basic')
-    const deps = createCampaignLivePlayDeps({
-      campaignId,
-      characterId: 'pc-hero',
-      campaignsRoot,
-      textCompleter: completer
-    }).resolveTurnDeps
-    expect(deps.narration.items?.hasItem('sword.basic')).toBe(true)
-    expect(deps.narration.items?.hasItem('missing.item')).toBe(false)
-  })
 })
+
+function openLiveDeps(campaignsRoot: string, campaignId: string) {
+  return createCampaignLivePlayDeps({
+    campaignId,
+    characterId: 'pc-hero',
+    campaignsRoot,
+    textCompleter: completer
+  })
+}
 
 function seedCampaign(campaignsRoot: string, campaignId: string): void {
   createCampaignSession({
@@ -141,15 +125,8 @@ function samplePersistRecord(campaignId: string): TurnPersistRecord {
     campaignId,
     characterId: 'pc-hero',
     route: 'narration',
-    resolution: {
-      kind: 'narration',
-      text: 'Hello'
-    },
-    narration: {
-      kind: 'scene',
-      status: 'persisted',
-      prose: 'A quiet dock.'
-    }
+    resolution: { kind: 'narration', text: 'Hello' },
+    narration: { kind: 'scene', status: 'persisted', prose: 'A quiet dock.' }
   }
 }
 

@@ -15,8 +15,10 @@ import {
   type ResolveTurnDeps
 } from '@weaver/dm-engine'
 import { fillAndValidate, type TextCompleter } from '@weaver/narration-engine'
+import { resolveCampaignDataRoot } from '../campaigns/campaignDisk.js'
 import { createAskDmService, type AskDmService } from './askDmService.js'
 import { createCampaignLivePlayDeps } from './createCampaignLivePlayDeps.js'
+import { writeDurableAutosave } from './durableAutosave.js'
 import { createTurnService, type TurnService } from './turnService.js'
 
 export type LivePlayDeps = {
@@ -30,27 +32,41 @@ type LivePlayDepsOptions = {
 }
 
 export function createLivePlayHandlerDeps(options: LivePlayDepsOptions): LivePlayDeps {
+  let activeCampaignId = ''
   return {
     turnService: createTurnService({
       resolveTurn,
-      getDeps: (campaignId, characterId) =>
-        createCampaignLivePlayDeps({
+      getDeps: (campaignId, characterId) => {
+        activeCampaignId = campaignId
+        return createCampaignLivePlayDeps({
           campaignId,
           characterId,
           campaignsRoot: options.campaignsRoot,
           textCompleter: options.textCompleter
-        }).resolveTurnDeps,
-      getEncounter: (encounterId, campaignId, characterId) =>
-        createCampaignLivePlayDeps({
+        }).resolveTurnDeps
+      },
+      getEncounter: (encounterId, campaignId, characterId) => {
+        activeCampaignId = campaignId
+        return createCampaignLivePlayDeps({
           campaignId,
           characterId,
           campaignsRoot: options.campaignsRoot,
           textCompleter: options.textCompleter
-        }).resolveTurnDeps.combat.getEncounter(encounterId),
+        }).resolveTurnDeps.combat.getEncounter(encounterId)
+      },
       character: {
         getCharacterStats,
         getCharacterProgression,
-        recordAutosaveSnapshot,
+        recordAutosaveSnapshot: (characterId, snapshot) => {
+          if (activeCampaignId.trim().length === 0) {
+            return recordAutosaveSnapshot(characterId, snapshot)
+          }
+          return writeDurableAutosave(
+            resolveCampaignDataRoot(options.campaignsRoot, activeCampaignId),
+            characterId,
+            snapshot
+          )
+        },
         resolveCharacterDeath
       }
     }),

@@ -19,13 +19,13 @@ Persist guided character creation, onboarding phase/selections, completed PC rec
 
 ## Acceptance criteria
 
-- [ ] Onboarding wizard resumes at the saved phase after app restart
-- [ ] Completed PCs appear in campaign hub after restart without re-onboarding
-- [ ] Hub remembers last-selected active character per campaign
-- [ ] Guided creation transcript and opening-scene flags persist (REBUILD_SPEC per-character guided state)
-- [ ] No module-level `Map` remains on the production onboarding path
-- [ ] Portability export includes onboarding/guided state (this epic or `108.4`)
-- [ ] Sub-tickets verified; gates pass; cloud gate: PR checks green + PR marked ready
+- [x] Onboarding wizard resumes at the saved phase after app restart
+- [x] Completed PCs appear in campaign hub after restart without re-onboarding
+- [x] Hub remembers last-selected active character per campaign
+- [x] Guided creation transcript and opening-scene flags persist (REBUILD_SPEC per-character guided state)
+- [x] No module-level `Map` remains on the production onboarding path
+- [x] Portability export includes onboarding/guided state (this epic or `108.4`)
+- [x] Sub-tickets verified; gates pass; cloud gate: PR checks green + PR marked ready
 
 ## Sub-tickets
 
@@ -35,8 +35,8 @@ Persist guided character creation, onboarding phase/selections, completed PC rec
 
 #### Acceptance criteria
 
-- [ ] Campaign tables or JSON blobs store onboarding phase, archetype/race/background selections, guided transcript
-- [ ] Unit tests cover save/load/resume
+- [x] Campaign tables or JSON blobs store onboarding phase, archetype/race/background selections, guided transcript
+- [x] Unit tests cover save/load/resume
 
 ### 109.2 — Hub session cursor
 
@@ -44,8 +44,8 @@ Persist guided character creation, onboarding phase/selections, completed PC rec
 
 #### Acceptance criteria
 
-- [ ] `campaign_meta` or dedicated table stores `activeCharacterId` per campaign
-- [ ] Hub screen loads cursor on open
+- [x] `campaign_meta` or dedicated table stores `activeCharacterId` per campaign
+- [x] Hub screen loads cursor on open
 
 ### 109.3 — Service wiring + Map removal
 
@@ -53,8 +53,8 @@ Persist guided character creation, onboarding phase/selections, completed PC rec
 
 #### Acceptance criteria
 
-- [ ] `onboardingService` and `campaignHubService` use injected repository; IPC handlers stay thin
-- [ ] Contract test: onboard character → restart simulation → hub lists PC
+- [x] `onboardingService` and `campaignHubService` use injected repository; IPC handlers stay thin
+- [x] Contract test: onboard character → restart simulation → hub lists PC
 
 ### 109.4 — Onboarding portability
 
@@ -62,5 +62,5 @@ Persist guided character creation, onboarding phase/selections, completed PC rec
 
 #### Acceptance criteria
 
-- [ ] Export/import restores in-progress onboarding for a campaign
-- [ ] Document whether in-progress onboarding is included or only completed PCs
+- [x] Export/import restores in-progress onboarding for a campaign
+- [x] Document whether in-progress onboarding is included or only completed PCs

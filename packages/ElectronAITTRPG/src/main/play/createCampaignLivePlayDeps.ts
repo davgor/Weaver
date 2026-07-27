@@ -22,6 +22,7 @@ import {
   resolveCampaignDataRoot,
   resolveCampaignFilePath
 } from '../campaigns/campaignDisk.js'
+import { hydrateDurableAutosaves } from './durableAutosave.js'
 
 export type CreateCampaignLivePlayDepsInput = {
   campaignId: string
@@ -61,10 +62,12 @@ export function ensureOpenSession(campaignsRoot: string, campaignId: string): Ca
   if (active?.campaignId === campaignId) return active
   active?.close()
   try {
-    return openCampaignSession({
+    const session = openCampaignSession({
       campaignId,
       filePath: resolveCampaignFilePath(campaignsRoot, campaignId)
     })
+    hydrateDurableAutosaves(resolveCampaignDataRoot(campaignsRoot, campaignId))
+    return session
   } catch (error) {
     throw new CampaignLivePlayError(
       `Unable to open campaign "${campaignId}": ${errorMessage(error)}`

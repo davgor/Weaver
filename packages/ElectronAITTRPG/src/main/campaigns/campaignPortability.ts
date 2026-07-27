@@ -51,7 +51,9 @@ export function invokeExportCampaignPackage(
   if (!campaignExistsOnDisk(campaignsRoot, campaignId)) {
     throw new Error(`Campaign not found on disk: ${campaignId}`)
   }
-  ensureOpenCampaignSession(campaignId, resolveCampaignFilePath(campaignsRoot, campaignId))
+  const campaignFilePath = resolveCampaignFilePath(campaignsRoot, campaignId)
+  ensureCampaignDatabase(campaignId, campaignFilePath)
+  ensureOpenCampaignSession(campaignId, campaignFilePath)
   const dataRoot = resolveCampaignDataRoot(campaignsRoot, campaignId)
   return exportCampaignPackage(deps, { dataRoot, campaignId })
 }
