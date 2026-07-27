@@ -28,7 +28,7 @@ Add a DMEngine orchestration pipeline that builds a short, configurable N-act vi
 - [x] All invented prose goes through NarrationEngine validation; peer facts persist via owning engines / campaign store
 - [x] Draft stories can be saved without marking the game as “in play”
 - [x] Consumer contract tests cover DMEngine → NarrationEngine / NPCEngine / store APIs with scripted labeled-block fixtures
-- [ ] Gates pass; cloud gate: PR checks green + PR marked ready
+- [x] Gates pass; cloud gate: PR checks green + PR marked ready
 
 ## Sub-tickets
 

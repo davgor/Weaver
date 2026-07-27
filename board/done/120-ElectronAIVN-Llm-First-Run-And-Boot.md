@@ -24,7 +24,7 @@ Wire AI Visual Novel’s startup so new users pick CPU or GPU local LLM, downloa
 - [x] Returning user boot starts selected LLM headlessly alongside the branded loading screen (Matrix-parity animation via ElectronUi)
 - [x] Backend preference persists across restarts
 - [x] Consumer `*.contract.test.ts` covers ElectronAIVN → LLMEngine status/install APIs
-- [ ] Gates pass; cloud gate: PR checks green + PR marked ready
+- [x] Gates pass; cloud gate: PR checks green + PR marked ready
 
 ## Sub-tickets
 
