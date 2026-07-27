@@ -23,7 +23,7 @@ Make VN games durable across app restarts during play, and when the authored sho
 - [x] Home distinguishes in-progress story vs completed-but-continuing saves
 - [x] Persistence goes through DMEngine campaign/VN store APIs — no ad-hoc renderer-only storage for story facts
 - [x] Tests cover save → simulated restart → resume, and story-complete → continue flag
-- [ ] Gates pass; cloud gate: PR checks green + PR marked ready
+- [x] Gates pass; cloud gate: PR checks green + PR marked ready
 
 ## Implementation notes
 

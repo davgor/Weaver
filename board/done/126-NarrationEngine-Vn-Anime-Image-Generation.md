@@ -24,7 +24,7 @@ Hook the V1 prompt contract (`123`) to real image generation for AI Visual Novel
 - [x] ElectronAIVN play stage loads assets asynchronously without blocking turn flow (`vnAssetService.queueFromSnapshot` fire-and-forget; renderer `onAssets` never toggles `busy`)
 - [x] Provider failure degrades to V1 prompt placeholders (engine returns `{ status: 'degraded', prompt, provider }`; `vnAssetService` maps degrade/throw → `failed` keeping label+fullPrompt; `PlaceholderLayer` renders prompt text)
 - [x] Contract tests cover generation ports with fake image providers (`providerGenerate.test.ts`, sprite/background generation tests inject fake `ImageProvider`s; ElectronAIVN `narrationEngine.vnImage.contract.test.ts`)
-- [ ] Gates pass; cloud gate: PR checks green + PR marked ready (handled at integration by parent flow)
+- [x] Gates pass; cloud gate: PR checks green + PR marked ready (handled at integration by parent flow)
 
 ## Sub-tickets
 
