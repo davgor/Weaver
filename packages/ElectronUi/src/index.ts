@@ -17,8 +17,8 @@ export {
   isBackendChoiceDisabled,
   selectBackend
 } from './localModel/backendChoice.js'
-export type { BackendChoiceProps } from './localModel/BackendChoice.js'
-export { BackendChoice } from './localModel/BackendChoice.js'
+export type { BackendChoiceProps } from './localModel/RuntimeBackendChoice.js'
+export { BackendChoice } from './localModel/RuntimeBackendChoice.js'
 export type { LocalModelInstallPanelProps } from './localModel/LocalModelInstallPanel.js'
 export { LocalModelInstallPanel } from './localModel/LocalModelInstallPanel.js'
 

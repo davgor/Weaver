@@ -1,4 +1,4 @@
-import { BackendChoice } from './BackendChoice.js'
+import { BackendChoice } from './RuntimeBackendChoice.js'
 import type { LocalModelBackend, LocalModelStatusPhase } from './backendChoice.js'
 
 export interface LocalModelInstallPanelProps {
