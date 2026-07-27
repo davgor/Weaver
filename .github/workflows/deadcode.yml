@@ -21,7 +21,7 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm ci
+        run: node scripts/npm-ci-with-retry.mjs
 
       - name: Build engine packages (for project references)
         run: npm run build:engines
