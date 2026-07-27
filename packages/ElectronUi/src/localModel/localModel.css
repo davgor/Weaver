@@ -1,0 +1,135 @@
+.local-model-panel {
+  display: grid;
+  gap: 0.85rem;
+  padding: 1rem;
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-lg);
+  background: var(--surface-panel);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-panel);
+}
+
+.local-model-header {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.local-model-header h2,
+.local-model-eyebrow,
+.local-model-status {
+  margin: 0;
+}
+
+.local-model-eyebrow {
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  color: var(--text-accent);
+}
+
+.local-model-status {
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+.local-model-progress {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.local-model-progress-track {
+  height: 10px;
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  background: rgba(244, 232, 210, 0.12);
+}
+
+.local-model-progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--progress-gradient);
+  transition: width 160ms linear;
+}
+
+.local-model-progress-label {
+  color: var(--text-dim);
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.local-model-backend {
+  margin: 0;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.local-model-backend legend {
+  padding: 0 0.35rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  color: var(--text-accent);
+}
+
+.local-model-backend-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.local-model-backend-option {
+  position: relative;
+  cursor: pointer;
+}
+
+.local-model-backend-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.local-model-backend-option span {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 180px;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-md);
+  background: var(--surface-inset);
+  color: var(--text-secondary);
+}
+
+.local-model-backend-option small {
+  color: var(--text-dim);
+}
+
+.local-model-backend-option input:checked + span {
+  border-color: var(--border-strong);
+  background: rgba(201, 166, 107, 0.16);
+  color: var(--text-primary);
+}
+
+.local-model-backend-option input:disabled + span {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+.local-model-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.local-model-actions button {
+  border: 1px solid var(--accent-gold);
+  border-radius: var(--radius-md);
+  background: rgba(201, 166, 107, 0.12);
+  color: var(--text-primary);
+  padding: 0.5rem 0.9rem;
+  cursor: pointer;
+}
+
+.local-model-actions button:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}

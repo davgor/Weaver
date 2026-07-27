@@ -22,11 +22,11 @@ Stand up `packages/ElectronUi` (`@weaver/electron-ui`) as the shared presentatio
 
 ## Acceptance criteria
 
-- [ ] `packages/ElectronUi` exists as `@weaver/electron-ui` with build/test/typecheck scripts matching other workspace packages
-- [ ] Exports cover: theme CSS variables, `LoadingScreen` (brandable title/stage/progress), titlebar primitives, local-model install panel with explicit GPU (Vulkan) vs CPU choice, and a first-run intro shell that accepts slotted steps
-- [ ] Package is renderer-safe (no Electron main imports); consumers wire IPC themselves
-- [ ] Unit/happy-dom tests cover loading progress states and backend-choice selection helpers
-- [ ] Root README package table documents `@weaver/electron-ui`; `npm test` / `lint` / `build` / `deadcode` pass; cloud gate: PR checks green + PR marked ready
+- [x] `packages/ElectronUi` exists as `@weaver/electron-ui` with build/test/typecheck scripts matching other workspace packages
+- [x] Exports cover: theme CSS variables, `LoadingScreen` (brandable title/stage/progress), titlebar primitives, local-model install panel with explicit GPU (Vulkan) vs CPU choice, and a first-run intro shell that accepts slotted steps
+- [x] Package is renderer-safe (no Electron main imports); consumers wire IPC themselves
+- [x] Unit/happy-dom tests cover loading progress states and backend-choice selection helpers
+- [x] Root README package table documents `@weaver/electron-ui`; `npm test` / `lint` / `build` / `deadcode` pass; cloud gate: PR checks green + PR marked ready
 
 ## Sub-tickets
 
@@ -36,8 +36,8 @@ Stand up `packages/ElectronUi` (`@weaver/electron-ui`) as the shared presentatio
 
 #### Acceptance criteria
 
-- [ ] Workspace package `@weaver/electron-ui` builds and is importable by Electron renderer packages
-- [ ] Shared CSS variables / base theme file exported; no game-specific brand copy hard-coded as the only theme
+- [x] Workspace package `@weaver/electron-ui` builds and is importable by Electron renderer packages
+- [x] Shared CSS variables / base theme file exported; no game-specific brand copy hard-coded as the only theme
 
 ### 118.2 — Startup loading screen
 
@@ -45,9 +45,9 @@ Stand up `packages/ElectronUi` (`@weaver/electron-ui`) as the shared presentatio
 
 #### Acceptance criteria
 
-- [ ] Loading screen accepts brand title, stage label, status text, progress %, and failure message props
-- [ ] Visual language matches Matrix / AI TTRPG loading animation (ported, not reinvented)
-- [ ] Happy-dom test covers booting / ready / failed presentations
+- [x] Loading screen accepts brand title, stage label, status text, progress %, and failure message props
+- [x] Visual language matches Matrix / AI TTRPG loading animation (ported, not reinvented)
+- [x] Happy-dom test covers booting / ready / failed presentations
 
 ### 118.3 — Titlebar primitives
 
@@ -55,8 +55,8 @@ Stand up `packages/ElectronUi` (`@weaver/electron-ui`) as the shared presentatio
 
 #### Acceptance criteria
 
-- [ ] Frameless titlebar + window control button set exported as presentational components
-- [ ] Drag-region / no-drag class helpers documented for Electron consumers
+- [x] Frameless titlebar + window control button set exported as presentational components
+- [x] Drag-region / no-drag class helpers documented for Electron consumers
 
 ### 118.4 — Local LLM install chrome
 
@@ -64,9 +64,9 @@ Stand up `packages/ElectronUi` (`@weaver/electron-ui`) as the shared presentatio
 
 #### Acceptance criteria
 
-- [ ] Panel shows install status, progress, and explicit GPU vs CPU backend selection (mirrors Matrix `020.28` radios / Weaver LocalModelSection)
-- [ ] Callbacks only — no direct LLMEngine import from this package
-- [ ] Tests cover disabled states while installing and backend toggle selection
+- [x] Panel shows install status, progress, and explicit GPU vs CPU backend selection (mirrors Matrix `020.28` radios / Weaver LocalModelSection)
+- [x] Callbacks only — no direct LLMEngine import from this package
+- [x] Tests cover disabled states while installing and backend toggle selection
 
 ### 118.5 — First-run intro shell
 
@@ -74,5 +74,5 @@ Stand up `packages/ElectronUi` (`@weaver/electron-ui`) as the shared presentatio
 
 #### Acceptance criteria
 
-- [ ] Modal/shell hosts stepped first-run content via slots/props (LLM choice → install progress → dismiss)
-- [ ] No game-product strings required inside ElectronUi; consumers supply copy
+- [x] Modal/shell hosts stepped first-run content via slots/props (LLM choice → install progress → dismiss)
+- [x] No game-product strings required inside ElectronUi; consumers supply copy

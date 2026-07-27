@@ -40,6 +40,7 @@ Package names encode where code belongs. Follow these conventions on every chang
 | `packages/LLMEngine` | `@weaver/llm-engine` | **Local LLM runtime controller.** Pins Qwen2.5 7B Instruct (Q4_K_M); prefers Vulkan, falls back to CPU. Exposes install status/`install`/`completeText` raw text passthrough so Electron UI can prompt download and exercise generation — no game invention, structured output, or tool calling here. |
 | `packages/ElectronAdmin` | `@weaver/electron-admin` | **AI ADMIN** Electron app (`npm run admin`). DEV panel for app/LLM metrics, exercising engine endpoints, and related tooling. UI + IPC only; no game business logic. Releasable alongside AI TTRPG. |
 | `packages/ElectronAITTRPG` | `@weaver/electron-aittrpg` | **AI TTRPG** releasable Electron game client (`npm run ai-ttrpg`; Win/Mac packaging). Product chrome/icons; wires UI to engines. No business rules in this package — call engines instead. |
+| `packages/ElectronUi` | `@weaver/electron-ui` | **Shared Electron game chrome.** Renderer-safe React presentation primitives, theme tokens, loading/titlebar/local-model/first-run shells reused by Electron game clients. No Electron main imports or engine wiring. |
 
 ## Setup
 
