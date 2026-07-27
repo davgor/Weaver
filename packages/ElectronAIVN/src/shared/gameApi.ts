@@ -52,6 +52,9 @@ export type {
   VnPlaySnapshot
 } from './play/types.js'
 
+export type { VnAssetSlot, VnAssetsUpdate, VnSlotAssetState } from './play/assetTypes.js'
+export { VN_PLAY_ASSETS_CHANNEL } from './play/assetTypes.js'
+
 import type { VnStoryApi } from './story/types.js'
 import type { VnPlayApi } from './play/types.js'
 

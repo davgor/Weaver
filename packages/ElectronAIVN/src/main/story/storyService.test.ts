@@ -86,7 +86,8 @@ describe('vnStoryService saved games', () => {
           title: 'Ryn Vale',
           premiseSummary: 'Harbor lights',
           actCount: 3,
-          lifecycle: 'permanent'
+          lifecycle: 'permanent',
+          playStatus: 'in_progress'
         }
       ]
     })

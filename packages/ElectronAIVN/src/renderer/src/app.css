@@ -121,6 +121,27 @@ body {
   font-size: 0.9rem;
 }
 
+.saved-games-status {
+  margin-top: 0.15rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--accent, #7aa2f7);
+}
+
+.vn-stage-freeplay {
+  margin: 0 0 0.35rem;
+  align-self: flex-start;
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--radius-md, 10px);
+  background: var(--surface-raised);
+  color: var(--accent, #7aa2f7);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
 .tell-story-form,
 .story-review {
   display: flex;
@@ -195,6 +216,8 @@ body {
 
 .vn-placeholder-bg {
   flex: 1;
+  position: relative;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -221,15 +244,40 @@ body {
 .vn-placeholder-mc,
 .vn-placeholder-npc {
   width: min(16rem, 42vw);
-  min-height: 10rem;
+  /* Reserve a fixed box so swapping placeholder text for an image never shifts layout. */
+  min-height: 16rem;
+  height: 16rem;
   padding: 0.85rem;
   border: 1px dashed var(--border-strong);
   border-radius: var(--radius-md, 10px);
   background: rgba(20, 28, 36, 0.72);
   color: var(--text-primary);
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
+}
+
+.vn-placeholder[data-status='ready'] {
+  padding: 0;
+  border-style: solid;
+}
+
+.vn-placeholder-bg .vn-placeholder-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.vn-placeholder-mc .vn-placeholder-image,
+.vn-placeholder-npc .vn-placeholder-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
 }
 
 .vn-placeholder-label {

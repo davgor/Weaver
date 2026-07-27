@@ -35,12 +35,15 @@ export type VnStoryReviewSnapshot = {
   actCount: number
 }
 
+export type VnSavedGamePlayStatus = 'not_started' | 'in_progress' | 'story_complete_continuing'
+
 export type VnSavedGameSummary = {
   campaignId: string
   title: string
   premiseSummary: string
   actCount: number
   lifecycle: 'permanent'
+  playStatus: VnSavedGamePlayStatus
 }
 
 export type PlayVnStoryResult = {

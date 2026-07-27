@@ -4,19 +4,25 @@ export type EngineEndpoint = {
   invoke: (payload?: unknown) => Promise<unknown> | unknown
 }
 
-export type ImageProviderId = 'cloud' | 'player2' | 'local'
-export type PortraitSubjectKind = 'npc' | 'enemy' | 'companion' | 'pc'
+import type {
+  ImageGenerationSettings,
+  ImageProvider,
+  ImageProviderId,
+  PortraitSubjectFacts,
+  PortraitSubjectKind,
+  ProviderImageRequest
+} from './imageProviderTypes.js'
 
-export type PortraitSubjectFacts = {
-  race?: string
-  description?: string
-  name?: string
-}
-
-export type ImageGenerationSettings = {
-  provider: ImageProviderId
-  generativeTokensEnabled: boolean
-}
+export type {
+  ImageGenerationSettings,
+  ImageProvider,
+  ImageProviderId,
+  PortraitSubjectFacts,
+  PortraitSubjectKind,
+  ProviderImageRequest,
+  VnImageKind,
+  VnImageSubjectKind
+} from './imageProviderTypes.js'
 
 export type ImageGenerateRequest = {
   subjectKind: PortraitSubjectKind
@@ -31,19 +37,6 @@ export type ImageGenerateResult = {
   imagePath: string | null
   provider: ImageProviderId
   degraded: boolean
-}
-
-export type ProviderImageRequest = {
-  provider: ImageProviderId
-  subjectKind: PortraitSubjectKind
-  prompt: string
-  subjectId: string
-  campaignId?: string
-}
-
-export type ImageProvider = {
-  id: ImageProviderId
-  generate: (request: ProviderImageRequest) => Promise<string | null>
 }
 
 export type ImageFetchRequest = {
@@ -106,6 +99,39 @@ export type {
   VnPresetBackgroundPromptInput,
   VnStance
 } from './vnImagePrompt/index.js'
+export {
+  clearVnBackgroundCache,
+  clearVnSpriteCache,
+  createVnBackgroundCache,
+  createVnSpriteCache,
+  DEFAULT_VN_CONSISTENCY_POLICY,
+  generateViaImageProvider,
+  generateVnBackground,
+  generateVnSprite,
+  generateWithConsistency,
+  vnBackgroundCacheKey,
+  vnCharacterStyleLockId,
+  vnSeedFromIdentity,
+  vnSpriteCacheKey
+} from './vnImageGen/index.js'
+export type {
+  GenerateViaImageProviderDeps,
+  GenerateViaImageProviderInput,
+  GenerateViaImageProviderResult,
+  GenerateVnBackgroundDeps,
+  GenerateVnSpriteDeps,
+  VnBackgroundAsset,
+  VnBackgroundCache,
+  VnBackgroundGenerateRequest,
+  VnBackgroundGenerateResult,
+  VnConsistencyOutcome,
+  VnConsistencyPolicy,
+  VnSpriteAsset,
+  VnSpriteCache,
+  VnSpriteCacheKey,
+  VnSpriteGenerateRequest,
+  VnSpriteGenerateResult
+} from './vnImageGen/index.js'
 export type {
   ItemPresenceLookup,
   LocationLookup,
@@ -207,6 +233,18 @@ import {
 } from './proseApi.js'
 import { decideSilentResolve } from './silentResolve.js'
 import { fillAndValidate, type FillAndValidateInput } from './skeletonFill.js'
+import {
+  generateVnBackground,
+  generateVnSprite,
+  type GenerateVnBackgroundDeps,
+  type GenerateVnSpriteDeps
+} from './vnImageGen/index.js'
+import type {
+  VnBackgroundGenerateRequest,
+  VnBackgroundGenerateResult,
+  VnSpriteGenerateRequest,
+  VnSpriteGenerateResult
+} from './vnImageGen/index.js'
 
 export type GeneratePortraitDeps = {
   providers?: Partial<Record<ImageProviderId, ImageProvider>>
@@ -253,6 +291,14 @@ export type NarrationEngineApi = {
     imagePath: string,
     deps?: SetManualPortraitDeps
   ) => Promise<ManualPortraitResult>
+  generateVnSprite: (
+    request: VnSpriteGenerateRequest,
+    deps?: GenerateVnSpriteDeps
+  ) => Promise<VnSpriteGenerateResult>
+  generateVnBackground: (
+    request: VnBackgroundGenerateRequest,
+    deps?: GenerateVnBackgroundDeps
+  ) => Promise<VnBackgroundGenerateResult>
   projectSocial: typeof projectSocial
   projectScene: typeof projectScene
   recordPlayerSocial: typeof recordPlayerSocial
@@ -415,6 +461,8 @@ export const narrationEngine: NarrationEngineApi = {
   describeRole,
   generatePortrait,
   setManualPortrait,
+  generateVnSprite,
+  generateVnBackground,
   projectSocial,
   projectScene,
   recordPlayerSocial,

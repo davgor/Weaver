@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { VnPlaySnapshot } from '../../../shared/play/types'
+import type { VnSlotAssetState } from '../../../shared/play/assetTypes'
 import { VnStageScreen } from './VnStageScreen'
 
 type PlaySessionProps = {
@@ -31,6 +32,7 @@ export function PlaySession(props: PlaySessionProps): JSX.Element {
       snapshot={session.snapshot}
       busy={session.busy}
       freeText={session.freeText}
+      assets={session.assets}
       onFreeTextChange={session.setFreeText}
       onHome={props.onHome}
       onChoose={session.choose}
@@ -43,10 +45,14 @@ function usePlaySession(campaignId: string) {
   const [freeText, setFreeText] = useState('')
   const [busy, setBusy] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [assets, setAssets] = useState<readonly VnSlotAssetState[]>([])
 
   useEffect(() => {
     let cancelled = false
     setBusy(true)
+    // New campaign: drop any assets carried over from a prior session so the stage
+    // does not briefly show stale images while the next beat's assets load.
+    setAssets([])
     void window.aivn.play
       .open(campaignId)
       .then((next) => {
@@ -68,12 +74,23 @@ function usePlaySession(campaignId: string) {
     }
   }, [campaignId])
 
+  useEffect(() => {
+    // Asset updates are advisory only — they never toggle `busy`, so turn input
+    // stays available while images load (epic 126.4).
+    const unsubscribe = window.aivn.play.onAssets((update) => {
+      if (update.campaignId !== campaignId) return
+      setAssets(update.assets)
+    })
+    return unsubscribe
+  }, [campaignId])
+
   return {
     snapshot,
     freeText,
     setFreeText,
     busy,
     error,
+    assets,
     choose: (text: string) => {
       if (snapshot === null) return
       void chooseAction({ text, snapshot, setSnapshot, setFreeText, setBusy, setError })
@@ -92,7 +109,9 @@ async function chooseAction(args: {
   args.setBusy(true)
   try {
     const socialSpeakerId =
-      args.snapshot.mode === 'npc' ? args.snapshot.cast[0]?.npcId : undefined
+      args.snapshot.mode === 'npc'
+        ? args.snapshot.speakerId ?? args.snapshot.cast[0]?.npcId
+        : undefined
     const next = await window.aivn.play.submitAction({
       campaignId: args.snapshot.campaignId,
       text: args.text,

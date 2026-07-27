@@ -1,24 +1,32 @@
 import {
+  advanceVnPlayCursor,
   generateVnChoicePair,
+  initialVnPlayCursor,
   openCampaign,
   openCampaignSession,
   readCatalogEntry,
+  readVnPlayCursorOnSession,
   resolveTurn,
+  writeVnPlayCursorOnSession,
   type CampaignSession,
   type ResolveTurnDeps,
   type ResolveTurnResult,
   type VnMainCharacterBrief,
+  type VnPlayCursor,
   type VnStoryCastMember,
   type VnStoryOverview
 } from '@weaver/dm-engine'
-import type { TextCompleter } from '@weaver/narration-engine'
+import { projectScene, projectSocial } from '@weaver/narration-engine'
+import type { SceneBlock, SocialLine, TextCompleter } from '@weaver/narration-engine'
 import type {
   SubmitVnPlayActionRequest,
   VnPlaySnapshot
 } from '../../shared/play/types.js'
 import { vnModeFromNarration } from '../../shared/play/vnMode.js'
 import { resolveStoryPaths } from '../story/storyDisk.js'
-import { buildPlayPlaceholders } from './buildPlayPlaceholders.js'
+import { incrementStoryTurns, shouldCompleteAct } from './playCursorPersist.js'
+import { assemblePlaySnapshot, restorePlaySnapshot } from './restorePlaySnapshot.js'
+import type { VnAssetService } from './vnAssetService.js'
 
 export type VnPlayService = {
   open: (campaignId: string) => Promise<VnPlaySnapshot>
@@ -38,6 +46,20 @@ export type VnPlayServiceDeps = {
   completer: TextCompleter
   resolveTurnDeps: ResolveTurnDeps
   resolveTurnFn?: typeof resolveTurn
+  /** Optional async image asset pipeline. Fire-and-forget; never blocks turns. */
+  assets?: VnAssetService
+}
+
+type LoadedStory = {
+  overview: VnStoryOverview
+  cast: VnStoryCastMember[]
+}
+
+type PlayContext = {
+  campaignId: string
+  characterId: string
+  session: CampaignSession
+  loaded: LoadedStory
 }
 
 type ActivePlay = {
@@ -47,6 +69,7 @@ type ActivePlay = {
   overview: VnStoryOverview
   cast: VnStoryCastMember[]
   snapshot: VnPlaySnapshot
+  cursor: VnPlayCursor
 }
 
 export function createVnPlayService(deps: VnPlayServiceDeps): VnPlayService {
@@ -54,8 +77,12 @@ export function createVnPlayService(deps: VnPlayServiceDeps): VnPlayService {
   const turn = deps.resolveTurnFn ?? resolveTurn
   return {
     open: async (campaignId) => {
-      active?.session.close()
+      if (active !== null) {
+        active.session.close()
+        deps.assets?.cancel()
+      }
       active = await openPlay(deps, campaignId)
+      queueAssets(deps, active.snapshot)
       return active.snapshot
     },
     submitAction: async (request) => {
@@ -63,8 +90,19 @@ export function createVnPlayService(deps: VnPlayServiceDeps): VnPlayService {
         throw new Error('No active VN play session for this campaign')
       }
       active = await submitPlay(deps, turn, active, request)
+      queueAssets(deps, active.snapshot)
       return active.snapshot
     }
+  }
+}
+
+/** Fire-and-forget asset queueing. Image errors must never fail a turn (126.5). */
+function queueAssets(deps: VnPlayServiceDeps, snapshot: VnPlaySnapshot): void {
+  if (deps.assets === undefined) return
+  try {
+    deps.assets.queueFromSnapshot(snapshot)
+  } catch {
+    // Asset generation is best-effort; swallow so open/submit still resolve.
   }
 }
 
@@ -95,37 +133,55 @@ async function openPlay(deps: VnPlayServiceDeps, campaignId: string): Promise<Ac
   const loaded = deps.catalog.loadStory(campaignId)
   const session = loaded.openSession()
   const characterId = `${campaignId}-vn-mc`
-  const choices = await requireChoices(
-    deps.completer,
-    loaded.overview.mainCharacter,
-    loaded.overview.openingBeat
-  )
-  const snapshot = buildSnapshot({
-    campaignId,
-    characterId,
-    overview: loaded.overview,
-    cast: loaded.cast,
+  const context: PlayContext = { campaignId, characterId, session, loaded }
+  const existing = readVnPlayCursorOnSession(session)
+  if (existing !== undefined) {
+    return resumePlay(context, existing)
+  }
+  return startFreshPlay(deps, context)
+}
+
+function resumePlay(context: PlayContext, cursor: VnPlayCursor): ActivePlay {
+  const history = safeProjections()
+  const snapshot = restorePlaySnapshot({
+    cursor,
+    overview: context.loaded.overview,
+    cast: context.loaded.cast,
+    ...(history.scene !== undefined ? { scene: history.scene } : {}),
+    ...(history.social !== undefined ? { social: history.social } : {})
+  })
+  return toActivePlay(context, snapshot, cursor)
+}
+
+async function startFreshPlay(
+  deps: VnPlayServiceDeps,
+  context: PlayContext
+): Promise<ActivePlay> {
+  const { overview } = context.loaded
+  const choices = await requireChoices(deps.completer, overview.mainCharacter, overview.openingBeat)
+  const cursor = initialVnPlayCursor({
+    campaignId: context.campaignId,
+    characterId: context.characterId,
+    openingBeat: overview.openingBeat,
+    options: choices
+  })
+  writeVnPlayCursorOnSession(context.session, cursor)
+  const snapshot = assemblePlaySnapshot({
+    campaignId: context.campaignId,
+    characterId: context.characterId,
+    overview,
+    cast: context.loaded.cast,
     mode: 'scene',
-    beatText: loaded.overview.openingBeat,
+    beatText: overview.openingBeat,
     speakerId: null,
     options: choices,
-    scene: [
-      {
-        id: 'opening',
-        text: loaded.overview.openingBeat,
-        at: Date.now()
-      }
-    ],
-    social: []
+    scene: [{ id: 'opening', text: overview.openingBeat, at: Date.now() }],
+    social: [],
+    phase: cursor.phase,
+    storyComplete: cursor.storyComplete,
+    actIndex: cursor.actIndex
   })
-  return {
-    campaignId,
-    characterId,
-    session,
-    overview: loaded.overview,
-    cast: loaded.cast,
-    snapshot
-  }
+  return toActivePlay(context, snapshot, cursor)
 }
 
 async function submitPlay(
@@ -134,23 +190,24 @@ async function submitPlay(
   active: ActivePlay,
   request: SubmitVnPlayActionRequest
 ): Promise<ActivePlay> {
-  const result = await turn(
-    {
-      channel: 'play',
-      campaignId: request.campaignId,
-      characterId: active.characterId,
-      text: request.text,
-      ...(request.socialSpeakerId !== undefined
-        ? { socialSpeakerId: request.socialSpeakerId }
-        : {})
-    },
-    deps.resolveTurnDeps
-  )
+  const result = await turn(buildTurnInput(active, request), deps.resolveTurnDeps)
   const mode = vnModeFromNarration(result.narration)
   const beatText = latestBeatText(result, mode)
   const speakerId = mode === 'npc' ? request.socialSpeakerId ?? latestNpcSpeaker(result) : null
   const choices = await requireChoices(deps.completer, active.overview.mainCharacter, beatText)
-  const snapshot = buildSnapshot({
+  const turns = incrementStoryTurns(active.session)
+  const cursor = advanceVnPlayCursor({
+    cursor: active.cursor,
+    actCount: actCount(active.overview),
+    mode,
+    beatId: `turn-${turns}`,
+    beatText,
+    speakerId,
+    options: choices,
+    completeAct: shouldCompleteAct(active.cursor.phase, turns)
+  })
+  writeVnPlayCursorOnSession(active.session, cursor)
+  const snapshot = assemblePlaySnapshot({
     campaignId: active.campaignId,
     characterId: active.characterId,
     overview: active.overview,
@@ -160,43 +217,54 @@ async function submitPlay(
     speakerId,
     options: choices,
     scene: result.projections.scene,
-    social: result.projections.social
+    social: result.projections.social,
+    phase: cursor.phase,
+    storyComplete: cursor.storyComplete,
+    actIndex: cursor.actIndex
   })
-  return { ...active, snapshot }
+  return { ...active, snapshot, cursor }
 }
 
-function buildSnapshot(input: {
-  campaignId: string
-  characterId: string
-  overview: VnStoryOverview
-  cast: VnStoryCastMember[]
-  mode: VnPlaySnapshot['mode']
-  beatText: string
-  speakerId: string | null
-  options: [string, string]
-  scene: VnPlaySnapshot['scene']
-  social: VnPlaySnapshot['social']
-}): VnPlaySnapshot {
+function buildTurnInput(
+  active: ActivePlay,
+  request: SubmitVnPlayActionRequest
+): Parameters<typeof resolveTurn>[0] {
   return {
-    campaignId: input.campaignId,
-    characterId: input.characterId,
-    mode: input.mode,
-    beatText: input.beatText,
-    speakerName: speakerName(input.cast, input.speakerId),
-    options: input.options,
-    freeText: '',
-    placeholders: buildPlayPlaceholders({
-      campaignId: input.campaignId,
-      mainCharacter: input.overview.mainCharacter,
-      beatText: input.beatText,
-      mode: input.mode,
-      speakerId: input.speakerId,
-      cast: input.cast
-    }),
-    scene: input.scene,
-    social: input.social,
-    mainCharacter: input.overview.mainCharacter,
-    cast: input.cast
+    channel: 'play',
+    campaignId: request.campaignId,
+    characterId: active.characterId,
+    text: request.text,
+    ...(request.socialSpeakerId !== undefined
+      ? { socialSpeakerId: request.socialSpeakerId }
+      : {})
+  }
+}
+
+function toActivePlay(
+  context: PlayContext,
+  snapshot: VnPlaySnapshot,
+  cursor: VnPlayCursor
+): ActivePlay {
+  return {
+    campaignId: context.campaignId,
+    characterId: context.characterId,
+    session: context.session,
+    overview: context.loaded.overview,
+    cast: context.loaded.cast,
+    snapshot,
+    cursor
+  }
+}
+
+function actCount(overview: VnStoryOverview): number {
+  return Math.max(1, overview.acts.length)
+}
+
+function safeProjections(): { scene?: SceneBlock[]; social?: SocialLine[] } {
+  try {
+    return { scene: projectScene(), social: projectSocial() }
+  } catch {
+    return {}
   }
 }
 
@@ -265,9 +333,4 @@ function latestBeatText(result: ResolveTurnResult, mode: VnPlaySnapshot['mode'])
 function latestNpcSpeaker(result: ResolveTurnResult): string | null {
   const line = [...result.projections.social].reverse().find((row) => row.kind === 'npc')
   return line?.speakerId ?? null
-}
-
-function speakerName(cast: VnStoryCastMember[], speakerId: string | null): string | null {
-  if (speakerId === null) return null
-  return cast.find((member) => member.npcId === speakerId)?.displayName ?? speakerId
 }
