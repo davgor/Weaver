@@ -19,13 +19,13 @@ Define the NarrationEngine-owned prompt builders for AI Visual Novel imagery so 
 
 ## Acceptance criteria
 
-- [ ] Public API builds character prompts from identity seed + stance + expression; output suitable for placeholder label and full provider prompt
-- [ ] Character prompts mandate anime style and no-background / subject-only framing
-- [ ] Stance and expression vocabularies are enumerated and validated (unknown values rejected)
-- [ ] Background prompts support named presets and an adaptive “wandered off map” builder grounded in scene/location facts passed by the caller
-- [ ] Placeholder DTO includes human-readable short label (e.g. `David's character, Standing, Angry`) plus full prompt text and slot (`mc` / `npc` / `background`)
-- [ ] Unit tests cover seed stability (same identity → shared style lock text) and validation errors
-- [ ] Gates pass; cloud gate: PR checks green + PR marked ready
+- [x] Public API builds character prompts from identity seed + stance + expression; output suitable for placeholder label and full provider prompt
+- [x] Character prompts mandate anime style and no-background / subject-only framing
+- [x] Stance and expression vocabularies are enumerated and validated (unknown values rejected)
+- [x] Background prompts support named presets and an adaptive “wandered off map” builder grounded in scene/location facts passed by the caller
+- [x] Placeholder DTO includes human-readable short label (e.g. `David's character, Standing, Angry`) plus full prompt text and slot (`mc` / `npc` / `background`)
+- [x] Unit tests cover seed stability (same identity → shared style lock text) and validation errors
+- [x] Gates pass; cloud gate: PR checks green + PR marked ready
 
 ## Sub-tickets
 
@@ -35,8 +35,8 @@ Define the NarrationEngine-owned prompt builders for AI Visual Novel imagery so 
 
 #### Acceptance criteria
 
-- [ ] Types for stance/expression exported; invalid combos fail closed
-- [ ] Identity seed includes stable character key + appearance facts used in every prompt
+- [x] Types for stance/expression exported; invalid combos fail closed
+- [x] Identity seed includes stable character key + appearance facts used in every prompt
 
 ### 123.2 — Character prompt builder
 
@@ -44,8 +44,8 @@ Define the NarrationEngine-owned prompt builders for AI Visual Novel imagery so 
 
 #### Acceptance criteria
 
-- [ ] Builder always includes anime-style + no-background constraints
-- [ ] Short label format documented and tested
+- [x] Builder always includes anime-style + no-background constraints
+- [x] Short label format documented and tested
 
 ### 123.3 — Background prompt builder
 
@@ -53,8 +53,8 @@ Define the NarrationEngine-owned prompt builders for AI Visual Novel imagery so 
 
 #### Acceptance criteria
 
-- [ ] Preset catalog exists (small V1 set)
-- [ ] Adaptive path accepts location/scene descriptors from caller (no inventing geography here — facts are inputs)
+- [x] Preset catalog exists (small V1 set)
+- [x] Adaptive path accepts location/scene descriptors from caller (no inventing geography here — facts are inputs)
 
 ### 123.4 — Placeholder DTO
 
@@ -62,5 +62,5 @@ Define the NarrationEngine-owned prompt builders for AI Visual Novel imagery so 
 
 #### Acceptance criteria
 
-- [ ] Single helper returns placeholders for MC, optional NPC, and background for a beat
-- [ ] Consumer contract test from ElectronAIVN may land with `124.4`; this epic still unit-tests the DTO in NarrationEngine
+- [x] Single helper returns placeholders for MC, optional NPC, and background for a beat
+- [x] Consumer contract test from ElectronAIVN may land with `124.4`; this epic still unit-tests the DTO in NarrationEngine

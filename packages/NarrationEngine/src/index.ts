@@ -76,6 +76,36 @@ export type {
   SocialStreamEvent,
   TurnInterestInput
 } from './proseTypes.js'
+export {
+  assertVnCharacterIdentitySeed,
+  assertVnExpression,
+  assertVnStance,
+  buildVnBackgroundPrompt,
+  buildVnBeatPlaceholders,
+  buildVnCharacterPrompt,
+  isVnExpression,
+  isVnStance,
+  listVnBackgroundPresets,
+  validateVnCharacterIdentitySeed,
+  VN_EXPRESSIONS,
+  VN_STANCES
+} from './vnImagePrompt/index.js'
+export type {
+  BuildVnBackgroundPromptInput,
+  BuildVnBeatPlaceholdersInput,
+  BuildVnCharacterPromptInput,
+  VnAdaptiveBackgroundPromptInput,
+  VnBackgroundPreset,
+  VnBackgroundPresetId,
+  VnBeatPlaceholder,
+  VnCharacterIdentitySeed,
+  VnCharacterIdentityValidation,
+  VnExpression,
+  VnImagePrompt,
+  VnPlaceholderSlot,
+  VnPresetBackgroundPromptInput,
+  VnStance
+} from './vnImagePrompt/index.js'
 export type {
   ItemPresenceLookup,
   LocationLookup,
