@@ -30,7 +30,6 @@ import {
   type GuidedCreationNarrationApi,
   type GuidedCreationState
 } from '@weaver/dm-engine'
-import { createTextCompletionClient, type LlmRuntime } from '@weaver/llm-engine'
 import type { TextCompleter } from '@weaver/narration-engine'
 import { fillAndValidate, generateGuidedIdentityReply } from '@weaver/narration-engine'
 import type {
@@ -125,7 +124,8 @@ export type OnboardingService = {
 const records = new Map<string, OnboardingRecord>()
 
 export function createLiveOnboardingPorts(
-  narrationOverrides?: Partial<OnboardingNarrationPorts>
+  narrationOverrides: Pick<OnboardingNarrationPorts, 'completer'> &
+    Partial<Omit<OnboardingNarrationPorts, 'completer'>>
 ): OnboardingPorts {
   return {
     character: createLiveCharacterPorts(),
@@ -162,12 +162,13 @@ function createLiveDmPorts(): OnboardingDmPorts {
 }
 
 function createLiveNarrationPorts(
-  overrides?: Partial<OnboardingNarrationPorts>
+  overrides: Pick<OnboardingNarrationPorts, 'completer'> &
+    Partial<Omit<OnboardingNarrationPorts, 'completer'>>
 ): OnboardingNarrationPorts {
   return {
-    narration: overrides?.narration ?? createGuidedNarrationAdapter(),
-    completer: overrides?.completer ?? createConfiguredTextCompleter(),
-    characterGrounding: overrides?.characterGrounding ?? createCharacterGroundingPorts()
+    narration: overrides.narration ?? createGuidedNarrationAdapter(),
+    completer: overrides.completer,
+    characterGrounding: overrides.characterGrounding ?? createCharacterGroundingPorts()
   }
 }
 
@@ -550,19 +551,6 @@ function createCharacterGroundingPorts(): CharacterIdentityGroundingApi {
         name: companion.name,
         archetype: companion.archetype
       }))
-  }
-}
-
-function createConfiguredTextCompleter(): TextCompleter {
-  let runtime: LlmRuntime | null = null
-  return {
-    completeText: async (request) => {
-      if (runtime === null) {
-        runtime = createTextCompletionClient()
-      }
-      const response = await runtime.completeText(request)
-      return { text: response.text, backend: String(response.backend) }
-    }
   }
 }
 

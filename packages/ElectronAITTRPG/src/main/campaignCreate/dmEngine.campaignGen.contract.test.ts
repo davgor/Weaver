@@ -7,7 +7,8 @@ import { runCampaignGeneration } from '@weaver/dm-engine'
 import {
   clearCampaignGenerationStores,
   createLiveGenerationDeps,
-  invokeRunCampaignGeneration
+  invokeRunCampaignGeneration,
+  scriptedCampaignCompleter
 } from './runGeneration.js'
 
 const roots: string[] = []
@@ -46,7 +47,7 @@ describe('DMEngine campaign generation contract (069)', () => {
           maxSeedRetries: 1,
           maxStageRetries: 1
         },
-        createLiveGenerationDeps()
+        createLiveGenerationDeps(scriptedCampaignCompleter())
       )
 
       const adapted = await invokeRunCampaignGeneration(
@@ -58,7 +59,7 @@ describe('DMEngine campaign generation contract (069)', () => {
           npcsPerRegion: 1,
           seed: 'electron-contract-adapter'
         },
-        createLiveGenerationDeps()
+        createLiveGenerationDeps(scriptedCampaignCompleter())
       )
 
       expect(direct.regions).toHaveLength(1)

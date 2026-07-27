@@ -1,86 +1,10 @@
 import { ipcMain } from 'electron'
-import {
-  advanceTravelDays,
-  getCharacterProgression,
-  getCharacterStats,
-  recordAutosaveSnapshot,
-  resolveCharacterDeath,
-  setCharacterLocation
-} from '@weaver/character-engine'
-import { createCurrencyService, clampProposedPrice } from '@weaver/item-engine'
-import { createMemoryEncounterStore } from '@weaver/combat-engine'
-import { askTheDm, createStoreCombatTurnApi, resolveTurn, type ResolveTurnDeps } from '@weaver/dm-engine'
-import { fillAndValidate, type TextCompleter } from '@weaver/narration-engine'
 import type { AskDmRequest, SubmitPlayActionRequest } from '../../shared/play/types.js'
-import { createAskDmService, type AskDmService } from './askDmService.js'
-import { createTurnService, type TurnService } from './turnService.js'
+import type { LivePlayDeps } from './livePlayDeps.js'
 
-type PlayHandlerDeps = {
-  turnService: TurnService
-  askDmService: AskDmService
-}
-
-function createLivePlayHandlerDeps(): PlayHandlerDeps {
-  const turnDeps = createLiveResolveTurnDeps()
-  return {
-    turnService: createTurnService({
-      resolveTurn,
-      deps: turnDeps,
-      getEncounter: (encounterId) => turnDeps.combat.getEncounter(encounterId),
-      character: {
-        getCharacterStats,
-        getCharacterProgression,
-        recordAutosaveSnapshot,
-        resolveCharacterDeath
-      }
-    }),
-    askDmService: createAskDmService({
-      askTheDm,
-      narration: { fillAndValidate },
-      completer: scriptedCompleter('The DM answers from established campaign notes.\n<<<CLAIMS\n>>>'),
-      facts: (request) => ({ campaignId: request.campaignId, characterId: request.characterId })
-    })
-  }
-}
-
-export function registerPlayHandlers(deps: PlayHandlerDeps = createLivePlayHandlerDeps()): void {
+export function registerPlayHandlers(deps: LivePlayDeps): void {
   ipcMain.handle('play:submitAction', (_event, request: SubmitPlayActionRequest) =>
     deps.turnService.submitAction(request)
   )
   ipcMain.handle('play:askDm', (_event, request: AskDmRequest) => deps.askDmService.ask(request))
-}
-
-function createLiveResolveTurnDeps(): ResolveTurnDeps {
-  const currency = createCurrencyService()
-  const store = createMemoryEncounterStore()
-  return {
-    completer: scriptedCompleter('{"intent":"look","route":"narration"}'),
-    currency: {
-      credit: (characterId, amount) => currency.credit(characterId, amount),
-      debit: (characterId, amount) => currency.debit(characterId, amount),
-      getBalance: (characterId) => currency.getBalance(characterId),
-      clampProposedPrice
-    },
-    travel: { advanceTravelDays, setCharacterLocation },
-    destinations: {
-      isGenerated: () => true,
-      resolvePlacement: (destinationId) => ({
-        regionId: destinationId,
-        placeId: destinationId,
-        locationKind: 'settlement'
-      })
-    },
-    narration: {
-      llm: scriptedCompleter('The scene shifts around your choice.\n<<<CLAIMS\n>>>'),
-      npcs: { getNpc: () => undefined },
-      items: { hasItem: () => true },
-      locations: { isKnownLocation: () => true }
-    },
-    combat: createStoreCombatTurnApi(store),
-    persist: () => undefined
-  }
-}
-
-function scriptedCompleter(text: string): TextCompleter {
-  return { completeText: async () => ({ text, backend: 'scripted' }) }
 }

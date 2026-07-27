@@ -24,7 +24,7 @@ import type { LocalLlmInstallPort, RagDescriptionPort } from './settingsPorts.js
 type CheckConnectionRequest = Parameters<SettingsApi['checkConnection']>[0]
 type SettingsUpdateResponse = Awaited<ReturnType<SettingsApi['update']>>
 
-type SettingsHandlerDeps = {
+export type SettingsHandlerDeps = {
   store: SettingsStore
   runtime: SettingsRuntime
   narration: RagDescriptionPort
@@ -48,7 +48,9 @@ function createLiveSettingsHandlerDeps(): SettingsHandlerDeps {
   }
 }
 
-export function registerSettingsHandlers(deps: SettingsHandlerDeps = createLiveSettingsHandlerDeps()): void {
+export function registerSettingsHandlers(
+  deps: SettingsHandlerDeps = createLiveSettingsHandlerDeps()
+): void {
   ipcMain.handle('settings:get', () => getSettingsSnapshot(deps))
   ipcMain.handle('settings:update', (_event, request: UpdateSettingsRequest) =>
     updateSettingsSnapshot(deps, request)
