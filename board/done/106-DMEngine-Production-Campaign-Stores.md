@@ -30,7 +30,7 @@ Expand the campaign-bundle SQLite schema beyond stub tables (`081`) and wire eng
 - [x] NarrationEngine Social/Scene projection rows persist per campaign (or documented alternative keyed store)
 - [x] Electron/renderer never talks SQL — DMEngine (or repository modules it owns) is the call path
 - [x] Cross-package contract tests exercise real SQLite round-trip for at least one consumer per engine boundary
-- [ ] Sub-tickets `106.1`–`106.5` acceptance criteria verified; `npm test`, `npm run lint`, `npm run build`, `npm run deadcode` pass; cloud gate: PR checks green + PR marked ready
+- [x] Sub-tickets `106.1`–`106.5` acceptance criteria verified; `npm test`, `npm run lint`, `npm run build`, `npm run deadcode` pass; cloud gate: PR checks green + PR marked ready
 
 ## Sub-tickets
 
