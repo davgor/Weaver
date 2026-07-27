@@ -11,7 +11,7 @@ Epic ids are grouped by package/theme (e.g. `021`-`031` = CharacterEngine), **no
 - `107-ElectronAITTRPG-Live-Play-Grounding-And-Persistence`
 - `108-Repo-Full-Campaign-Portability-Slices`
 - `109-ElectronAITTRPG-Durable-Onboarding-And-Hub`
-- `119-ElectronAIVN-Scaffold-And-Dev-Cmd`
+- `119-ElectronAIVN-Scaffold-And-Dev-Cmd` _(in-progress)_
 - `121-DMEngine-Visual-Novel-Story-Pipeline`
 
 ## Wave 2
