@@ -24,7 +24,7 @@ Stand up `packages/ElectronAIVN` (`@weaver/electron-aivn`) as the **AI Visual No
 - [x] Package depends on Weaver engine workspaces + `@weaver/electron-ui` (no business rules in this package)
 - [x] Root `npm run aivn` runs ensure-dev then launches the app (parity with `ai-ttrpg`)
 - [x] Root README package table documents the new client vs AI TTRPG / Admin
-- [ ] Unit tests cover branding constants; `npm test` / `lint` / `build` / `deadcode` pass; cloud gate: PR checks green + PR marked ready
+- [x] Unit tests cover branding constants; `npm test` / `lint` / `build` / `deadcode` pass; cloud gate: PR checks green + PR marked ready
 
 ## Sub-tickets
 
