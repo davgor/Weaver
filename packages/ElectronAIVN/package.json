@@ -11,6 +11,7 @@
     "dev": "electron-vite dev",
     "prebuild": "npm run build -w @weaver/electron-ui --if-present",
     "build": "electron-vite build",
+    "pretypecheck": "npm run build -w @weaver/electron-ui --if-present",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json"
   },
   "dependencies": {
