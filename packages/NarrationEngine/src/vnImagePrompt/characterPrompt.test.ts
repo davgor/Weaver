@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { buildVnCharacterPrompt, type VnCharacterIdentitySeed, type VnStance } from '../index.js'
 
-describe('buildVnCharacterPrompt', () => {
+describe('buildVnCharacterPrompt label', () => {
   it('builds the required short label format', () => {
     const prompt = buildVnCharacterPrompt({
       identity: david(),
@@ -11,7 +11,9 @@ describe('buildVnCharacterPrompt', () => {
 
     expect(prompt.label).toBe("David's character, Standing, Angry")
   })
+})
 
+describe('buildVnCharacterPrompt full prompt', () => {
   it('includes anime style, no-background framing, identity, stance, and expression', () => {
     const prompt = buildVnCharacterPrompt({
       identity: david(),
@@ -48,7 +50,9 @@ describe('buildVnCharacterPrompt', () => {
     expect(second.fullPrompt).toContain(lock)
     expect(styleLockLine(third.fullPrompt)).not.toBe(lock)
   })
+})
 
+describe('buildVnCharacterPrompt validation', () => {
   it('rejects invalid stance or expression combinations', () => {
     expect(() =>
       buildVnCharacterPrompt({

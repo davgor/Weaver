@@ -67,12 +67,15 @@ function optionalStyleNotes(notes: readonly string[] | undefined): string | null
 }
 
 function normalizeIdentity(identity: VnCharacterIdentitySeed): VnCharacterIdentitySeed {
-  return {
+  const normalized: VnCharacterIdentitySeed = {
     characterKey: normalizeText(identity.characterKey),
     displayName: normalizeText(identity.displayName),
-    appearance: normalizeText(identity.appearance),
-    styleNotes: identity.styleNotes
+    appearance: normalizeText(identity.appearance)
   }
+  if (identity.styleNotes !== undefined) {
+    normalized.styleNotes = identity.styleNotes
+  }
+  return normalized
 }
 
 function normalizeText(value: string): string {

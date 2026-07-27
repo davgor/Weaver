@@ -4,9 +4,17 @@
 
 Epic ids are grouped by package/theme (e.g. `021`-`031` = CharacterEngine), **not** by dependency order. Picking tickets in numeric order alone will hand you one before something it depends on exists. Work wave by wave instead: everything in a wave has no unmet dependency on anything else still pending, so tickets within a wave can run in any order (including in parallel).
 
-6 waves, 16 pending epics.
+5 waves, 17 pending epics.
 
 ## Wave 1
+
+- `107-ElectronAITTRPG-Live-Play-Grounding-And-Persistence`
+- `108-Repo-Full-Campaign-Portability-Slices`
+- `109-ElectronAITTRPG-Durable-Onboarding-And-Hub`
+- `119-ElectronAIVN-Scaffold-And-Dev-Cmd`
+- `121-DMEngine-Visual-Novel-Story-Pipeline`
+
+## Wave 2
 
 - `110-ElectronAITTRPG-Production-Character-And-Npc-Ui`
 - `111-DMEngine-Live-Rag-And-Context-Integration`
@@ -14,28 +22,18 @@ Epic ids are grouped by package/theme (e.g. `021`-`031` = CharacterEngine), **no
 - `113-DMEngine-Weather-Play-Integration`
 - `114-ElectronAITTRPG-Quest-Offer-And-Progression-Ui`
 - `115-ElectronAITTRPG-Inactive-Pc-Proxy-Ui`
-- `118-ElectronUi-Shared-Game-Chrome`
-- `121-DMEngine-Visual-Novel-Story-Pipeline`
-- `123-NarrationEngine-Vn-Image-Prompt-Contract`
-
-## Wave 2
-
-- `116-DMEngine-Live-Population-Production`
-- `119-ElectronAIVN-Scaffold-And-Dev-Cmd`
+- `120-ElectronAIVN-Llm-First-Run-And-Boot`
 
 ## Wave 3
 
-- `120-ElectronAIVN-Llm-First-Run-And-Boot`
+- `116-DMEngine-Live-Population-Production`
+- `122-ElectronAIVN-Tell-A-Story-And-Review`
 
 ## Wave 4
 
-- `122-ElectronAIVN-Tell-A-Story-And-Review`
-
-## Wave 5
-
 - `124-ElectronAIVN-Visual-Novel-Play-Loop`
 
-## Wave 6
+## Wave 5
 
 - `125-ElectronAIVN-Persistence-And-Post-Story-Continue`
 - `126-NarrationEngine-Vn-Anime-Image-Generation`

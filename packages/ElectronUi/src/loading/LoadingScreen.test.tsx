@@ -26,7 +26,7 @@ afterEach(() => {
   document.body.innerHTML = ''
 })
 
-describe('LoadingScreen', () => {
+describe('LoadingScreen boot progress', () => {
   it('renders brand, stage, status, and boot progress', () => {
     const host = renderElement(
       <LoadingScreen
@@ -46,7 +46,9 @@ describe('LoadingScreen', () => {
     expect(progress?.getAttribute('aria-valuenow')).toBe('32')
     expect(fill?.style.width).toBe('32%')
   })
+})
 
+describe('LoadingScreen ready state', () => {
   it('presents the ready state when progress reaches 100', () => {
     const host = renderElement(
       <LoadingScreen
@@ -64,7 +66,9 @@ describe('LoadingScreen', () => {
     expect(progress?.getAttribute('aria-valuenow')).toBe('100')
     expect(host.textContent).toContain('Entering the table')
   })
+})
 
+describe('LoadingScreen failure', () => {
   it('shows failure message and optional retry action', () => {
     const onRetry = vi.fn()
     const host = renderElement(
