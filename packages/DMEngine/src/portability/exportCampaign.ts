@@ -19,6 +19,10 @@ import {
   type NpcCampaignSlice
 } from '@weaver/npc-engine'
 import {
+  exportQuestCampaignSlice,
+  type QuestCampaignSlice
+} from '@weaver/quest-engine'
+import {
   exportRegionalCampaignSlice,
   type RegionalCampaignSlice
 } from '@weaver/regional-engine'
@@ -62,6 +66,9 @@ export type CampaignPortabilityDeps = {
       characterIds: readonly string[]
     }) => ItemCampaignSlice
   }
+  quest: {
+    exportCampaignSlice: (ctx: { campaignId: string }) => QuestCampaignSlice
+  }
 }
 
 export type ExportCampaignPackageInput = {
@@ -79,7 +86,8 @@ export function exportCampaignPackage(
     campaignId: input.campaignId,
     worldId
   }
-  const characterSlice = deps.character.exportCampaignSlice({ campaignId: input.campaignId })
+  const campaignCtx = { campaignId: input.campaignId }
+  const characterSlice = deps.character.exportCampaignSlice(campaignCtx)
   return {
     version: PORTABLE_PACKAGE_VERSION,
     campaignId: input.campaignId,
@@ -88,13 +96,14 @@ export function exportCampaignPackage(
       world: deps.world.exportCampaignSlice(worldCtx),
       regional: deps.regional.exportCampaignSlice(worldCtx),
       civilization: deps.civilization.exportCampaignSlice(worldCtx),
-      npc: deps.npc.exportCampaignSlice({ campaignId: input.campaignId }),
-      enemy: deps.enemy.exportCampaignSlice({ campaignId: input.campaignId }),
+      npc: deps.npc.exportCampaignSlice(campaignCtx),
+      enemy: deps.enemy.exportCampaignSlice(campaignCtx),
       character: characterSlice,
       item: deps.item.exportCampaignSlice({
         campaignId: input.campaignId,
         characterIds: characterSlice.characterIds
-      })
+      }),
+      quest: deps.quest.exportCampaignSlice(campaignCtx)
     }
   }
 }
@@ -111,6 +120,7 @@ export function createDefaultCampaignPortabilityDeps(
     enemy: { exportCampaignSlice: exportEnemyCampaignSlice },
     character: { exportCampaignSlice: exportCharacterCampaignSlice },
     item: { exportCampaignSlice: exportItemCampaignSlice },
+    quest: { exportCampaignSlice: exportQuestCampaignSlice },
     ...overrides
   }
 }

@@ -6,7 +6,7 @@ Weaver campaign backups are a single JSON document produced by `exportCampaignPa
 
 ```json
 {
-  "version": 1,
+  "version": 2,
   "campaignId": "my-campaign",
   "exportedAt": "2026-07-26T07:00:00.000Z",
   "slices": {
@@ -16,14 +16,15 @@ Weaver campaign backups are a single JSON document produced by `exportCampaignPa
     "npc": { "...": "NPCEngine slice" },
     "enemy": { "...": "EnemyEngine slice" },
     "character": { "...": "CharacterEngine slice" },
-    "item": { "...": "ItemEngine slice" }
+    "item": { "...": "ItemEngine slice" },
+    "quest": { "...": "QuestEngine slice" }
   }
 }
 ```
 
 ## Version field
 
-- `version` is the **portable package schema version** (`PORTABLE_PACKAGE_VERSION`, currently `1`).
+- `version` is the **portable package schema version** (`PORTABLE_PACKAGE_VERSION`, currently `2`).
 - Each slice also carries its own `sliceVersion` owned by the exporting engine.
 - Import rejects unknown package versions with `PortabilitySchemaError` instead of partially applying data.
 
@@ -38,6 +39,20 @@ When a breaking change is required:
 
 New exports should always write the latest `version` and slice versions. Older backups remain restorable via the adapter chain until explicitly retired.
 
+### v1 → v2
+
+Version `1` packages omit the `quest` slice. On import, DMEngine adapts them in memory to version `2` by inserting an empty QuestEngine slice:
+
+```json
+{
+  "sliceVersion": 1,
+  "campaignId": "<package.campaignId>",
+  "worldQuests": []
+}
+```
+
+Seeded world quests are therefore empty after a v1 restore; re-run campaign quest seeding if needed.
+
 ## Slice ownership
 
 | Slice | Owning package | Notes |
@@ -49,5 +64,6 @@ New exports should always write the latest `version` and slice versions. Older b
 | `enemy` | EnemyEngine | Bestiary ids + generated foe snapshots |
 | `character` | CharacterEngine | Campaign day, death mode, companion ids, locations (sliceVersion 2+) |
 | `item` | ItemEngine | Per-character currency balances |
+| `quest` | QuestEngine | Seeded world quests (`QUEST_SLICE_VERSION` 1) |
 
 DMEngine orchestrates export/import but does not embed cross-engine dumps; each slice is produced by the owning engine's `exportCampaignSlice` API.

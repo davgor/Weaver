@@ -7,6 +7,11 @@ import { createCivilizationStore } from '@weaver/civilization-engine'
 import { clearEnemyStore } from '@weaver/enemy-engine'
 import { itemEngine } from '@weaver/item-engine'
 import { clearNpcStore } from '@weaver/npc-engine'
+import {
+  clearQuestStores,
+  listWorldQuests,
+  QUEST_SLICE_VERSION
+} from '@weaver/quest-engine'
 import { createRegionStore } from '@weaver/regional-engine'
 import { createWorldService } from '@weaver/world-engine'
 import {
@@ -26,6 +31,7 @@ beforeEach(() => {
   clearNpcStore()
   clearEnemyStore()
   clearCompanionStore()
+  clearQuestStores()
   setCampaignDay(CAMPAIGN_ID, 0)
   itemEngine.restoreCampaignBalances({})
 })
@@ -37,21 +43,54 @@ afterEach(() => {
   }
 })
 
-describe('DMEngine campaign portability', () => {
-  it('export then import reproduces an equivalent campaign', () => {
+describe('DMEngine campaign portability round-trip', () => {
+  it('reproduces an equivalent campaign with seeded quests', () => {
     const dataRoot = tempRoot()
     seedCampaign(dataRoot, CAMPAIGN_ID)
-
     const deps = createDefaultCampaignImportDeps()
     const exported = exportCampaignPackage(deps, { dataRoot, campaignId: CAMPAIGN_ID })
     expect(exported.version).toBe(PORTABLE_PACKAGE_VERSION)
     expect(exported.slices.world.worldId).toBe(CAMPAIGN_ID)
+    expect(exported.slices.quest.sliceVersion).toBe(QUEST_SLICE_VERSION)
+    expect(exported.slices.quest.worldQuests.length).toBeGreaterThan(0)
 
     clearCampaignState(dataRoot, CAMPAIGN_ID)
+    expect(listWorldQuests(CAMPAIGN_ID)).toEqual([])
     importCampaignPackage(deps, { dataRoot, package: exported })
-
+    expect(listWorldQuests(CAMPAIGN_ID)).toEqual(exported.slices.quest.worldQuests)
     const restored = exportCampaignPackage(deps, { dataRoot, campaignId: CAMPAIGN_ID })
     assertRoundTripEquivalent(exported, restored)
+  })
+
+  it('round-trips an empty quest slice', () => {
+    const dataRoot = tempRoot()
+    seedCampaign(dataRoot, CAMPAIGN_ID, { seedQuests: false })
+    const deps = createDefaultCampaignImportDeps()
+    const exported = exportCampaignPackage(deps, { dataRoot, campaignId: CAMPAIGN_ID })
+    expect(exported.slices.quest.worldQuests).toEqual([])
+    clearCampaignState(dataRoot, CAMPAIGN_ID)
+    importCampaignPackage(deps, { dataRoot, package: exported })
+    expect(listWorldQuests(CAMPAIGN_ID)).toEqual([])
+  })
+})
+
+describe('DMEngine campaign portability versions', () => {
+  it('adapts v1 packages by inserting an empty quest slice', () => {
+    const dataRoot = tempRoot()
+    seedCampaign(dataRoot, CAMPAIGN_ID)
+    const deps = createDefaultCampaignImportDeps()
+    const current = exportCampaignPackage(deps, { dataRoot, campaignId: CAMPAIGN_ID })
+    const v1Package = toV1Package(current)
+    clearCampaignState(dataRoot, CAMPAIGN_ID)
+    importCampaignPackage(deps, { dataRoot, package: v1Package })
+    expect(listWorldQuests(CAMPAIGN_ID)).toEqual([])
+    const restored = exportCampaignPackage(deps, { dataRoot, campaignId: CAMPAIGN_ID })
+    expect(restored.version).toBe(PORTABLE_PACKAGE_VERSION)
+    expect(restored.slices.quest).toEqual({
+      sliceVersion: QUEST_SLICE_VERSION,
+      campaignId: CAMPAIGN_ID,
+      worldQuests: []
+    })
   })
 
   it('reports campaignId mismatch across slices', () => {
@@ -59,8 +98,7 @@ describe('DMEngine campaign portability', () => {
     const dataRoot = tempRoot()
     seedCampaign(dataRoot, CAMPAIGN_ID)
     const exported = exportCampaignPackage(deps, { dataRoot, campaignId: CAMPAIGN_ID })
-    const mismatched = withSliceCampaignId(exported, 'npc', 'wrong-campaign')
-
+    const mismatched = withSliceCampaignId(exported, 'quest', 'wrong-campaign')
     expect(() => importCampaignPackage(deps, { dataRoot, package: mismatched })).toThrow(
       PortabilitySchemaError
     )
@@ -74,18 +112,11 @@ describe('DMEngine campaign portability', () => {
     const dataRoot = tempRoot()
     seedCampaign(dataRoot, CAMPAIGN_ID)
     const exported = exportCampaignPackage(deps, { dataRoot, campaignId: CAMPAIGN_ID })
-
     expect(() =>
-      importCampaignPackage(deps, {
-        dataRoot,
-        package: { ...exported, version: 99 }
-      })
+      importCampaignPackage(deps, { dataRoot, package: { ...exported, version: 99 } })
     ).toThrow(PortabilitySchemaError)
     expect(() =>
-      importCampaignPackage(deps, {
-        dataRoot,
-        package: { ...exported, version: 99 }
-      })
+      importCampaignPackage(deps, { dataRoot, package: { ...exported, version: 99 } })
     ).toThrow(/Unsupported portable package version/)
   })
 })
@@ -103,6 +134,28 @@ function withSliceCampaignId(
         ...exported.slices[sliceKey],
         campaignId
       }
+    }
+  }
+}
+
+function toV1Package(current: CampaignPortablePackage): {
+  version: 1
+  campaignId: string
+  exportedAt: string
+  slices: Omit<CampaignPortablePackage['slices'], 'quest'>
+} {
+  return {
+    version: 1,
+    campaignId: current.campaignId,
+    exportedAt: current.exportedAt,
+    slices: {
+      world: current.slices.world,
+      regional: current.slices.regional,
+      civilization: current.slices.civilization,
+      npc: current.slices.npc,
+      enemy: current.slices.enemy,
+      character: current.slices.character,
+      item: current.slices.item
     }
   }
 }
@@ -130,6 +183,7 @@ function assertRoundTripEquivalent(
   expect(restored.slices.character.day).toBe(exported.slices.character.day)
   expect(restored.slices.character.characterIds).toEqual(exported.slices.character.characterIds)
   expect(restored.slices.item.balances).toEqual(exported.slices.item.balances)
+  expect(restored.slices.quest.worldQuests).toEqual(exported.slices.quest.worldQuests)
 }
 
 function clearCampaignState(dataRoot: string, campaignId: string): void {
@@ -140,6 +194,7 @@ function clearCampaignState(dataRoot: string, campaignId: string): void {
   clearNpcStore()
   clearEnemyStore()
   clearCompanionStore()
+  clearQuestStores()
   setCampaignDay(campaignId, 0)
   itemEngine.restoreCampaignBalances({})
 }

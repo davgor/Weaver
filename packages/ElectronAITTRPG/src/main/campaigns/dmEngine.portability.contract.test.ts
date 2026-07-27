@@ -11,6 +11,7 @@ import { createCivilizationStore } from '@weaver/civilization-engine'
 import { clearEnemyStore, saveGeneratedFoe } from '@weaver/enemy-engine'
 import { itemEngine } from '@weaver/item-engine'
 import { clearNpcStore, saveNpc } from '@weaver/npc-engine'
+import { clearQuestStores, seedWorldQuests } from '@weaver/quest-engine'
 import { createRegionStore } from '@weaver/regional-engine'
 import { createWorldService } from '@weaver/world-engine'
 import {
@@ -30,6 +31,7 @@ const TIMESTAMP = '2026-01-01T00:00:00.000Z'
 beforeEach(() => {
   clearNpcStore()
   clearEnemyStore()
+  clearQuestStores()
   setCampaignDay(CAMPAIGN_ID, 0)
   itemEngine.restoreCampaignBalances({})
 })
@@ -58,6 +60,7 @@ describe('DMEngine campaign portability contract (097)', () => {
     const deps = createDefaultCampaignImportDeps()
     const restored = exportCampaignPackage(deps, { dataRoot, campaignId: CAMPAIGN_ID })
     expect(restored.slices.npc.npcIds).toEqual(exported.slices.npc.npcIds)
+    expect(restored.slices.quest.worldQuests).toEqual(exported.slices.quest.worldQuests)
   })
 })
 
@@ -65,6 +68,22 @@ function seedContractCampaign(dataRoot: string, campaignId: string): void {
   seedContractWorld(dataRoot, campaignId)
   seedContractNpc(campaignId)
   seedContractFoeAndCompanions(campaignId)
+  seedContractQuests(campaignId)
+}
+
+function seedContractQuests(campaignId: string): void {
+  seedWorldQuests({
+    campaignId,
+    worldId: campaignId,
+    seed: 'electron-portability-quest',
+    pools: {
+      regionIds: ['region-core'],
+      placeIds: ['civ-core'],
+      npcIds: ['npc-guide'],
+      itemIds: ['item-token']
+    },
+    counts: { main: 1, side: 0 }
+  })
 }
 
 function seedContractWorld(dataRoot: string, campaignId: string): void {
@@ -200,6 +219,7 @@ function clearCampaignState(dataRoot: string, campaignId: string): void {
   createCivilizationStore(dataRoot).clearCivilizations(worldId)
   clearNpcStore()
   clearEnemyStore()
+  clearQuestStores()
   setCampaignDay(campaignId, 0)
   itemEngine.restoreCampaignBalances({})
 }

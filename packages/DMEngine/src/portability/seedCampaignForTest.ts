@@ -7,12 +7,21 @@ import { createCivilizationStore } from '@weaver/civilization-engine'
 import { saveGeneratedFoe } from '@weaver/enemy-engine'
 import { itemEngine } from '@weaver/item-engine'
 import { saveNpc } from '@weaver/npc-engine'
+import { seedWorldQuests } from '@weaver/quest-engine'
 import { createRegionStore } from '@weaver/regional-engine'
 import { createWorldService } from '@weaver/world-engine'
 
 const TIMESTAMP = '2026-01-01T00:00:00.000Z'
 
-export function seedCampaign(dataRoot: string, campaignId: string): void {
+type SeedCampaignOptions = {
+  seedQuests?: boolean
+}
+
+export function seedCampaign(
+  dataRoot: string,
+  campaignId: string,
+  options: SeedCampaignOptions = {}
+): void {
   const worldId = campaignId
   seedWorld(dataRoot, worldId)
   seedRegion(dataRoot, worldId)
@@ -20,6 +29,24 @@ export function seedCampaign(dataRoot: string, campaignId: string): void {
   seedNpc(campaignId, worldId)
   seedFoe()
   seedCharacterAndCurrency(campaignId)
+  if (options.seedQuests !== false) {
+    seedQuests(campaignId, worldId)
+  }
+}
+
+function seedQuests(campaignId: string, worldId: string): void {
+  seedWorldQuests({
+    campaignId,
+    worldId,
+    seed: 'portability-quest-seed',
+    pools: {
+      regionIds: ['region-core'],
+      placeIds: ['civ-core'],
+      npcIds: ['npc-guide'],
+      itemIds: ['item-token']
+    },
+    counts: { main: 1, side: 0 }
+  })
 }
 
 function seedWorld(dataRoot: string, worldId: string): void {
