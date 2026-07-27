@@ -5,6 +5,7 @@ export function exportCampaignSlice(ctx: ItemPortabilityContext): ItemCampaignSl
   return {
     sliceVersion: ITEM_SLICE_VERSION,
     campaignId: ctx.campaignId,
-    balances: itemEngine.snapshotCampaignBalances(ctx.characterIds)
+    balances: itemEngine.snapshotCampaignBalances(ctx.characterIds),
+    ...itemEngine.snapshotCampaignItems(ctx.characterIds)
   }
 }

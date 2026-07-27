@@ -9,6 +9,8 @@ import {
 export function importCampaignSlice(ctx: ItemPortabilityContext, slice: ItemCampaignSlice): void {
   assertSliceVersion(slice)
   assertCampaignMatch(ctx.campaignId, slice.campaignId)
+  // Preserve instance ids via seed restore; clear then restore replaces prior campaign item state.
+  itemEngine.restoreCampaignItems(slice)
   itemEngine.restoreCampaignBalances(slice.balances)
 }
 
