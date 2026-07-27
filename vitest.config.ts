@@ -8,8 +8,9 @@ export default defineConfig({
       'scripts/**/*.test.mjs'
     ],
     environment: 'node',
-    // Windows CI shards can spend >5s on better-sqlite3 world/civ bootstraps.
-    testTimeout: 30_000,
+    // Windows CI + better-sqlite3 world/civ bootstraps can exceed 60s under
+    // coverage / full-suite load (see WeatherEngine weatherField.test.ts).
+    testTimeout: 120_000,
     reporters: ['default'],
     coverage: {
       provider: 'v8',
