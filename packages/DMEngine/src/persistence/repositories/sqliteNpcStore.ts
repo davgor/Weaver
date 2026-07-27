@@ -1,5 +1,6 @@
 import {
   createMemoryNpcCampaignStore,
+  type DmNpcOpinion,
   type FactionRecord,
   type FactionRelation,
   type NpcCampaignStore,
@@ -23,7 +24,6 @@ type LocationRow = {
   location_kind: string
   updated_day: number | null
 }
-type DmOpinionPayload = { campaignId: string; npcId: string; text: string }
 type SqliteNpcStoreContext = { db: SqliteDatabase; memory: NpcCampaignStore }
 type UpsertPayloadInput = {
   db: SqliteDatabase
@@ -99,7 +99,7 @@ function hydrateOpinions(db: SqliteDatabase, memory: NpcCampaignStore): void {
 
 function hydrateDmOpinions(db: SqliteDatabase, memory: NpcCampaignStore): void {
   for (const row of selectPayloads(db, 'dm_npc_opinions', 'npc_id')) {
-    const payload = JSON.parse(row.payload_json) as DmOpinionPayload
+    const payload = JSON.parse(row.payload_json) as DmNpcOpinion
     memory.setDmNpcOpinion(payload.campaignId, payload.npcId, payload.text)
   }
 }
@@ -165,15 +165,28 @@ function createFactFactionWriteThroughSection(
   | 'clearWorldFacts'
   | 'getFaction'
   | 'setFaction'
+  | 'listFactions'
   | 'clearFactions'
   | 'getFactionRelation'
   | 'setFactionRelation'
+  | 'listFactionRelations'
   | 'clearFactionRelations'
   | 'getReputation'
   | 'setReputation'
   | 'listReputationsForCharacter'
+  | 'listReputations'
   | 'clearReputations'
 > {
+  return {
+    ...createWorldFactWriteThroughSection(context),
+    ...createFactionWriteThroughSection(context),
+    ...createReputationWriteThroughSection(context)
+  }
+}
+
+function createWorldFactWriteThroughSection(
+  context: SqliteNpcStoreContext
+): Pick<NpcCampaignStore, 'setWorldFact' | 'listWorldFacts' | 'clearWorldFacts'> {
   const { db, memory } = context
   return {
     setWorldFact: (fact) => writeWorldFact(db, memory, fact),
@@ -181,22 +194,58 @@ function createFactFactionWriteThroughSection(
     clearWorldFacts: () => {
       memory.clearWorldFacts()
       db.prepare('DELETE FROM world_facts').run()
-    },
+    }
+  }
+}
+
+function createFactionWriteThroughSection(
+  context: SqliteNpcStoreContext
+): Pick<
+  NpcCampaignStore,
+  | 'getFaction'
+  | 'setFaction'
+  | 'listFactions'
+  | 'clearFactions'
+  | 'getFactionRelation'
+  | 'setFactionRelation'
+  | 'listFactionRelations'
+  | 'clearFactionRelations'
+> {
+  const { db, memory } = context
+  return {
     getFaction: (id) => memory.getFaction(id),
     setFaction: (faction) => writeFaction(db, memory, faction),
+    listFactions: () => memory.listFactions(),
     clearFactions: () => {
       memory.clearFactions()
       db.prepare('DELETE FROM factions').run()
     },
     getFactionRelation: (sourceId, targetId) => memory.getFactionRelation(sourceId, targetId),
     setFactionRelation: (relation) => writeRelation(db, memory, relation),
+    listFactionRelations: () => memory.listFactionRelations(),
     clearFactionRelations: () => {
       memory.clearFactionRelations()
       db.prepare('DELETE FROM faction_relations').run()
-    },
+    }
+  }
+}
+
+function createReputationWriteThroughSection(
+  context: SqliteNpcStoreContext
+): Pick<
+  NpcCampaignStore,
+  | 'getReputation'
+  | 'setReputation'
+  | 'listReputationsForCharacter'
+  | 'listReputations'
+  | 'clearReputations'
+> {
+  const { db, memory } = context
+  return {
     getReputation: (characterId, factionId) => memory.getReputation(characterId, factionId),
     setReputation: (standing) => writeReputation(db, memory, standing),
     listReputationsForCharacter: (characterId) => memory.listReputationsForCharacter(characterId),
+    listReputations: () => memory.listReputations(),
     clearReputations: () => {
       memory.clearReputations()
       db.prepare('DELETE FROM character_faction_reputations').run()
@@ -211,9 +260,11 @@ function createOpinionWriteThroughSection(
   | 'setNpcOpinion'
   | 'listNpcOpinionsHeldBy'
   | 'listNpcOpinionsAbout'
+  | 'listNpcOpinions'
   | 'clearNpcOpinions'
   | 'setDmNpcOpinion'
   | 'getDmNpcOpinion'
+  | 'listDmNpcOpinionsForCampaign'
   | 'clearDmNpcOpinions'
 > {
   const { db, memory } = context
@@ -221,6 +272,7 @@ function createOpinionWriteThroughSection(
     setNpcOpinion: (opinion) => writeOpinion(db, memory, opinion),
     listNpcOpinionsHeldBy: (holderId) => memory.listNpcOpinionsHeldBy(holderId),
     listNpcOpinionsAbout: (subjectId) => memory.listNpcOpinionsAbout(subjectId),
+    listNpcOpinions: () => memory.listNpcOpinions(),
     clearNpcOpinions: () => {
       memory.clearNpcOpinions()
       db.prepare('DELETE FROM npc_opinions').run()
@@ -228,6 +280,7 @@ function createOpinionWriteThroughSection(
     setDmNpcOpinion: (campaignId, npcId, text) =>
       writeDmOpinion({ db, memory, campaignId, npcId, text }),
     getDmNpcOpinion: (campaignId, npcId) => memory.getDmNpcOpinion(campaignId, npcId),
+    listDmNpcOpinionsForCampaign: (campaignId) => memory.listDmNpcOpinionsForCampaign(campaignId),
     clearDmNpcOpinions: () => {
       memory.clearDmNpcOpinions()
       db.prepare('DELETE FROM dm_npc_opinions').run()
@@ -380,7 +433,7 @@ function writeDmOpinion(input: {
 }): string {
   const { db, memory, campaignId, npcId, text } = input
   const saved = memory.setDmNpcOpinion(campaignId, npcId, text)
-  const payload: DmOpinionPayload = { campaignId, npcId, text: saved }
+  const payload: DmNpcOpinion = { campaignId, npcId, text: saved }
   upsertPayload({ db, tableName: 'dm_npc_opinions', idColumn: 'npc_id', id: npcId, payload })
   return saved
 }

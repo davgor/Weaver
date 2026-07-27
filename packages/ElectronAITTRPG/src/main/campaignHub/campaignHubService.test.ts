@@ -56,6 +56,27 @@ describe('campaignHubService load', () => {
   })
 })
 
+describe('campaignHubService active cursor', () => {
+  it('loads and saves the active character cursor', async () => {
+    let activeCharacterId: string | null = 'pc-2'
+    const service = createCampaignHubService(hubDeps({
+      listCompletedCharacters: () => completedCharacters(),
+      getActiveCharacterId: () => activeCharacterId,
+      setActiveCharacterId: (_campaignId, characterId) => {
+        activeCharacterId = characterId
+      }
+    }))
+
+    await expect(service.loadHub('camp-1')).resolves.toMatchObject({
+      activeCharacterId: 'pc-2'
+    })
+    await expect(service.setActiveCharacter('camp-1', 'pc-1')).resolves.toMatchObject({
+      activeCharacterId: 'pc-1'
+    })
+    expect(activeCharacterId).toBe('pc-1')
+  })
+})
+
 describe('campaignHubService addCharacter', () => {
   it('creates the next onboarding request for adding another character', async () => {
     const service = createCampaignHubService(hubDeps({
@@ -82,6 +103,8 @@ function hubDeps(overrides: Partial<CampaignHubDeps> = {}): CampaignHubDeps {
     getCharacterSessionCursor: () => undefined,
     recordCharacterSessionCursor: (cursor) => cursor,
     buildSessionRecap: () => ({ paragraphs: [], eventIds: [] }),
+    getActiveCharacterId: () => null,
+    setActiveCharacterId: () => undefined,
     ...overrides
   }
 }
@@ -117,5 +140,12 @@ function events(): CausalEvent[] {
       seq: 1,
       at: 10
     }
+  ]
+}
+
+function completedCharacters() {
+  return [
+    { campaignId: 'camp-1', characterId: 'pc-1', characterName: 'Ilyra', phase: 'complete' as const },
+    { campaignId: 'camp-1', characterId: 'pc-2', characterName: 'Briar', phase: 'complete' as const }
   ]
 }

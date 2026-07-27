@@ -39,6 +39,8 @@ export type CampaignHubDeps = {
   ) => CharacterSessionCursor | undefined
   recordCharacterSessionCursor: (cursor: CharacterSessionCursor) => CharacterSessionCursor
   buildSessionRecap: (input: SessionRecapInput) => SessionRecap
+  getActiveCharacterId: (campaignId: string) => string | null
+  setActiveCharacterId: (campaignId: string, characterId: string | null) => void
 }
 
 export type CampaignHubService = CampaignHubApi & {
@@ -49,6 +51,7 @@ export function createCampaignHubService(deps: CampaignHubDeps): CampaignHubServ
   return {
     load: (campaignId) => loadHub(deps, campaignId),
     loadHub: (campaignId) => loadHub(deps, campaignId),
+    setActiveCharacter: (campaignId, characterId) => setActiveCharacter(deps, campaignId, characterId),
     addCharacter: (campaignId) => addCharacter(deps, campaignId)
   }
 }
@@ -59,11 +62,22 @@ async function loadHub(deps: CampaignHubDeps, campaignId: string): Promise<Campa
     Promise.resolve(deps.listCompletedCharacters(campaignId))
   ])
   const events = deps.listCausalEvents(campaignId)
+  const activeCharacterId = resolveActiveCharacterId(deps, campaignId, characters)
   return {
     campaignId,
+    activeCharacterId,
     worldPreview: worldPreview(campaignId, review),
     characters: characters.map((character) => hubCharacter(deps, events, character))
   }
+}
+
+async function setActiveCharacter(
+  deps: CampaignHubDeps,
+  campaignId: string,
+  characterId: string | null
+): Promise<CampaignHubSnapshot> {
+  deps.setActiveCharacterId(campaignId, characterId)
+  return loadHub(deps, campaignId)
 }
 
 async function addCharacter(
@@ -117,6 +131,20 @@ function recordLatestCursor(
     characterId: character.characterId,
     lastSessionAt: latest
   })
+}
+
+function resolveActiveCharacterId(
+  deps: CampaignHubDeps,
+  campaignId: string,
+  characters: readonly CharacterRecord[]
+): string | null {
+  const stored = deps.getActiveCharacterId(campaignId)
+  if (stored !== null && characters.some((character) => character.characterId === stored)) {
+    return stored
+  }
+  const fallback = characters[0]?.characterId ?? null
+  deps.setActiveCharacterId(campaignId, fallback)
+  return fallback
 }
 
 function worldPreview(

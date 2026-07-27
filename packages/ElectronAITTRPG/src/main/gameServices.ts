@@ -2,8 +2,10 @@ import { join } from 'node:path'
 import { listCompanions } from '@weaver/character-engine'
 import {
   buildSessionRecap,
+  getActiveCampaignSession,
   getCharacterSessionCursor,
   listCausalEvents,
+  openCampaignSession,
   recordCharacterSessionCursor
 } from '@weaver/dm-engine'
 import { createTextCompletionClient, llmEngine } from '@weaver/llm-engine'
@@ -21,9 +23,11 @@ import { createCampaignsService, type CampaignsService } from './campaigns/campa
 import {
   createLiveOnboardingPorts,
   createOnboardingService,
+  type OnboardingStore,
   type OnboardingService
 } from './onboarding/onboardingService.js'
 import { createLivePlayHandlerDeps, type LivePlayDeps } from './play/livePlayDeps.js'
+import { resolveCampaignFilePath } from './campaigns/campaignDisk.js'
 import type { SettingsHandlerDeps } from './settings/registerHandlers.js'
 import {
   createSharedSettingsServices,
@@ -44,7 +48,10 @@ export function createGameServices(campaignsRoot: string): GameServices {
   const settings = createSharedSettingsServices()
   const completer = settings.textCompleter
   const campaignCreate = createCampaignCreateWithCompleter(campaignsRoot, completer)
-  const onboarding = createOnboardingService(createLiveOnboardingPorts({ completer }))
+  const resolveOnboardingStore = createOnboardingStoreResolver(campaignsRoot)
+  const onboarding = createOnboardingService(createLiveOnboardingPorts({ completer }), {
+    resolveStore: resolveOnboardingStore
+  })
   return {
     settings,
     settingsHandlers: buildSettingsHandlerDeps(settings),
@@ -54,8 +61,8 @@ export function createGameServices(campaignsRoot: string): GameServices {
       getReview: campaignCreate.getReview,
       listCharacters: onboarding.listCharacters
     }),
-    campaignHub: createHubService(campaignCreate, onboarding),
-    play: createLivePlayHandlerDeps({ textCompleter: completer })
+    campaignHub: createHubService(campaignCreate, onboarding, resolveOnboardingStore),
+    play: createLivePlayHandlerDeps({ textCompleter: completer, campaignsRoot })
   }
 }
 
@@ -74,7 +81,8 @@ function createCampaignCreateWithCompleter(
 
 function createHubService(
   campaignCreate: CampaignCreateService,
-  onboarding: OnboardingService
+  onboarding: OnboardingService,
+  resolveOnboardingStore: (campaignId: string) => OnboardingStore
 ): CampaignHubService {
   return createCampaignHubService({
     getReview: campaignCreate.getReview,
@@ -84,7 +92,25 @@ function createHubService(
     listCausalEvents,
     getCharacterSessionCursor,
     recordCharacterSessionCursor,
-    buildSessionRecap
+    buildSessionRecap,
+    getActiveCharacterId: (campaignId) =>
+      resolveOnboardingStore(campaignId).getActiveCharacterId(),
+    setActiveCharacterId: (campaignId, characterId) =>
+      resolveOnboardingStore(campaignId).setActiveCharacterId(characterId)
+  })
+}
+
+function createOnboardingStoreResolver(campaignsRoot: string): (campaignId: string) => OnboardingStore {
+  return (campaignId) => ensureCampaignSession(campaignsRoot, campaignId).onboardingStore
+}
+
+function ensureCampaignSession(campaignsRoot: string, campaignId: string) {
+  const active = getActiveCampaignSession()
+  if (active?.campaignId === campaignId) return active
+  active?.close()
+  return openCampaignSession({
+    campaignId,
+    filePath: resolveCampaignFilePath(campaignsRoot, campaignId)
   })
 }
 

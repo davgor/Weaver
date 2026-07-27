@@ -1,11 +1,30 @@
 import type {
-  GuidedCreationPhase,
   GuidedCreationState,
-  GuidedCreationTranscriptEntry,
   StartGuidedIdentityInput
 } from './types.js'
+import {
+  cloneGuidedCreationState,
+  createMemoryGuidedCreationStateStore,
+  type GuidedCreationStateStore
+} from './stateStore.js'
 
-const stateByCharacterId = new Map<string, GuidedCreationState>()
+const memoryStore = createMemoryGuidedCreationStateStore()
+let activeStore: GuidedCreationStateStore = memoryStore
+let campaignStoreBound = false
+
+export function bindGuidedCreationStateStore(store: GuidedCreationStateStore): void {
+  activeStore = store
+  campaignStoreBound = true
+}
+
+export function unbindGuidedCreationStateStore(): void {
+  activeStore = memoryStore
+  campaignStoreBound = false
+}
+
+export function isGuidedCreationStateStoreBound(): boolean {
+  return campaignStoreBound
+}
 
 export function startGuidedIdentityState(input: StartGuidedIdentityInput): GuidedCreationState {
   assertText(input.campaignId, 'campaignId')
@@ -18,13 +37,11 @@ export function startGuidedIdentityState(input: StartGuidedIdentityInput): Guide
     characterFacts: {},
     enterWorldUnlocked: false
   }
-  stateByCharacterId.set(input.characterId, cloneState(state))
-  return cloneState(state)
+  return activeStore.save(state)
 }
 
 export function getGuidedCreationState(characterId: string): GuidedCreationState | undefined {
-  const state = stateByCharacterId.get(characterId)
-  return state === undefined ? undefined : cloneState(state)
+  return activeStore.load(characterId)
 }
 
 export function requireGuidedCreationState(characterId: string): GuidedCreationState {
@@ -36,48 +53,23 @@ export function requireGuidedCreationState(characterId: string): GuidedCreationS
 }
 
 export function saveGuidedCreationState(state: GuidedCreationState): GuidedCreationState {
-  stateByCharacterId.set(state.characterId, cloneState(state))
-  return cloneState(state)
+  return activeStore.save(state)
 }
 
 export function exportGuidedCreationStates(): GuidedCreationState[] {
-  return [...stateByCharacterId.values()].map(cloneState)
+  return activeStore.list()
 }
 
 export function importGuidedCreationStates(states: readonly GuidedCreationState[]): GuidedCreationState[] {
-  stateByCharacterId.clear()
+  activeStore.clear()
   for (const state of states) {
-    stateByCharacterId.set(state.characterId, normalizeState(state))
+    activeStore.save(cloneGuidedCreationState(state))
   }
   return exportGuidedCreationStates()
 }
 
 export function resetGuidedCreationStateStore(): void {
-  stateByCharacterId.clear()
-}
-
-function normalizeState(state: GuidedCreationState): GuidedCreationState {
-  return {
-    campaignId: state.campaignId,
-    characterId: state.characterId,
-    guidedCreationPhase: state.guidedCreationPhase,
-    transcript: state.transcript.map(cloneTranscriptEntry),
-    characterFacts: { ...state.characterFacts },
-    enterWorldUnlocked: state.enterWorldUnlocked,
-    ...(state.openingScene === undefined ? {} : { openingScene: state.openingScene })
-  }
-}
-
-function cloneState(state: GuidedCreationState): GuidedCreationState {
-  return normalizeState(state)
-}
-
-function cloneTranscriptEntry(entry: GuidedCreationTranscriptEntry): GuidedCreationTranscriptEntry {
-  return {
-    speaker: entry.speaker,
-    phase: entry.phase as GuidedCreationPhase,
-    text: entry.text
-  }
+  activeStore.clear()
 }
 
 function assertText(value: string, label: string): void {

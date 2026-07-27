@@ -35,6 +35,7 @@ export type CharacterFactStore = {
   setOnboardingStatus: (ownerCharacterId: string, status: CompanionOnboardingStatus) => void
   allocateCompanionId: () => string
   allocateRecordId: (prefix: string) => string
+  listCharacterFactIds: () => string[]
 }
 
 export type MemoryCharacterFactStoreOptions = {
@@ -83,7 +84,8 @@ export function createMemoryCharacterFactStore(
     ...buildStatsApi(maps),
     ...buildRecordApis(maps),
     ...buildLocationApi(maps),
-    ...buildCompanionApi(maps, allocators)
+    ...buildCompanionApi(maps, allocators),
+    listCharacterFactIds: () => listCharacterFactIds(maps)
   }
 }
 
@@ -372,6 +374,26 @@ function listLocationsFrom(
       ? records
       : records.filter((record) => record.campaignId === campaignId)
   return filtered.sort((left, right) => left.characterId.localeCompare(right.characterId))
+}
+
+function listCharacterFactIds(maps: MemoryMaps): string[] {
+  const ids = new Set<string>()
+  addKeys(ids, maps.stats)
+  addKeys(ids, maps.journal)
+  addKeys(ids, maps.logBook)
+  addKeys(ids, maps.quests)
+  addKeys(ids, maps.knownActions)
+  addKeys(ids, maps.locations)
+  for (const companion of maps.companions.values()) {
+    ids.add(companion.characterId)
+  }
+  return [...ids].sort()
+}
+
+function addKeys(ids: Set<string>, map: ReadonlyMap<string, unknown>): void {
+  for (const key of map.keys()) {
+    ids.add(key)
+  }
 }
 
 function copyStats(stats: CharacterStats): CharacterStats {

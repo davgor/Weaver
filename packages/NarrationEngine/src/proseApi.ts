@@ -23,12 +23,14 @@ export {
   isNarrationCampaignStoreBound,
   projectScene,
   projectSocial,
+  restoreNarrationProjections,
   unbindNarrationCampaignStore
 } from './proseStore.js'
 export type {
   AppendSceneBlockInput,
   AppendSocialLineInput,
   MemoryNarrationProjectionStoreOptions,
+  NarrationProjectionSnapshot,
   NarrationProjectionStore
 } from './proseStore.js'
 

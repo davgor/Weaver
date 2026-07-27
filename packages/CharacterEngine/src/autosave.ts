@@ -26,6 +26,21 @@ export function getLatestAutosaveSnapshot(characterId: string): CharacterAutosav
   return snapshot === undefined ? undefined : copySnapshot(snapshot)
 }
 
+export function listAutosaveCharacterIds(): string[] {
+  return [...autosaveStore.keys()].sort()
+}
+
+export function listAutosaveSnapshots(): Record<string, CharacterAutosaveSnapshot> {
+  const snapshots: Record<string, CharacterAutosaveSnapshot> = {}
+  for (const characterId of listAutosaveCharacterIds()) {
+    const snapshot = autosaveStore.get(characterId)
+    if (snapshot !== undefined) {
+      snapshots[characterId] = copySnapshot(snapshot)
+    }
+  }
+  return snapshots
+}
+
 export function restoreLatestAutosaveSnapshot(characterId: string): CharacterAutosaveSnapshot {
   const snapshot = getLatestAutosaveSnapshot(characterId)
   if (snapshot === undefined) {

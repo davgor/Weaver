@@ -30,6 +30,7 @@ type StoredInventory = {
   heldItemIds: string[]
   equipped: EquippedItems
 }
+type ItemCampaignState = Parameters<ItemService['restoreCampaignState']>[0]
 
 export function createSqliteItemService(db: SqliteDatabase): ItemService {
   return new SqliteItemService(db, createItemService(readItemSeed(db)))
@@ -117,6 +118,15 @@ class SqliteItemService implements ItemService {
 
   getWeaponDamageProfile(instanceId: string): WeaponDamageProfile {
     return this.memory.getWeaponDamageProfile(instanceId)
+  }
+
+  snapshotCampaignState(characterIds: readonly string[]): ItemCampaignState {
+    return this.memory.snapshotCampaignState(characterIds)
+  }
+
+  restoreCampaignState(state: ItemCampaignState): void {
+    this.memory.restoreCampaignState(state)
+    replacePersistedItemState(this.db, state)
   }
 }
 
@@ -242,7 +252,10 @@ function updateInstancePayload(db: SqliteDatabase, item: ItemInstance): void {
 }
 
 function persistInventory(db: SqliteDatabase, snapshot: InventorySnapshot): void {
-  const stored = toInventorySeed(snapshot)
+  persistStoredInventory(db, toInventorySeed(snapshot))
+}
+
+function persistStoredInventory(db: SqliteDatabase, stored: StoredInventory): void {
   db.prepare(
     `INSERT INTO character_inventories (character_id, held_json, equipped_json)
      VALUES (?, ?, ?)
@@ -250,6 +263,34 @@ function persistInventory(db: SqliteDatabase, snapshot: InventorySnapshot): void
        held_json = excluded.held_json,
        equipped_json = excluded.equipped_json`
   ).run(stored.characterId, JSON.stringify(stored.heldItemIds), JSON.stringify(stored.equipped))
+}
+
+function replacePersistedItemState(db: SqliteDatabase, state: ItemCampaignState): void {
+  clearPersistedItemState(db)
+  for (const template of state.templates) persistTemplate(db, template)
+  for (const instance of state.instances) {
+    persistInstance(db, toItemInstancePayload(instance), instance.ownerCharacterId)
+  }
+  for (const inventory of state.inventories) persistStoredInventory(db, inventory)
+  writeItemMeta(db, 'next_instance_number', String(inferNextInstanceNumber(state.instances)))
+}
+
+function clearPersistedItemState(db: SqliteDatabase): void {
+  db.exec(`
+    DELETE FROM character_inventories;
+    DELETE FROM item_instances;
+    DELETE FROM item_templates;
+    DELETE FROM item_store_meta WHERE key = 'next_instance_number';
+  `)
+}
+
+function toItemInstancePayload(instance: ItemCampaignState['instances'][number]): ItemInstance {
+  const item: ItemInstance = { id: instance.id, templateId: instance.templateId }
+  if (instance.durability !== undefined) item.durability = instance.durability
+  if (instance.charges !== undefined) item.charges = instance.charges
+  if (instance.customName !== undefined) item.customName = instance.customName
+  if (instance.enchantmentOverlays !== undefined) item.enchantmentOverlays = instance.enchantmentOverlays
+  return item
 }
 
 function persistBalance(db: SqliteDatabase, snapshot: CurrencyBalanceSnapshot): void {

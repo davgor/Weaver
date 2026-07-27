@@ -166,11 +166,13 @@ export type NpcDossierTraits = {
 }
 
 /** Persisted DM notes about an NPC, keyed by campaign + npc (042). Separate from 041 opinion scores. */
-export type UpsertDmNpcOpinionInput = {
+export type DmNpcOpinion = {
   campaignId: string
   npcId: string
   text: string
 }
+
+export type UpsertDmNpcOpinionInput = DmNpcOpinion
 
 export type GetNpcDossierInput = {
   npcId: string

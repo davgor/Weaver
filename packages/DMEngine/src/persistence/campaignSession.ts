@@ -16,6 +16,11 @@ import {
 } from '@weaver/narration-engine'
 import { isQuestCampaignStoreBound, unbindQuestCampaignStore } from '@weaver/quest-engine'
 import {
+  bindGuidedCreationStateStore,
+  isGuidedCreationStateStoreBound,
+  unbindGuidedCreationStateStore
+} from '../guidedCreation/phaseState.js'
+import {
   createCampaign,
   openCampaign,
   type CampaignHandle,
@@ -29,8 +34,16 @@ import {
 } from './repositories/sqliteItemStore.js'
 import { bindNpcCampaignStores } from './repositories/bindNpcStores.js'
 import { bindEnemyQuestNarrationStores } from './repositories/bindEnemyQuestNarrationStores.js'
+import {
+  bindOnboardingStore,
+  createSqliteOnboardingStore,
+  isOnboardingStoreBound,
+  type OnboardingStore,
+  unbindOnboardingStore
+} from './repositories/sqliteOnboardingStore.js'
 
 export type CampaignSession = Omit<CampaignHandle, 'getDb'> & {
+  onboardingStore: OnboardingStore
   isStoreBound: () => boolean
 }
 
@@ -64,6 +77,7 @@ export function assertCampaignStoresBound(): void {
 
 function bindSession(handle: InternalHandle): CampaignSession {
   const db = handle.getDb()
+  const onboardingStore = createSqliteOnboardingStore(db)
   bindCharacterFactStore(createSqliteCharacterFactStore(db))
   bindItemCampaignStores({
     itemService: createSqliteItemService(db),
@@ -72,11 +86,14 @@ function bindSession(handle: InternalHandle): CampaignSession {
   // NPC campaign store binding (106.3): durable NPC facts, memories, factions, opinions, locations.
   bindNpcCampaignStores(db)
   bindEnemyQuestNarrationStores(db)
+  bindOnboardingStore(onboardingStore)
+  bindGuidedCreationStateStore(onboardingStore)
   const session: CampaignSession = {
     campaignId: handle.campaignId,
     filePath: handle.filePath,
     schemaVersion: handle.schemaVersion,
     appliedMigrations: handle.appliedMigrations,
+    onboardingStore,
     isStoreBound: allCampaignStoresBound,
     close() {
       unbindAllStores()
@@ -97,6 +114,8 @@ function unbindAllStores(): void {
   unbindEnemyCampaignStore()
   unbindQuestCampaignStore()
   unbindNarrationCampaignStore()
+  unbindOnboardingStore()
+  unbindGuidedCreationStateStore()
 }
 
 function allCampaignStoresBound(): boolean {
@@ -106,7 +125,9 @@ function allCampaignStoresBound(): boolean {
     isNpcCampaignStoreBound() &&
     isEnemyCampaignStoreBound() &&
     isQuestCampaignStoreBound() &&
-    isNarrationCampaignStoreBound()
+    isNarrationCampaignStoreBound() &&
+    isOnboardingStoreBound() &&
+    isGuidedCreationStateStoreBound()
   )
 }
 

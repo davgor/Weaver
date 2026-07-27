@@ -1,6 +1,7 @@
 import { NpcEngineError } from './errors.js'
 import type { NpcLocation } from './location.js'
 import type {
+  DmNpcOpinion,
   FactionRecord,
   FactionRelation,
   NpcMemory,
@@ -31,24 +32,29 @@ export type NpcCampaignStore = {
 
   getFaction: (factionId: string) => FactionRecord | undefined
   setFaction: (faction: FactionRecord) => FactionRecord
+  listFactions: () => FactionRecord[]
   clearFactions: () => void
 
   getFactionRelation: (sourceFactionId: string, targetFactionId: string) => FactionRelation | undefined
   setFactionRelation: (relation: FactionRelation) => FactionRelation
+  listFactionRelations: () => FactionRelation[]
   clearFactionRelations: () => void
 
   getReputation: (characterId: string, factionId: string) => ReputationStanding | undefined
   setReputation: (standing: ReputationStanding) => ReputationStanding
   listReputationsForCharacter: (characterId: string) => ReputationStanding[]
+  listReputations: () => ReputationStanding[]
   clearReputations: () => void
 
   setNpcOpinion: (opinion: NpcOpinion) => NpcOpinion
   listNpcOpinionsHeldBy: (holderNpcId: string) => NpcOpinion[]
   listNpcOpinionsAbout: (subjectId: string) => NpcOpinion[]
+  listNpcOpinions: () => NpcOpinion[]
   clearNpcOpinions: () => void
 
   setDmNpcOpinion: (campaignId: string, npcId: string, text: string) => string
   getDmNpcOpinion: (campaignId: string, npcId: string) => string | undefined
+  listDmNpcOpinionsForCampaign: (campaignId: string) => DmNpcOpinion[]
   clearDmNpcOpinions: () => void
 
   getLocation: (npcId: string) => NpcLocation | undefined
@@ -70,7 +76,7 @@ type MemoryNpcCampaignStoreMaps = {
   relations: Map<string, FactionRelation>
   reputations: Map<string, ReputationStanding>
   opinions: Map<string, NpcOpinion>
-  dmOpinions: Map<string, string>
+  dmOpinions: Map<string, DmNpcOpinion>
   locations: Map<string, NpcLocation>
 }
 
@@ -83,7 +89,7 @@ export function createMemoryNpcCampaignStore(): NpcCampaignStore {
     relations: new Map<string, FactionRelation>(),
     reputations: new Map<string, ReputationStanding>(),
     opinions: new Map<string, NpcOpinion>(),
-    dmOpinions: new Map<string, string>(),
+    dmOpinions: new Map<string, DmNpcOpinion>(),
     locations: new Map<string, NpcLocation>()
   }
   return {
@@ -167,9 +173,11 @@ function createFactionMemoryStore(
   NpcCampaignStore,
   | 'getFaction'
   | 'setFaction'
+  | 'listFactions'
   | 'clearFactions'
   | 'getFactionRelation'
   | 'setFactionRelation'
+  | 'listFactionRelations'
   | 'clearFactionRelations'
 > {
   return {
@@ -178,6 +186,7 @@ function createFactionMemoryStore(
       maps.factions.set(faction.factionId, copyFaction(faction))
       return copyFaction(faction)
     },
+    listFactions: () => [...maps.factions.values()].map(copyFaction),
     clearFactions: () => {
       maps.factions.clear()
     },
@@ -188,6 +197,7 @@ function createFactionMemoryStore(
       maps.relations.set(key, copyRelation(relation))
       return copyRelation(relation)
     },
+    listFactionRelations: () => [...maps.relations.values()].map(copyRelation),
     clearFactionRelations: () => {
       maps.relations.clear()
     }
@@ -198,7 +208,11 @@ function createReputationMemoryStore(
   maps: MemoryNpcCampaignStoreMaps
 ): Pick<
   NpcCampaignStore,
-  'getReputation' | 'setReputation' | 'listReputationsForCharacter' | 'clearReputations'
+  | 'getReputation'
+  | 'setReputation'
+  | 'listReputationsForCharacter'
+  | 'listReputations'
+  | 'clearReputations'
 > {
   return {
     getReputation: (characterId, factionId) =>
@@ -214,6 +228,7 @@ function createReputationMemoryStore(
       [...maps.reputations.values()]
         .filter((standing) => standing.characterId === characterId)
         .map(copyStanding),
+    listReputations: () => [...maps.reputations.values()].map(copyStanding),
     clearReputations: () => {
       maps.reputations.clear()
     }
@@ -227,9 +242,11 @@ function createOpinionMemoryStore(
   | 'setNpcOpinion'
   | 'listNpcOpinionsHeldBy'
   | 'listNpcOpinionsAbout'
+  | 'listNpcOpinions'
   | 'clearNpcOpinions'
   | 'setDmNpcOpinion'
   | 'getDmNpcOpinion'
+  | 'listDmNpcOpinionsForCampaign'
   | 'clearDmNpcOpinions'
 > {
   return {
@@ -245,15 +262,20 @@ function createOpinionMemoryStore(
       [...maps.opinions.values()]
         .filter((opinion) => opinion.subjectId === subjectId)
         .map(copyOpinion),
+    listNpcOpinions: () => [...maps.opinions.values()].map(copyOpinion),
     clearNpcOpinions: () => {
       maps.opinions.clear()
     },
     setDmNpcOpinion: (campaignId, npcId, text) => {
-      maps.dmOpinions.set(dmOpinionKey(campaignId, npcId), text)
+      maps.dmOpinions.set(dmOpinionKey(campaignId, npcId), { campaignId, npcId, text })
       return text
     },
     getDmNpcOpinion: (campaignId, npcId) =>
-      maps.dmOpinions.get(dmOpinionKey(campaignId, npcId)),
+      maps.dmOpinions.get(dmOpinionKey(campaignId, npcId))?.text,
+    listDmNpcOpinionsForCampaign: (campaignId) =>
+      [...maps.dmOpinions.values()]
+        .filter((opinion) => opinion.campaignId === campaignId)
+        .map(copyDmOpinion),
     clearDmNpcOpinions: () => {
       maps.dmOpinions.clear()
     }
@@ -444,6 +466,10 @@ function copyOpinion(opinion: NpcOpinion): NpcOpinion {
     ...opinion,
     ...(opinion.provenance === undefined ? {} : { provenance: { ...opinion.provenance } })
   }
+}
+
+function copyDmOpinion(opinion: DmNpcOpinion): DmNpcOpinion {
+  return { ...opinion }
 }
 
 function copyLocation(record: NpcLocation): NpcLocation {
