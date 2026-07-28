@@ -4,7 +4,7 @@ Coverage job failed on `packages/WeatherEngine/src/worldEngine.weather.contract.
 
 ## Acceptance criteria
 
-- [ ] Global Vitest `testTimeout` raised to cover documented Windows world-bootstrap worst case (match `weatherField` 120s headroom)
-- [ ] `worldEngine.weather.contract.test.ts` gets an explicit 120s timeout
-- [ ] Weather contract + field tests pass locally
-- [ ] PR coverage (and checks) green
+- [x] Global Vitest `testTimeout` raised to cover documented Windows world-bootstrap worst case (match `weatherField` 120s headroom)
+- [x] `worldEngine.weather.contract.test.ts` gets an explicit 120s timeout
+- [x] Weather contract + field tests pass locally
+- [x] PR coverage (and checks) green
