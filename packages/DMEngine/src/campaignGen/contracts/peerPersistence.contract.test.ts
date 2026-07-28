@@ -75,7 +75,8 @@ describe('DMEngine campaign generation peer persistence contract', () => {
       ])
       expect(existsSync(join(root, 'campaign.sqlite'))).toBe(true)
     },
-    30_000
+    // Windows CI shards can exceed 30s when this follows heavy world/civ bootstraps.
+    90_000
   )
 })
 

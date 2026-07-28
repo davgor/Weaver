@@ -21,6 +21,7 @@ import {
   type CampaignHandle,
   type CampaignOpenOptions
 } from './campaignPersistence.js'
+import { readCampaignMeta, upsertCampaignMeta } from './campaignMeta.js'
 import type { SqliteDatabase } from './migrationRunner.js'
 import { createSqliteCharacterFactStore } from './repositories/sqliteCharacterFactStore.js'
 import {
@@ -32,6 +33,10 @@ import { bindEnemyQuestNarrationStores } from './repositories/bindEnemyQuestNarr
 
 export type CampaignSession = Omit<CampaignHandle, 'getDb'> & {
   isStoreBound: () => boolean
+  /** Write a campaign_meta key on the open session without a second SQLite connection. */
+  upsertMeta: (key: string, value: string) => void
+  /** Read a campaign_meta key on the open session without a second SQLite connection. */
+  readMeta: (key: string) => string | undefined
 }
 
 type InternalHandle = CampaignHandle & {
@@ -78,6 +83,12 @@ function bindSession(handle: InternalHandle): CampaignSession {
     schemaVersion: handle.schemaVersion,
     appliedMigrations: handle.appliedMigrations,
     isStoreBound: allCampaignStoresBound,
+    upsertMeta(key: string, value: string) {
+      upsertCampaignMeta(handle, key, value)
+    },
+    readMeta(key: string) {
+      return readCampaignMeta(handle, key)
+    },
     close() {
       unbindAllStores()
       handle.close()

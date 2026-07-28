@@ -1,12 +1,17 @@
 import { existsSync, mkdirSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import {
+  VN_PLAY_CURSOR_META_KEY,
+  VN_STORY_COMPLETE_META_KEY,
   openCampaign,
   readCampaignMeta,
   readCatalogEntry,
   type VnStoryOverview
 } from '@weaver/dm-engine'
-import type { VnSavedGameSummary } from '../../shared/story/types.js'
+import type {
+  VnSavedGamePlayStatus,
+  VnSavedGameSummary
+} from '../../shared/story/types.js'
 
 export function resolveStoryPaths(
   storiesRoot: string,
@@ -60,9 +65,22 @@ function summarizePermanentHandle(
       title: overview?.mainCharacter.name ?? campaignId,
       premiseSummary: overview?.premiseSummary ?? '',
       actCount: Number.isFinite(actCount) ? actCount : 3,
-      lifecycle: 'permanent'
+      lifecycle: 'permanent',
+      playStatus: readPlayStatus(handle)
     }
   ]
+}
+
+function readPlayStatus(
+  handle: Parameters<typeof readCampaignMeta>[0]
+): VnSavedGamePlayStatus {
+  if (readCampaignMeta(handle, VN_PLAY_CURSOR_META_KEY) === undefined) {
+    return 'not_started'
+  }
+  if (readCampaignMeta(handle, VN_STORY_COMPLETE_META_KEY) === 'true') {
+    return 'story_complete_continuing'
+  }
+  return 'in_progress'
 }
 
 function parseOverview(payloadJson: string | undefined): VnStoryOverview | null {

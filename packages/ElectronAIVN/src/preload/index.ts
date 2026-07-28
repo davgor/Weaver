@@ -9,11 +9,13 @@ import type {
   PlayVnStoryResult,
   StartupBootSnapshot,
   SubmitVnPlayActionRequest,
+  VnAssetsUpdate,
   VnPlaySnapshot,
   VnSavedGameSummary,
   VnStoryDraft,
   VnStoryReviewSnapshot
 } from '../shared/gameApi.js'
+import { VN_PLAY_ASSETS_CHANNEL } from '../shared/gameApi.js'
 import {
   LLM_INSTALL_PROGRESS_CHANNEL,
   STARTUP_BOOT_PROGRESS_CHANNEL
@@ -56,7 +58,9 @@ const api: AivnApi = {
     open: (campaignId: string): Promise<VnPlaySnapshot> =>
       ipcRenderer.invoke('vnPlay:open', campaignId),
     submitAction: (request: SubmitVnPlayActionRequest): Promise<VnPlaySnapshot> =>
-      ipcRenderer.invoke('vnPlay:submitAction', request)
+      ipcRenderer.invoke('vnPlay:submitAction', request),
+    onAssets: (listener: (update: VnAssetsUpdate) => void) =>
+      subscribe<VnAssetsUpdate>(VN_PLAY_ASSETS_CHANNEL, listener)
   },
   app: {
     getVersion: (): Promise<string> => ipcRenderer.invoke('app:getVersion')

@@ -75,7 +75,11 @@ export function discoverTsPruneProjects(root) {
   for (const entry of readdirSync(packagesRoot, { withFileTypes: true })) {
     if (!entry.isDirectory()) continue
     const pkgDir = join(packagesRoot, entry.name)
-    if (entry.name === 'ElectronAdmin' || entry.name === 'ElectronAITTRPG') {
+    if (
+      entry.name === 'ElectronAdmin' ||
+      entry.name === 'ElectronAITTRPG' ||
+      entry.name === 'ElectronAIVN'
+    ) {
       pushElectronProjects(root, pkgDir, projects)
       continue
     }

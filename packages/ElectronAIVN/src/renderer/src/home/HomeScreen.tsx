@@ -1,5 +1,8 @@
 import { APP_DISPLAY_NAME } from '../../../shared/appBranding'
-import type { VnSavedGameSummary } from '../../../shared/story/types'
+import type {
+  VnSavedGamePlayStatus,
+  VnSavedGameSummary
+} from '../../../shared/story/types'
 import appBrandMarkUrl from '../assets/app-icon.png'
 
 type HomeScreenProps = {
@@ -37,6 +40,7 @@ export function HomeScreen(props: HomeScreenProps): JSX.Element {
                 >
                   <span className="saved-games-title">{game.title}</span>
                   <span className="saved-games-premise">{game.premiseSummary}</span>
+                  <PlayStatusLabel status={game.playStatus} />
                 </button>
               </li>
             ))}
@@ -45,6 +49,18 @@ export function HomeScreen(props: HomeScreenProps): JSX.Element {
       ) : null}
     </main>
   )
+}
+
+function PlayStatusLabel(props: { status: VnSavedGamePlayStatus }): JSX.Element | null {
+  const label = playStatusLabel(props.status)
+  if (label === null) return null
+  return <span className="saved-games-status">{label}</span>
+}
+
+function playStatusLabel(status: VnSavedGamePlayStatus): string | null {
+  if (status === 'in_progress') return 'In progress'
+  if (status === 'story_complete_continuing') return 'Story complete — continuing'
+  return null
 }
 
 function homeCopy(canTellStory: boolean, hasSaves: boolean): string {

@@ -9,8 +9,11 @@ import {
 } from '@weaver/civilization-engine'
 import {
   createCampaign,
+  openCampaign,
   permanentizeVnStory,
-  runVnStoryGeneration
+  runVnStoryGeneration,
+  writeVnPlayCursor,
+  type VnPlayCursor
 } from '@weaver/dm-engine'
 import { fillAndValidate, type TextCompleter } from '@weaver/narration-engine'
 import {
@@ -55,11 +58,51 @@ describe('storyDisk', () => {
     expect(listed[0]).toMatchObject({
       campaignId: permanentId,
       lifecycle: 'permanent',
-      title: 'Ryn Vale'
+      title: 'Ryn Vale',
+      playStatus: 'not_started'
     })
     expect(listed.some((row) => row.campaignId === draftId)).toBe(false)
   }, 30_000)
+
+  it('reports in_progress and story_complete_continuing from the persisted cursor', async () => {
+    const storiesRoot = tempRoot()
+    const campaignId = 'vn-permanent'
+    await createDraft(storiesRoot, campaignId)
+    const paths = resolveStoryPaths(storiesRoot, campaignId)
+    permanentizeVnStory({ campaignId, filePath: paths.campaignFilePath }).session.close()
+
+    writeCursor(paths.campaignFilePath, campaignId, { phase: 'story', storyComplete: false })
+    expect(listPermanentVnStories(storiesRoot)[0]?.playStatus).toBe('in_progress')
+
+    writeCursor(paths.campaignFilePath, campaignId, { phase: 'freeplay', storyComplete: true })
+    expect(listPermanentVnStories(storiesRoot)[0]?.playStatus).toBe('story_complete_continuing')
+  }, 30_000)
 })
+
+function writeCursor(
+  filePath: string,
+  campaignId: string,
+  progress: Pick<VnPlayCursor, 'phase' | 'storyComplete'>
+): void {
+  const handle = openCampaign({ campaignId, filePath })
+  try {
+    writeVnPlayCursor(handle, {
+      campaignId,
+      characterId: `${campaignId}-vn-mc`,
+      phase: progress.phase,
+      storyComplete: progress.storyComplete,
+      actIndex: 1,
+      beatId: 'opening',
+      mode: 'scene',
+      beatText: 'Fog rolls over the dock.',
+      speakerId: null,
+      options: ['Search the fog.', 'Ask the warden.'],
+      updatedAt: new Date().toISOString()
+    })
+  } finally {
+    handle.close()
+  }
+}
 
 async function createDraft(storiesRoot: string, campaignId: string): Promise<void> {
   ensureStoryLayout(storiesRoot, campaignId)

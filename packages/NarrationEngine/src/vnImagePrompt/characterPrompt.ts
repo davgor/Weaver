@@ -1,3 +1,4 @@
+import { stableHash } from './stableHash.js'
 import {
   assertVnCharacterIdentitySeed,
   assertVnExpression,
@@ -7,6 +8,10 @@ import {
   type VnImagePrompt,
   type VnStance
 } from './types.js'
+
+export function vnCharacterStyleLockId(characterKey: string): string {
+  return `vn-character-${stableHash(characterKey)}`
+}
 
 export type BuildVnCharacterPromptInput = {
   identity: VnCharacterIdentitySeed
@@ -47,18 +52,9 @@ function buildFullPrompt(
 
 function styleLockLine(characterKey: string): string {
   return [
-    `Style lock: vn-character-${stableHash(characterKey)}`,
+    `Style lock: ${vnCharacterStyleLockId(characterKey)}`,
     'preserve face, outfit, palette, and proportions across every stance and expression.'
   ].join('; ')
-}
-
-function stableHash(value: string): string {
-  let hash = 2_166_136_261
-  for (let index = 0; index < value.length; index += 1) {
-    hash ^= value.charCodeAt(index)
-    hash = Math.imul(hash, 16_777_619) >>> 0
-  }
-  return hash.toString(36).padStart(7, '0')
 }
 
 function optionalStyleNotes(notes: readonly string[] | undefined): string | null {

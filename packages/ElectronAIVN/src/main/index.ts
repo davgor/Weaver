@@ -22,6 +22,10 @@ import {
   createDiskVnPlayCatalog,
   createVnPlayService
 } from './play/playService.js'
+import { createVnAssetService } from './play/vnAssetService.js'
+import { generateVnBackground, generateVnSprite } from '@weaver/narration-engine'
+import type { ImageGenerationSettings } from '@weaver/narration-engine'
+import { VN_PLAY_ASSETS_CHANNEL, type VnAssetsUpdate } from '../shared/play/assetTypes.js'
 
 Menu.setApplicationMenu(null)
 
@@ -117,13 +121,31 @@ function wireVnPlay(holder: EngineHolder, storiesRoot: string): void {
     completeText: (request: Parameters<LocalLlmEnginePort['completeText']>[0]) =>
       holder.current.completeText(request)
   }
+  // No local image runtime is wired in V1, so keep tokens disabled: the engine then
+  // degrades to `{ status: 'degraded', prompt, provider }` and the UI falls back to
+  // prompt placeholders (epic 126.5). Real image providers can be injected later via
+  // `createVnAssetService({ providers })` with `generativeTokensEnabled: true`.
+  const imageSettings: ImageGenerationSettings = { provider: 'local', generativeTokensEnabled: false }
+  const assets = createVnAssetService({
+    generateSprite: generateVnSprite,
+    generateBackground: generateVnBackground,
+    settings: imageSettings,
+    onUpdate: broadcastVnAssets
+  })
   registerVnPlayHandlers(
     createVnPlayService({
       catalog: createDiskVnPlayCatalog(storiesRoot),
       completer,
-      resolveTurnDeps: createLiveVnResolveTurnDeps(completer)
+      resolveTurnDeps: createLiveVnResolveTurnDeps(completer),
+      assets
     })
   )
+}
+
+function broadcastVnAssets(update: VnAssetsUpdate): void {
+  for (const window of BrowserWindow.getAllWindows()) {
+    window.webContents.send(VN_PLAY_ASSETS_CHANNEL, update)
+  }
 }
 
 function registerAppHandlers(): void {

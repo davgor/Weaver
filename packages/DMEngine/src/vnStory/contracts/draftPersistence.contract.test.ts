@@ -72,7 +72,7 @@ describe('DMEngine vnStory draft persistence contract', () => {
     const reopened = openCampaign({ campaignId, filePath })
     expect(readCampaignMeta(reopened, 'lifecycle')).toBe('permanent')
     reopened.close()
-  }, 30_000)
+  }, 90_000)
 })
 
 function input(campaignId: string, root: string, filePath: string) {

@@ -6,8 +6,9 @@ export type {
   VnBackgroundPresetId,
   VnPresetBackgroundPromptInput
 } from './backgroundPrompt.js'
-export { buildVnCharacterPrompt } from './characterPrompt.js'
+export { buildVnCharacterPrompt, vnCharacterStyleLockId } from './characterPrompt.js'
 export type { BuildVnCharacterPromptInput } from './characterPrompt.js'
+export { stableHash } from './stableHash.js'
 export { buildVnBeatPlaceholders } from './placeholders.js'
 export type {
   BuildVnBeatPlaceholdersInput,

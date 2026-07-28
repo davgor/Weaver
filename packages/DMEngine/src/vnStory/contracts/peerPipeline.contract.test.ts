@@ -72,7 +72,7 @@ describe('DMEngine vnStory peer pipeline contract', () => {
       expect(context.privateMemories).toHaveLength(1)
       expect(context.privateMemories[0]?.text).toContain(npcId)
     }
-  }, 30_000)
+  }, 90_000)
 })
 
 function realDeps(actCount: number): VnStoryGenerationDeps {

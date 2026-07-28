@@ -23,32 +23,37 @@ function withContractWorld(run: (dataRoot: string, worldId: string, base: Cell) 
 }
 
 describe('WeatherEngine ↔ WorldEngine weather mutation contract', () => {
-  it('applies weather through WorldEngine overlays and restores base terrain on clear', () => {
-    withContractWorld((dataRoot, worldId, base) => {
-      const bounds = { minX: 0, minY: 0, maxX: 4, maxY: 4 }
-      applyWeatherField({ dataRoot, worldId, day: 8, bounds })
+  // Windows CI + better-sqlite3 world bootstrap can exceed 30s (see weatherField.test.ts).
+  it(
+    'applies weather through WorldEngine overlays and restores base terrain on clear',
+    () => {
+      withContractWorld((dataRoot, worldId, base) => {
+        const bounds = { minX: 0, minY: 0, maxX: 4, maxY: 4 }
+        applyWeatherField({ dataRoot, worldId, day: 8, bounds })
 
-      expect(
-        worldEngine.getSparseOverlay({ dataRoot, worldId, x: 2, y: 2, key: WEATHER_CONDITION_KEY })
-      ).not.toBeNull()
-      const weathered = getWeatherAt({ dataRoot, worldId, x: 2, y: 2 })
-      expect(weathered.severity).toBeGreaterThanOrEqual(1)
+        expect(
+          worldEngine.getSparseOverlay({ dataRoot, worldId, x: 2, y: 2, key: WEATHER_CONDITION_KEY })
+        ).not.toBeNull()
+        const weathered = getWeatherAt({ dataRoot, worldId, x: 2, y: 2 })
+        expect(weathered.severity).toBeGreaterThanOrEqual(1)
 
-      const override = worldEngine.getSparseOverlay({
-        dataRoot,
-        worldId,
-        x: 2,
-        y: 2,
-        key: LAND_TYPE_OVERRIDE_KEY
+        const override = worldEngine.getSparseOverlay({
+          dataRoot,
+          worldId,
+          x: 2,
+          y: 2,
+          key: LAND_TYPE_OVERRIDE_KEY
+        })
+        const cell = worldEngine.getCell({ dataRoot, worldId, x: 2, y: 2 })
+        expect(cell?.landType).toBe(override ? override.value : base.landType)
+
+        clearWeatherField({ dataRoot, worldId, bounds })
+        expect(worldEngine.getCell({ dataRoot, worldId, x: 2, y: 2 })).toEqual(base)
+        expect(
+          worldEngine.getSparseOverlay({ dataRoot, worldId, x: 2, y: 2, key: WEATHER_CONDITION_KEY })
+        ).toBeNull()
       })
-      const cell = worldEngine.getCell({ dataRoot, worldId, x: 2, y: 2 })
-      expect(cell?.landType).toBe(override ? override.value : base.landType)
-
-      clearWeatherField({ dataRoot, worldId, bounds })
-      expect(worldEngine.getCell({ dataRoot, worldId, x: 2, y: 2 })).toEqual(base)
-      expect(
-        worldEngine.getSparseOverlay({ dataRoot, worldId, x: 2, y: 2, key: WEATHER_CONDITION_KEY })
-      ).toBeNull()
-    })
-  })
+    },
+    120_000
+  )
 })

@@ -182,10 +182,26 @@ export type {
   VnStoryOverview
 } from './vnStory/index.js'
 
-export { generateVnChoicePair } from './vnPlay/index.js'
+export {
+  VN_PLAY_CURSOR_META_KEY,
+  VN_PLAY_PHASE_META_KEY,
+  VN_STORY_COMPLETE_META_KEY,
+  advanceVnPlayCursor,
+  generateVnChoicePair,
+  initialVnPlayCursor,
+  isVnFreeplay,
+  parseVnPlayCursor,
+  readVnPlayCursor,
+  readVnPlayCursorOnSession,
+  serializeVnPlayCursor,
+  writeVnPlayCursor,
+  writeVnPlayCursorOnSession
+} from './vnPlay/index.js'
 export type {
   GenerateVnChoicePairInput,
-  GenerateVnChoicePairResult
+  GenerateVnChoicePairResult,
+  VnPlayCursor,
+  VnPlayPhase
 } from './vnPlay/index.js'
 
 export {

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { VnPlaySnapshot } from '../../../shared/play/types'
+import type { VnSlotAssetState } from '../../../shared/play/assetTypes'
 import { VnStageScreen } from './VnStageScreen'
 
 type PlaySessionProps = {
@@ -31,6 +32,7 @@ export function PlaySession(props: PlaySessionProps): JSX.Element {
       snapshot={session.snapshot}
       busy={session.busy}
       freeText={session.freeText}
+      assets={session.assets}
       onFreeTextChange={session.setFreeText}
       onHome={props.onHome}
       onChoose={session.choose}
@@ -43,6 +45,7 @@ function usePlaySession(campaignId: string) {
   const [freeText, setFreeText] = useState('')
   const [busy, setBusy] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const assets = usePlayAssets(campaignId)
 
   useEffect(() => {
     let cancelled = false
@@ -74,11 +77,23 @@ function usePlaySession(campaignId: string) {
     setFreeText,
     busy,
     error,
+    assets,
     choose: (text: string) => {
       if (snapshot === null) return
       void chooseAction({ text, snapshot, setSnapshot, setFreeText, setBusy, setError })
     }
   }
+}
+
+function usePlayAssets(campaignId: string): readonly VnSlotAssetState[] {
+  const [assets, setAssets] = useState<readonly VnSlotAssetState[]>([])
+  useEffect(() => {
+    setAssets([])
+    return window.aivn.play.onAssets((update) => {
+      if (update.campaignId === campaignId) setAssets(update.assets)
+    })
+  }, [campaignId])
+  return assets
 }
 
 async function chooseAction(args: {
@@ -92,7 +107,9 @@ async function chooseAction(args: {
   args.setBusy(true)
   try {
     const socialSpeakerId =
-      args.snapshot.mode === 'npc' ? args.snapshot.cast[0]?.npcId : undefined
+      args.snapshot.mode === 'npc'
+        ? args.snapshot.speakerId ?? args.snapshot.cast[0]?.npcId
+        : undefined
     const next = await window.aivn.play.submitAction({
       campaignId: args.snapshot.campaignId,
       text: args.text,
